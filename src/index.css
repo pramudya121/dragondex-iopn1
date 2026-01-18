@@ -2,95 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* DRAGONDEX Design System - Premium Dragon Theme */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core Dragon Colors - Crimson & Obsidian */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+    
+    /* Dragon Red - Primary */
+    --primary: 0 85% 50%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Ember Glow */
+    --secondary: 15 90% 55%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Dark surfaces */
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
+    
+    /* Accent - Golden ember */
+    --accent: 35 100% 50%;
+    --accent-foreground: 0 0% 5%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Borders & inputs */
+    --border: 0 0% 18%;
+    --input: 0 0% 15%;
+    --ring: 0 85% 50%;
+    
+    --radius: 0.75rem;
+    
+    /* Dragon-specific tokens */
+    --dragon-crimson: 0 85% 50%;
+    --dragon-ember: 15 90% 55%;
+    --dragon-gold: 35 100% 50%;
+    --dragon-obsidian: 0 0% 4%;
+    --dragon-smoke: 0 0% 12%;
+    --dragon-ash: 0 0% 25%;
+    
+    /* Success/Info states */
+    --success: 142 76% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 35 100% 50%;
+    --info: 200 80% 50%;
+    
+    /* Gradients */
+    --gradient-dragon: linear-gradient(135deg, hsl(0, 85%, 50%) 0%, hsl(15, 90%, 55%) 50%, hsl(35, 100%, 50%) 100%);
+    --gradient-ember: linear-gradient(180deg, hsl(0, 85%, 50%) 0%, hsl(0, 85%, 30%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 10%) 0%, hsl(0, 0%, 6%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(0, 85%, 50%, 0.15) 0%, transparent 70%);
+    
+    /* Shadows */
+    --shadow-dragon: 0 0 60px -15px hsl(0, 85%, 50%, 0.4);
+    --shadow-card: 0 4px 24px -4px hsl(0, 0%, 0%, 0.5);
+    --shadow-glow: 0 0 40px 0px hsl(0, 85%, 50%, 0.2);
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 0 85% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 85% 50%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
   }
 }
 
@@ -99,7 +90,265 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01", "ss03";
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dragon-ash rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+}
+
+@layer components {
+  /* Dragon button variants */
+  .btn-dragon {
+    @apply relative overflow-hidden bg-gradient-to-r from-primary via-secondary to-accent text-primary-foreground font-semibold px-6 py-3 rounded-xl transition-all duration-300;
+    box-shadow: 0 0 30px -10px hsl(var(--primary) / 0.5);
+  }
+
+  .btn-dragon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px -5px hsl(var(--primary) / 0.6);
+  }
+
+  .btn-dragon::before {
+    content: '';
+    @apply absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300;
+  }
+
+  .btn-dragon:hover::before {
+    @apply opacity-100;
+  }
+
+  /* Glass card effect */
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl;
+    box-shadow: var(--shadow-card);
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300;
+  }
+
+  .glass-card-hover:hover {
+    @apply border-primary/30;
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Dragon glow effects */
+  .dragon-glow {
+    box-shadow: var(--shadow-dragon);
+  }
+
+  .dragon-glow-text {
+    text-shadow: 0 0 30px hsl(var(--primary) / 0.5);
+  }
+
+  /* Wave background animation */
+  .wave-bg {
+    background: 
+      radial-gradient(ellipse 80% 50% at 50% 120%, hsl(0, 85%, 20%, 0.3) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 20% 80%, hsl(0, 85%, 30%, 0.2) 0%, transparent 40%),
+      radial-gradient(ellipse 50% 30% at 80% 90%, hsl(15, 90%, 25%, 0.2) 0%, transparent 40%),
+      hsl(var(--background));
+  }
+
+  /* Token input styling */
+  .token-input {
+    @apply bg-muted/50 border border-border/50 rounded-xl p-4 transition-all duration-200;
+  }
+
+  .token-input:focus-within {
+    @apply border-primary/50 bg-muted/70;
+    box-shadow: 0 0 20px -10px hsl(var(--primary) / 0.3);
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply glass-card p-6 relative overflow-hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-secondary to-accent;
+  }
+
+  /* Navigation link */
+  .nav-link {
+    @apply relative px-4 py-2 text-muted-foreground hover:text-foreground transition-colors duration-200;
+  }
+
+  .nav-link.active {
+    @apply text-primary;
+  }
+
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary transition-all duration-300;
+  }
+
+  .nav-link:hover::after,
+  .nav-link.active::after {
+    @apply w-full;
+  }
+
+  /* Pool card */
+  .pool-card {
+    @apply glass-card-hover p-5 cursor-pointer;
+  }
+
+  /* Animated gradient border */
+  .gradient-border {
+    @apply relative;
+  }
+
+  .gradient-border::before {
+    content: '';
+    @apply absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-300;
+    background: var(--gradient-dragon);
+    z-index: -1;
+  }
+
+  .gradient-border:hover::before {
+    @apply opacity-100;
+  }
+}
+
+@layer utilities {
+  /* Dragon color utilities */
+  .bg-dragon-crimson {
+    background-color: hsl(var(--dragon-crimson));
+  }
+
+  .bg-dragon-ember {
+    background-color: hsl(var(--dragon-ember));
+  }
+
+  .bg-dragon-gold {
+    background-color: hsl(var(--dragon-gold));
+  }
+
+  .bg-dragon-obsidian {
+    background-color: hsl(var(--dragon-obsidian));
+  }
+
+  .bg-dragon-smoke {
+    background-color: hsl(var(--dragon-smoke));
+  }
+
+  .text-dragon-crimson {
+    color: hsl(var(--dragon-crimson));
+  }
+
+  .text-dragon-ember {
+    color: hsl(var(--dragon-ember));
+  }
+
+  .text-dragon-gold {
+    color: hsl(var(--dragon-gold));
+  }
+
+  .text-success {
+    color: hsl(var(--success));
+  }
+
+  .text-warning {
+    color: hsl(var(--warning));
+  }
+
+  .bg-success {
+    background-color: hsl(var(--success));
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-dragon);
+  }
+
+  /* Animation utilities */
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 20px -10px hsl(var(--primary) / 0.4);
+    }
+    to {
+      box-shadow: 0 0 40px -5px hsl(var(--primary) / 0.6);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Wave animation */
+  @keyframes wave {
+    0%, 100% {
+      transform: translateY(0) scaleY(1);
+    }
+    50% {
+      transform: translateY(-5px) scaleY(0.95);
+    }
+  }
+
+  .animate-wave {
+    animation: wave 4s ease-in-out infinite;
+  }
+
+  /* Shimmer effect for loading */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 25%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
   }
 }

@@ -1,6 +1,6 @@
 import { createConfig, http } from 'wagmi';
 import { defineChain } from 'viem';
-import { injected, walletConnect } from 'wagmi/connectors';
+import { injected } from 'wagmi/connectors';
 
 // Define OPN Testnet chain
 export const opnTestnet = defineChain({
@@ -53,9 +53,3 @@ export const config = createConfig({
     [opnTestnet.id]: http('https://testnet-rpc.iopn.tech'),
   },
 });
-
-declare module 'wagmi' {
-  interface Register {
-    config: typeof config;
-  }
-}

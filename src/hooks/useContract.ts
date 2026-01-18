@@ -1,50 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
-import { parseEther, formatEther, parseUnits, formatUnits } from 'viem';
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useReadContracts, useAccount } from 'wagmi';
+import { parseEther, formatEther, parseUnits, formatUnits, encodeFunctionData } from 'viem';
 import { CONTRACTS } from '@/config/contracts';
+import { ROUTER_ABI, FACTORY_ABI, WETH_ABI, ERC20_ABI, PAIR_ABI, MULTICALL_ABI } from '@/config/abis';
 
-// ABIs
-const ROUTER_ABI = [
-  {
-    inputs: [
-      { internalType: "uint256", name: "amountOutMin", type: "uint256" },
-      { internalType: "address[]", name: "path", type: "address[]" },
-      { internalType: "address", name: "to", type: "address" },
-      { internalType: "uint256", name: "deadline", type: "uint256" }
-    ],
-    name: "swapExactETHForTokens",
-    outputs: [{ internalType: "uint256[]", name: "amounts", type: "uint256[]" }],
-    stateMutability: "payable",
-    type: "function"
-  },
-  {
-    inputs: [
-      { internalType: "uint256", name: "amountIn", type: "uint256" },
-      { internalType: "address[]", name: "path", type: "address[]" }
-    ],
-    name: "getAmountsOut",
-    outputs: [{ internalType: "uint256[]", name: "amounts", type: "uint256[]" }],
-    stateMutability: "view",
-    type: "function"
-  }
-];
-
-const WETH_ABI = [
-  { inputs: [], name: "deposit", outputs: [], stateMutability: "payable", type: "function" },
-  { inputs: [{ name: "wad", type: "uint256" }], name: "withdraw", outputs: [], stateMutability: "nonpayable", type: "function" },
-  { inputs: [{ name: "account", type: "address" }], name: "balanceOf", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" }
-];
-
-const FACTORY_ABI = [
-  { inputs: [], name: "allPairsLength", outputs: [{ internalType: "uint256", name: "", type: "uint256" }], stateMutability: "view", type: "function" }
-];
-
-const ERC20_ABI = [
-  { inputs: [{ name: "account", type: "address" }], name: "balanceOf", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
-  { inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }], name: "allowance", outputs: [{ name: "", type: "uint256" }], stateMutability: "view", type: "function" },
-  { inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }], name: "approve", outputs: [{ name: "", type: "bool" }], stateMutability: "nonpayable", type: "function" }
-];
-
+// ============= ROUTER HOOKS =============
 export function useRouter() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
@@ -65,18 +25,158 @@ export function useRouter() {
     });
   };
 
-  return { swapExactETHForTokens, hash, isPending, isConfirming, isSuccess, error };
+  const swapExactTokensForETH = (
+    amountIn: bigint,
+    amountOutMin: bigint,
+    path: readonly `0x${string}`[],
+    to: `0x${string}`,
+    deadline: bigint
+  ) => {
+    (writeContract as any)({
+      address: CONTRACTS.ROUTER,
+      abi: ROUTER_ABI,
+      functionName: 'swapExactTokensForETH',
+      args: [amountIn, amountOutMin, [...path], to, deadline],
+    });
+  };
+
+  const swapExactTokensForTokens = (
+    amountIn: bigint,
+    amountOutMin: bigint,
+    path: readonly `0x${string}`[],
+    to: `0x${string}`,
+    deadline: bigint
+  ) => {
+    (writeContract as any)({
+      address: CONTRACTS.ROUTER,
+      abi: ROUTER_ABI,
+      functionName: 'swapExactTokensForTokens',
+      args: [amountIn, amountOutMin, [...path], to, deadline],
+    });
+  };
+
+  const addLiquidity = (
+    tokenA: `0x${string}`,
+    tokenB: `0x${string}`,
+    amountADesired: bigint,
+    amountBDesired: bigint,
+    amountAMin: bigint,
+    amountBMin: bigint,
+    to: `0x${string}`,
+    deadline: bigint
+  ) => {
+    (writeContract as any)({
+      address: CONTRACTS.ROUTER,
+      abi: ROUTER_ABI,
+      functionName: 'addLiquidity',
+      args: [tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline],
+    });
+  };
+
+  const addLiquidityETH = (
+    token: `0x${string}`,
+    amountTokenDesired: bigint,
+    amountTokenMin: bigint,
+    amountETHMin: bigint,
+    to: `0x${string}`,
+    deadline: bigint,
+    value: bigint
+  ) => {
+    (writeContract as any)({
+      address: CONTRACTS.ROUTER,
+      abi: ROUTER_ABI,
+      functionName: 'addLiquidityETH',
+      args: [token, amountTokenDesired, amountTokenMin, amountETHMin, to, deadline],
+      value,
+    });
+  };
+
+  const removeLiquidity = (
+    tokenA: `0x${string}`,
+    tokenB: `0x${string}`,
+    liquidity: bigint,
+    amountAMin: bigint,
+    amountBMin: bigint,
+    to: `0x${string}`,
+    deadline: bigint
+  ) => {
+    (writeContract as any)({
+      address: CONTRACTS.ROUTER,
+      abi: ROUTER_ABI,
+      functionName: 'removeLiquidity',
+      args: [tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline],
+    });
+  };
+
+  const removeLiquidityETH = (
+    token: `0x${string}`,
+    liquidity: bigint,
+    amountTokenMin: bigint,
+    amountETHMin: bigint,
+    to: `0x${string}`,
+    deadline: bigint
+  ) => {
+    (writeContract as any)({
+      address: CONTRACTS.ROUTER,
+      abi: ROUTER_ABI,
+      functionName: 'removeLiquidityETH',
+      args: [token, liquidity, amountTokenMin, amountETHMin, to, deadline],
+    });
+  };
+
+  return { 
+    swapExactETHForTokens, 
+    swapExactTokensForETH, 
+    swapExactTokensForTokens,
+    addLiquidity,
+    addLiquidityETH,
+    removeLiquidity,
+    removeLiquidityETH,
+    hash, 
+    isPending, 
+    isConfirming, 
+    isSuccess, 
+    error 
+  };
 }
 
-export function useGetAmountsOut(amountIn: bigint | undefined, path: `0x${string}`[]) {
+// ============= FACTORY HOOKS =============
+export function useFactory() {
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const createPair = (tokenA: `0x${string}`, tokenB: `0x${string}`) => {
+    (writeContract as any)({
+      address: CONTRACTS.FACTORY,
+      abi: FACTORY_ABI,
+      functionName: 'createPair',
+      args: [tokenA, tokenB],
+    });
+  };
+
+  return { createPair, hash, isPending, isConfirming, isSuccess, error };
+}
+
+export function useGetPair(tokenA: `0x${string}` | undefined, tokenB: `0x${string}` | undefined) {
   const result = useReadContract({
-    address: CONTRACTS.ROUTER as `0x${string}`,
-    abi: ROUTER_ABI as any,
-    functionName: 'getAmountsOut',
-    args: amountIn && amountIn > 0n ? [amountIn, path] : undefined,
-    query: { enabled: !!amountIn && amountIn > 0n && path.length >= 2 },
+    address: CONTRACTS.FACTORY as `0x${string}`,
+    abi: FACTORY_ABI as any,
+    functionName: 'getPair',
+    args: tokenA && tokenB ? [tokenA, tokenB] : undefined,
+    query: { enabled: !!tokenA && !!tokenB },
   });
-  return { ...result, data: result.data as bigint[] | undefined };
+  return { ...result, data: result.data as `0x${string}` | undefined };
+}
+
+export function useAllPairs(index: number | undefined) {
+  const result = useReadContract({
+    address: CONTRACTS.FACTORY as `0x${string}`,
+    abi: FACTORY_ABI as any,
+    functionName: 'allPairs',
+    args: index !== undefined ? [BigInt(index)] : undefined,
+    query: { enabled: index !== undefined },
+  });
+  return { ...result, data: result.data as `0x${string}` | undefined };
 }
 
 export function useAllPairsLength() {
@@ -88,6 +188,116 @@ export function useAllPairsLength() {
   return { ...result, data: result.data as bigint | undefined };
 }
 
+// ============= PAIR HOOKS =============
+export function usePairReserves(pairAddress: `0x${string}` | undefined) {
+  const result = useReadContract({
+    address: pairAddress,
+    abi: PAIR_ABI as any,
+    functionName: 'getReserves',
+    query: { enabled: !!pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' },
+  });
+  return { ...result, data: result.data as [bigint, bigint, number] | undefined };
+}
+
+export function usePairTokens(pairAddress: `0x${string}` | undefined) {
+  const enabled = !!pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000';
+  
+  const token0Result = useReadContract({
+    address: pairAddress,
+    abi: PAIR_ABI as any,
+    functionName: 'token0',
+    query: { enabled },
+  });
+
+  const token1Result = useReadContract({
+    address: pairAddress,
+    abi: PAIR_ABI as any,
+    functionName: 'token1',
+    query: { enabled },
+  });
+
+  return {
+    token0: token0Result.data as `0x${string}` | undefined,
+    token1: token1Result.data as `0x${string}` | undefined,
+    isLoading: token0Result.isLoading || token1Result.isLoading,
+  };
+}
+
+export function usePairTotalSupply(pairAddress: `0x${string}` | undefined) {
+  const result = useReadContract({
+    address: pairAddress,
+    abi: PAIR_ABI as any,
+    functionName: 'totalSupply',
+    query: { enabled: !!pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' },
+  });
+  return { ...result, data: result.data as bigint | undefined };
+}
+
+export function usePairBalance(pairAddress: `0x${string}` | undefined, userAddress: `0x${string}` | undefined) {
+  const result = useReadContract({
+    address: pairAddress,
+    abi: PAIR_ABI as any,
+    functionName: 'balanceOf',
+    args: userAddress ? [userAddress] : undefined,
+    query: { enabled: !!pairAddress && !!userAddress && pairAddress !== '0x0000000000000000000000000000000000000000' },
+  });
+  return { ...result, data: result.data as bigint | undefined };
+}
+
+export function usePairAllowance(
+  pairAddress: `0x${string}` | undefined, 
+  ownerAddress: `0x${string}` | undefined
+) {
+  const result = useReadContract({
+    address: pairAddress,
+    abi: PAIR_ABI as any,
+    functionName: 'allowance',
+    args: ownerAddress ? [ownerAddress, CONTRACTS.ROUTER as `0x${string}`] : undefined,
+    query: { enabled: !!pairAddress && !!ownerAddress && pairAddress !== '0x0000000000000000000000000000000000000000' },
+  });
+  return { ...result, data: result.data as bigint | undefined };
+}
+
+export function useApprovePair() {
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const approve = (pairAddress: `0x${string}`, amount: bigint) => {
+    (writeContract as any)({
+      address: pairAddress,
+      abi: PAIR_ABI,
+      functionName: 'approve',
+      args: [CONTRACTS.ROUTER as `0x${string}`, amount],
+    });
+  };
+
+  return { approve, hash, isPending, isConfirming, isSuccess, error };
+}
+
+// ============= ROUTER READ HOOKS =============
+export function useGetAmountsOut(amountIn: bigint | undefined, path: `0x${string}`[]) {
+  const result = useReadContract({
+    address: CONTRACTS.ROUTER as `0x${string}`,
+    abi: ROUTER_ABI as any,
+    functionName: 'getAmountsOut',
+    args: amountIn && amountIn > 0n ? [amountIn, path] : undefined,
+    query: { enabled: !!amountIn && amountIn > 0n && path.length >= 2 },
+  });
+  return { ...result, data: result.data as bigint[] | undefined };
+}
+
+export function useGetAmountsIn(amountOut: bigint | undefined, path: `0x${string}`[]) {
+  const result = useReadContract({
+    address: CONTRACTS.ROUTER as `0x${string}`,
+    abi: ROUTER_ABI as any,
+    functionName: 'getAmountsIn',
+    args: amountOut && amountOut > 0n ? [amountOut, path] : undefined,
+    query: { enabled: !!amountOut && amountOut > 0n && path.length >= 2 },
+  });
+  return { ...result, data: result.data as bigint[] | undefined };
+}
+
+// ============= WETH HOOKS =============
 export function useWETH() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
@@ -113,6 +323,7 @@ export function useWETH() {
   return { deposit, withdraw, hash, isPending, isConfirming, isSuccess, error };
 }
 
+// ============= ERC20 HOOKS =============
 export function useTokenBalance(tokenAddress: `0x${string}` | undefined, userAddress: `0x${string}` | undefined) {
   const result = useReadContract({
     address: tokenAddress,
@@ -155,4 +366,44 @@ export function useApprove() {
   return { approve, hash, isPending, isConfirming, isSuccess, error };
 }
 
+export function useTokenSymbol(tokenAddress: `0x${string}` | undefined) {
+  const result = useReadContract({
+    address: tokenAddress,
+    abi: ERC20_ABI as any,
+    functionName: 'symbol',
+    query: { enabled: !!tokenAddress && tokenAddress !== '0x0000000000000000000000000000000000000000' },
+  });
+  return { ...result, data: result.data as string | undefined };
+}
+
+// ============= MULTICALL HOOKS =============
+export function useMulticall() {
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const aggregate = (calls: { target: `0x${string}`; callData: `0x${string}` }[]) => {
+    (writeContract as any)({
+      address: CONTRACTS.MULTICALL,
+      abi: MULTICALL_ABI,
+      functionName: 'aggregate',
+      args: [calls],
+    });
+  };
+
+  return { aggregate, hash, isPending, isConfirming, isSuccess, error };
+}
+
+export function useMulticallRead(calls: { address: `0x${string}`; abi: any; functionName: string; args?: any[] }[]) {
+  const results = useReadContracts({
+    contracts: calls.map(call => ({
+      address: call.address,
+      abi: call.abi,
+      functionName: call.functionName,
+      args: call.args,
+    })),
+  });
+  return results;
+}
+
+// ============= UTILITY EXPORTS =============
 export { parseEther, formatEther, parseUnits, formatUnits };

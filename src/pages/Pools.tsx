@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Droplets, TrendingUp, Plus, RefreshCw, Search, Grid, List, Star, ExternalLink } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { formatUnits } from 'viem';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAllPairsLength, useAllPairs, usePairReserves, usePairTokens } from '@/hooks/useContract';
@@ -209,10 +210,12 @@ export default function Pools() {
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
-            <Button className="btn-dragon" size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Pool
-            </Button>
+            <Link to="/create-pool">
+              <Button className="btn-dragon" size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Pool
+              </Button>
+            </Link>
           </div>
         </div>
 

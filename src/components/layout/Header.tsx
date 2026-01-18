@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ExternalLink, ArrowLeftRight, Droplets, LayoutGrid, BarChart3, Wallet } from 'lucide-react';
+import { Menu, X, ExternalLink, ArrowLeftRight, Droplets, LayoutGrid, BarChart3, Wallet, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { FloatingDock } from '@/components/ui/aceternity/FloatingDock';
@@ -14,9 +14,10 @@ const navItems = [
   { name: 'Pools', path: '/pools', icon: LayoutGrid },
   { name: 'Analytics', path: '/analytics', icon: BarChart3 },
   { name: 'Portfolio', path: '/portfolio', icon: Wallet },
+  { name: 'Docs', path: '/docs', icon: BookOpen },
 ];
 
-const dockItems = navItems.map(item => ({
+const dockItems = navItems.slice(0, 5).map(item => ({
   title: item.name,
   icon: item.icon,
   href: item.path,

@@ -333,22 +333,42 @@
 
   /* Shimmer effect for loading */
   @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 
   .animate-shimmer {
-    background: linear-gradient(
-      90deg,
-      hsl(var(--muted)) 25%,
-      hsl(var(--muted-foreground) / 0.1) 50%,
-      hsl(var(--muted)) 75%
-    );
+    background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.1) 50%, hsl(var(--muted)) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
+  }
+
+  /* Marquee animation */
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-100% - var(--gap))); }
+  }
+
+  .animate-marquee {
+    animation: marquee var(--duration) linear infinite;
+  }
+
+  .animate-marquee-reverse {
+    animation-direction: reverse;
+  }
+
+  /* Border beam animation */
+  @keyframes border-beam {
+    100% { offset-distance: 100%; }
+  }
+
+  .animate-border-beam {
+    animation: border-beam calc(var(--duration)*1s) infinite linear;
+  }
+
+  /* Twinkle animation for stars */
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
   }
 }

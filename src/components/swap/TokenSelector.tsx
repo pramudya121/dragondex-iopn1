@@ -62,7 +62,7 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
   }, [isOpen]);
 
   return (
-    <>
+    <div className="relative">
       {label && (
         <span className="text-xs text-muted-foreground mb-1.5 block">{label}</span>
       )}
@@ -88,7 +88,7 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
         <ChevronDown className="w-4 h-4 ml-auto text-muted-foreground" />
       </button>
 
-      {/* Modal Overlay */}
+      {/* Modal Overlay - positioned relative to parent container */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -96,15 +96,15 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40"
               onClick={() => setIsOpen(false)}
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', duration: 0.3 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-50 px-4"
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ type: 'spring', duration: 0.25 }}
+              className="absolute right-0 top-full mt-2 w-[360px] z-50"
             >
               <div className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
                 {/* Header */}
@@ -231,6 +231,6 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
           </>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }

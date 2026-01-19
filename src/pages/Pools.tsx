@@ -25,16 +25,8 @@ interface PoolData {
   token1Amount: number;
 }
 
-const MOCK_POOLS: PoolData[] = [
-  { token0: 'BNB', token1: 'ETH', tvl: 276.66, apy: 15.64, volume24h: 45000, fees24h: 135, change: 1.83, token0Amount: 100.000, token1Amount: 88.988 },
-  { token0: 'ETH', token1: 'MON', tvl: 259.43, apy: 7.49, volume24h: 38000, fees24h: 114, change: 2.15, token0Amount: 100.000, token1Amount: 100.000 },
-  { token0: 'WOPN', token1: 'ETH', tvl: 248.64, apy: 5.29, volume24h: 32000, fees24h: 96, change: 0.98, token0Amount: 0.01, token1Amount: 101477.87 },
-  { token0: 'DRAGON', token1: 'ETH', tvl: 248.64, apy: 6.74, volume24h: 28000, fees24h: 84, change: -2.57, token0Amount: 0.01, token1Amount: 101477.87 },
-  { token0: 'BNB', token1: 'MON', tvl: 46.06, apy: 21.57, volume24h: 12000, fees24h: 36, change: -2.02, token0Amount: 100.000, token1Amount: 100.000 },
-  { token0: 'BNB', token1: 'HYPE', tvl: 33.50, apy: 17.55, volume24h: 9500, fees24h: 28.5, change: -0.44, token0Amount: 100.000, token1Amount: 100.000 },
-  { token0: 'WOPN', token1: 'BNB', tvl: 31.61, apy: 16.97, volume24h: 8800, fees24h: 26.4, change: 1.25, token0Amount: 0.01, token1Amount: 88900.4 },
-  { token0: 'DRAGON', token1: 'BNB', tvl: 31.61, apy: 23.49, volume24h: 7500, fees24h: 22.5, change: 4.88, token0Amount: 0.01, token1Amount: 88900.4 },
-];
+// Empty mock - pools will be loaded from blockchain
+const MOCK_POOLS: PoolData[] = [];
 
 function PoolCard({ pool, index }: { pool: PoolData; index: number }) {
   const token0Info = TOKEN_LIST.find(t => t.symbol === pool.token0);

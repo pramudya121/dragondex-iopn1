@@ -39,7 +39,7 @@ export default function Liquidity() {
   const { data: wopnBalance } = useTokenBalance(CONTRACTS.WETH as `0x${string}`, address);
   const { deposit, withdraw, isPending: wethPending, isConfirming: wethConfirming, hash: wethHash, isSuccess: wethSuccess } = useWETH();
   
-  // Token balances
+  // Token balances - handle native OPN separately
   const { data: tokenABalance } = useTokenBalance(
     tokenA && !tokenA.isNative ? (tokenA.address as `0x${string}`) : undefined,
     address
@@ -48,6 +48,27 @@ export default function Liquidity() {
     tokenB && !tokenB.isNative ? (tokenB.address as `0x${string}`) : undefined,
     address
   );
+  
+  // Native balance for OPN
+  const { data: nativeOPNBalance } = useBalance({ address });
+  
+  // Get display balance for token A (handle native OPN)
+  const getTokenADisplayBalance = () => {
+    if (!tokenA) return '0';
+    if (tokenA.isNative) {
+      return nativeOPNBalance ? parseFloat(formatEther(nativeOPNBalance.value)).toFixed(4) : '0';
+    }
+    return tokenABalance ? parseFloat(formatUnits(tokenABalance, tokenA.decimals)).toFixed(4) : '0';
+  };
+  
+  // Get display balance for token B (handle native OPN)
+  const getTokenBDisplayBalance = () => {
+    if (!tokenB) return '0';
+    if (tokenB.isNative) {
+      return nativeOPNBalance ? parseFloat(formatEther(nativeOPNBalance.value)).toFixed(4) : '0';
+    }
+    return tokenBBalance ? parseFloat(formatUnits(tokenBBalance, tokenB.decimals)).toFixed(4) : '0';
+  };
   
   // Allowances
   const { data: allowanceA } = useTokenAllowance(
@@ -272,7 +293,7 @@ export default function Liquidity() {
                   <div className="token-input">
                     <div className="flex justify-between text-sm text-muted-foreground mb-2">
                       <span>Token A</span>
-                      <span>Balance: {tokenABalance ? parseFloat(formatUnits(tokenABalance, tokenA?.decimals || 18)).toFixed(4) : '0'}</span>
+                      <span className="cursor-pointer hover:text-primary">Balance: {getTokenADisplayBalance()}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Input 
@@ -294,7 +315,7 @@ export default function Liquidity() {
                   <div className="token-input">
                     <div className="flex justify-between text-sm text-muted-foreground mb-2">
                       <span>Token B</span>
-                      <span>Balance: {tokenBBalance ? parseFloat(formatUnits(tokenBBalance, tokenB?.decimals || 18)).toFixed(4) : '0'}</span>
+                      <span className="cursor-pointer hover:text-primary">Balance: {getTokenBDisplayBalance()}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Input 

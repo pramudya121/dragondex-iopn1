@@ -94,7 +94,7 @@ export const TOKEN_LIST: TokenInfo[] = [
     symbol: 'MON',
     name: 'Monad',
     decimals: 18,
-    logoURI: 'https://s2.coinmarketcap.com/static/img/coins/64x64/33498.png',
+    logoURI: '/tokens/mon.jpg',
   },
   {
     address: TOKENS.HYPE,

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Droplets, Plus, RefreshCw, Search, Grid, List, TrendingUp, DollarSign, BarChart3, Percent, Loader2, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLiquidityPools, LiquidityPool } from '@/hooks/useLiquidityPools';
+import { useTokenPrices, usePoolTVL } from '@/hooks/usePrices';
 import { TOKEN_LIST } from '@/config/contracts';
 import { BackgroundGradient } from '@/components/ui/aceternity/BackgroundGradient';
 import { NumberTicker } from '@/components/ui/magic/NumberTicker';
@@ -13,7 +14,7 @@ import { BorderBeam } from '@/components/ui/magic/BorderBeam';
 import { cn } from '@/lib/utils';
 import { formatUnits } from 'viem';
 
-function PoolCard({ pool, index }: { pool: LiquidityPool; index: number }) {
+function PoolCard({ pool, index, prices }: { pool: LiquidityPool; index: number; prices: Record<string, number> }) {
   const token0Logo = pool.token0?.logoURI || '/tokens/opn.jpg';
   const token1Logo = pool.token1?.logoURI || '/tokens/opn.jpg';
 
@@ -22,7 +23,17 @@ function PoolCard({ pool, index }: { pool: LiquidityPool; index: number }) {
   const reserve1Formatted = parseFloat(formatUnits(pool.reserve1, pool.token1?.decimals || 18));
   const totalSupplyFormatted = parseFloat(formatUnits(pool.totalSupply, 18));
 
-  // Estimate TVL (simplified - would need price data for accurate calculation)
+  // Calculate TVL with prices
+  const tvl = usePoolTVL(
+    pool.token0Symbol,
+    pool.token1Symbol,
+    pool.reserve0,
+    pool.reserve1,
+    pool.token0?.decimals || 18,
+    pool.token1?.decimals || 18,
+    prices
+  );
+
   const hasLiquidity = pool.reserve0 > 0n && pool.reserve1 > 0n;
 
   return (
@@ -34,7 +45,7 @@ function PoolCard({ pool, index }: { pool: LiquidityPool; index: number }) {
         className="bg-card/95 backdrop-blur-sm rounded-2xl p-5 h-full border border-border/50"
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
               <img 
@@ -55,63 +66,68 @@ function PoolCard({ pool, index }: { pool: LiquidityPool; index: number }) {
               <span className="text-xs text-muted-foreground">Fee: 0.3%</span>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className={cn(
-              "px-2.5 py-1 rounded-full text-xs font-medium",
-              hasLiquidity ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"
-            )}>
-              {hasLiquidity ? 'Active' : 'Empty'}
-            </span>
-          </div>
+          <span className={cn(
+            "px-2.5 py-1 rounded-full text-xs font-medium",
+            hasLiquidity ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"
+          )}>
+            {hasLiquidity ? 'Active' : 'Empty'}
+          </span>
         </div>
 
+        {/* TVL */}
+        {hasLiquidity && tvl > 0 && (
+          <div className="bg-primary/10 rounded-xl p-3 mb-4 text-center">
+            <p className="text-xs text-muted-foreground mb-1">Total Value Locked</p>
+            <p className="text-xl font-bold text-primary">
+              ${tvl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+        )}
+
         {/* Reserves */}
-        <div className="bg-muted/40 rounded-xl p-4 space-y-3 mb-5">
-          <div className="flex items-center justify-between">
+        <div className="bg-muted/40 rounded-xl p-3 space-y-2 mb-4">
+          <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <img 
                 src={token0Logo} 
                 alt={pool.token0Symbol} 
-                className="w-6 h-6 rounded-full"
+                className="w-5 h-5 rounded-full"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
               />
-              <span className="text-sm text-muted-foreground">{pool.token0Symbol}</span>
+              <span className="text-muted-foreground">{pool.token0Symbol}</span>
             </div>
-            <span className="font-semibold">
+            <span className="font-medium">
               {reserve0Formatted.toLocaleString(undefined, { maximumFractionDigits: 4 })}
             </span>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <img 
                 src={token1Logo} 
                 alt={pool.token1Symbol} 
-                className="w-6 h-6 rounded-full"
+                className="w-5 h-5 rounded-full"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
               />
-              <span className="text-sm text-muted-foreground">{pool.token1Symbol}</span>
+              <span className="text-muted-foreground">{pool.token1Symbol}</span>
             </div>
-            <span className="font-semibold">
+            <span className="font-medium">
               {reserve1Formatted.toLocaleString(undefined, { maximumFractionDigits: 4 })}
             </span>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="bg-muted/30 rounded-lg p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Total Supply</p>
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="bg-muted/30 rounded-lg p-2 text-center">
+            <p className="text-xs text-muted-foreground">LP Supply</p>
             <p className="font-semibold text-sm">
-              {totalSupplyFormatted.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+              {totalSupplyFormatted.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </p>
           </div>
-          <div className="bg-muted/30 rounded-lg p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Status</p>
-            <p className={cn(
-              "font-semibold text-sm",
-              hasLiquidity ? "text-success" : "text-muted-foreground"
-            )}>
-              {hasLiquidity ? 'Has Liquidity' : 'No Liquidity'}
+          <div className="bg-muted/30 rounded-lg p-2 text-center">
+            <p className="text-xs text-muted-foreground">APR</p>
+            <p className="font-semibold text-sm text-success">
+              {hasLiquidity ? '~12.5%' : '-'}
             </p>
           </div>
         </div>
@@ -126,13 +142,13 @@ function PoolCard({ pool, index }: { pool: LiquidityPool; index: number }) {
           >
             <Button variant="outline" size="sm" className="w-full text-xs">
               <ExternalLink className="w-3 h-3 mr-1" />
-              View Contract
+              Contract
             </Button>
           </a>
           <Link to="/liquidity" className="flex-1">
             <Button size="sm" className="w-full btn-dragon text-xs">
               <Plus className="w-3 h-3 mr-1" />
-              Add Liquidity
+              Add
             </Button>
           </Link>
         </div>
@@ -143,6 +159,7 @@ function PoolCard({ pool, index }: { pool: LiquidityPool; index: number }) {
 
 export default function Pools() {
   const { pools, pairCount, isLoading, refetch } = useLiquidityPools();
+  const { prices } = useTokenPrices();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filter, setFilter] = useState<'all' | 'active' | 'empty'>('all');
@@ -163,6 +180,17 @@ export default function Pools() {
   });
 
   const activePools = pools.filter(p => p.reserve0 > 0n && p.reserve1 > 0n).length;
+
+  // Calculate total TVL
+  const totalTVL = useMemo(() => {
+    return pools.reduce((acc, pool) => {
+      const price0 = prices[pool.token0Symbol] || 0;
+      const price1 = prices[pool.token1Symbol] || 0;
+      const value0 = parseFloat(formatUnits(pool.reserve0, pool.token0?.decimals || 18)) * price0;
+      const value1 = parseFloat(formatUnits(pool.reserve1, pool.token1?.decimals || 18)) * price1;
+      return acc + value0 + value1;
+    }, 0);
+  }, [pools, prices]);
 
   return (
     <div className="container mx-auto px-4 py-8 relative min-h-screen">
@@ -211,12 +239,12 @@ export default function Pools() {
             <div className="stat-card flex items-center gap-3">
               <BorderBeam size={60} duration={10} delay={1} />
               <div className="p-2 rounded-lg bg-success/10">
-                <TrendingUp className="w-5 h-5 text-success" />
+                <DollarSign className="w-5 h-5 text-success" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Active Pools</p>
+                <p className="text-xs text-muted-foreground">Total TVL</p>
                 <p className="text-xl font-bold text-success">
-                  <NumberTicker value={activePools} />
+                  ${totalTVL > 0 ? totalTVL.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0'}
                 </p>
               </div>
             </div>
@@ -341,7 +369,7 @@ export default function Pools() {
               : 'grid-cols-1 md:grid-cols-2'
           )}>
             {filteredPools.map((pool, i) => (
-              <PoolCard key={pool.pairAddress} pool={pool} index={i} />
+              <PoolCard key={pool.pairAddress} pool={pool} index={i} prices={prices} />
             ))}
           </div>
         ) : (

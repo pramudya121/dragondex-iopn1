@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowDownUp, Plus, Minus, Loader2, Check, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowDownUp, Plus, Minus, Loader2, Check, AlertCircle, ExternalLink, RefreshCw, Droplets, Info } from 'lucide-react';
 import { useAccount, useBalance } from 'wagmi';
 import { parseEther, formatEther, parseUnits, formatUnits } from 'viem';
 import { Button } from '@/components/ui/button';
@@ -192,32 +192,35 @@ export default function Liquidity() {
   const isLoading = router.isPending || router.isConfirming;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl relative">
+    <div className="container mx-auto px-4 py-8 relative">
       <Spotlight className="hidden md:block" />
       
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-lg mx-auto">
         {/* Hero */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold gradient-text mb-2">Liquidity</h1>
-          <TextGenerateEffect 
-            words="Provide liquidity to earn trading fees and rewards"
-            className="text-muted-foreground text-lg font-normal"
-          />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm mb-4">
+            <Droplets className="w-4 h-4" />
+            Liquidity Management
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-2">Liquidity</h1>
+          <p className="text-muted-foreground">
+            Provide liquidity to earn 0.3% on every trade
+          </p>
         </div>
 
         <MovingBorder duration={3000} borderRadius="1.5rem">
           <div className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full mb-6 bg-muted/50 grid grid-cols-3">
-                <TabsTrigger value="wrap" className="flex items-center gap-2">
+              <TabsList className="w-full mb-6 bg-muted/50 grid grid-cols-3 h-12">
+                <TabsTrigger value="wrap" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <RefreshCw className="w-4 h-4" />
                   Wrap
                 </TabsTrigger>
-                <TabsTrigger value="add" className="flex items-center gap-2">
+                <TabsTrigger value="add" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Plus className="w-4 h-4" />
                   Add
                 </TabsTrigger>
-                <TabsTrigger value="remove" className="flex items-center gap-2">
+                <TabsTrigger value="remove" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Minus className="w-4 h-4" />
                   Remove
                 </TabsTrigger>
@@ -286,14 +289,24 @@ export default function Liquidity() {
               {/* ADD LIQUIDITY TAB */}
               <TabsContent value="add">
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-center text-lg">Add Liquidity</h3>
-                  <p className="text-sm text-muted-foreground text-center">Add tokens to earn 0.3% trading fees</p>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-lg">Add Liquidity</h3>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      Earn 0.3% fees
+                    </span>
+                  </div>
                   
                   {/* Token A */}
                   <div className="token-input">
-                    <div className="flex justify-between text-sm text-muted-foreground mb-2">
-                      <span>Token A</span>
-                      <span className="cursor-pointer hover:text-primary">Balance: {getTokenADisplayBalance()}</span>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm text-muted-foreground">First Token</span>
+                      <button 
+                        onClick={() => setAmountA(getTokenADisplayBalance())}
+                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        Balance: {getTokenADisplayBalance()}
+                      </button>
                     </div>
                     <div className="flex items-center gap-3">
                       <Input 
@@ -301,21 +314,28 @@ export default function Liquidity() {
                         placeholder="0.0" 
                         value={amountA} 
                         onChange={(e) => setAmountA(e.target.value)} 
-                        className="flex-1 text-lg" 
+                        className="flex-1 text-xl font-bold bg-transparent border-none p-0 h-auto focus-visible:ring-0" 
                       />
                       <TokenSelector selectedToken={tokenA} onSelect={setTokenA} disabledToken={tokenB} />
                     </div>
                   </div>
                   
                   <div className="flex justify-center">
-                    <Plus className="w-6 h-6 text-muted-foreground" />
+                    <div className="p-2 rounded-full bg-muted">
+                      <Plus className="w-5 h-5 text-muted-foreground" />
+                    </div>
                   </div>
                   
                   {/* Token B */}
                   <div className="token-input">
-                    <div className="flex justify-between text-sm text-muted-foreground mb-2">
-                      <span>Token B</span>
-                      <span className="cursor-pointer hover:text-primary">Balance: {getTokenBDisplayBalance()}</span>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm text-muted-foreground">Second Token</span>
+                      <button 
+                        onClick={() => setAmountB(getTokenBDisplayBalance())}
+                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        Balance: {getTokenBDisplayBalance()}
+                      </button>
                     </div>
                     <div className="flex items-center gap-3">
                       <Input 
@@ -323,7 +343,7 @@ export default function Liquidity() {
                         placeholder="0.0" 
                         value={amountB} 
                         onChange={(e) => setAmountB(e.target.value)} 
-                        className="flex-1 text-lg" 
+                        className="flex-1 text-xl font-bold bg-transparent border-none p-0 h-auto focus-visible:ring-0" 
                       />
                       <TokenSelector selectedToken={tokenB} onSelect={setTokenB} disabledToken={tokenA} />
                     </div>

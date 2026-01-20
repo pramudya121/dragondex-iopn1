@@ -1,0 +1,199 @@
+import { useState, useEffect } from 'react';
+import { useReadContract, useReadContracts } from 'wagmi';
+import { CONTRACTS, getTokenByAddress, TokenInfo } from '@/config/contracts';
+import { FACTORY_ABI, PAIR_ABI, ERC20_ABI } from '@/config/abis';
+import { formatUnits } from 'viem';
+
+export interface LiquidityPool {
+  pairAddress: `0x${string}`;
+  token0: TokenInfo | null;
+  token1: TokenInfo | null;
+  token0Address: `0x${string}`;
+  token1Address: `0x${string}`;
+  reserve0: bigint;
+  reserve1: bigint;
+  totalSupply: bigint;
+  token0Symbol: string;
+  token1Symbol: string;
+}
+
+// Hook to get all LP pairs from the Factory contract
+export function useLiquidityPools() {
+  const [pools, setPools] = useState<LiquidityPool[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Get total number of pairs
+  const { data: pairsLength, refetch: refetchLength } = useReadContract({
+    address: CONTRACTS.FACTORY as `0x${string}`,
+    abi: FACTORY_ABI,
+    functionName: 'allPairsLength',
+  });
+
+  // Get all pair addresses
+  const pairCount = Number(pairsLength || 0);
+  const pairIndices = Array.from({ length: pairCount }, (_, i) => i);
+
+  const pairAddressesResult = useReadContracts({
+    contracts: pairIndices.map(index => ({
+      address: CONTRACTS.FACTORY as `0x${string}`,
+      abi: FACTORY_ABI,
+      functionName: 'allPairs',
+      args: [BigInt(index)],
+    })),
+    query: { enabled: pairCount > 0 },
+  });
+
+  const pairAddresses = (pairAddressesResult.data || [])
+    .map(result => result.result as `0x${string}` | undefined)
+    .filter(Boolean) as `0x${string}`[];
+
+  // Get token0 and token1 for each pair
+  const tokenCallsResult = useReadContracts({
+    contracts: pairAddresses.flatMap(pairAddress => [
+      { address: pairAddress, abi: PAIR_ABI, functionName: 'token0' },
+      { address: pairAddress, abi: PAIR_ABI, functionName: 'token1' },
+      { address: pairAddress, abi: PAIR_ABI, functionName: 'getReserves' },
+      { address: pairAddress, abi: PAIR_ABI, functionName: 'totalSupply' },
+    ]),
+    query: { enabled: pairAddresses.length > 0 },
+  });
+
+  // Get symbols for unknown tokens
+  const tokenAddresses = new Set<`0x${string}`>();
+  if (tokenCallsResult.data) {
+    for (let i = 0; i < pairAddresses.length; i++) {
+      const token0 = tokenCallsResult.data[i * 4]?.result as `0x${string}` | undefined;
+      const token1 = tokenCallsResult.data[i * 4 + 1]?.result as `0x${string}` | undefined;
+      if (token0) tokenAddresses.add(token0);
+      if (token1) tokenAddresses.add(token1);
+    }
+  }
+
+  const symbolCallsResult = useReadContracts({
+    contracts: Array.from(tokenAddresses).flatMap(address => [
+      { address, abi: ERC20_ABI, functionName: 'symbol' },
+      { address, abi: ERC20_ABI, functionName: 'name' },
+      { address, abi: ERC20_ABI, functionName: 'decimals' },
+    ]),
+    query: { enabled: tokenAddresses.size > 0 },
+  });
+
+  // Build symbol map
+  const symbolMap = new Map<string, { symbol: string; name: string; decimals: number }>();
+  if (symbolCallsResult.data) {
+    const addresses = Array.from(tokenAddresses);
+    for (let i = 0; i < addresses.length; i++) {
+      const symbol = symbolCallsResult.data[i * 3]?.result as string | undefined;
+      const name = symbolCallsResult.data[i * 3 + 1]?.result as string | undefined;
+      const decimals = symbolCallsResult.data[i * 3 + 2]?.result as number | undefined;
+      if (symbol) {
+        symbolMap.set(addresses[i].toLowerCase(), {
+          symbol,
+          name: name || symbol,
+          decimals: decimals || 18,
+        });
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (!tokenCallsResult.data || tokenCallsResult.isLoading) {
+      return;
+    }
+
+    try {
+      const poolsData: LiquidityPool[] = [];
+
+      for (let i = 0; i < pairAddresses.length; i++) {
+        const pairAddress = pairAddresses[i];
+        const token0Address = tokenCallsResult.data[i * 4]?.result as `0x${string}` | undefined;
+        const token1Address = tokenCallsResult.data[i * 4 + 1]?.result as `0x${string}` | undefined;
+        const reserves = tokenCallsResult.data[i * 4 + 2]?.result as [bigint, bigint, number] | undefined;
+        const totalSupply = tokenCallsResult.data[i * 4 + 3]?.result as bigint | undefined;
+
+        if (!token0Address || !token1Address) continue;
+
+        const token0Info = getTokenByAddress(token0Address);
+        const token1Info = getTokenByAddress(token1Address);
+
+        // Get symbol from map if not in TOKEN_LIST
+        const token0Data = symbolMap.get(token0Address.toLowerCase());
+        const token1Data = symbolMap.get(token1Address.toLowerCase());
+
+        poolsData.push({
+          pairAddress,
+          token0: token0Info || null,
+          token1: token1Info || null,
+          token0Address,
+          token1Address,
+          reserve0: reserves?.[0] || 0n,
+          reserve1: reserves?.[1] || 0n,
+          totalSupply: totalSupply || 0n,
+          token0Symbol: token0Info?.symbol || token0Data?.symbol || 'Unknown',
+          token1Symbol: token1Info?.symbol || token1Data?.symbol || 'Unknown',
+        });
+      }
+
+      setPools(poolsData);
+      setIsLoading(false);
+      setError(null);
+    } catch (err) {
+      setError(err as Error);
+      setIsLoading(false);
+    }
+  }, [tokenCallsResult.data, tokenCallsResult.isLoading, pairAddresses.length, symbolMap.size]);
+
+  const refetch = () => {
+    refetchLength();
+    pairAddressesResult.refetch();
+    tokenCallsResult.refetch();
+    symbolCallsResult.refetch();
+  };
+
+  return {
+    pools,
+    pairCount,
+    isLoading: isLoading || pairAddressesResult.isLoading || tokenCallsResult.isLoading,
+    error,
+    refetch,
+  };
+}
+
+// Hook to validate a token contract address
+export function useValidateToken(address: `0x${string}` | undefined) {
+  const isValidAddress = address && /^0x[a-fA-F0-9]{40}$/.test(address);
+
+  const symbolResult = useReadContract({
+    address: address,
+    abi: ERC20_ABI,
+    functionName: 'symbol',
+    query: { enabled: !!isValidAddress },
+  });
+
+  const nameResult = useReadContract({
+    address: address,
+    abi: ERC20_ABI,
+    functionName: 'name',
+    query: { enabled: !!isValidAddress },
+  });
+
+  const decimalsResult = useReadContract({
+    address: address,
+    abi: ERC20_ABI,
+    functionName: 'decimals',
+    query: { enabled: !!isValidAddress },
+  });
+
+  const isLoading = symbolResult.isLoading || nameResult.isLoading || decimalsResult.isLoading;
+  const isValid = !!symbolResult.data && !!decimalsResult.data;
+
+  return {
+    isValid,
+    isLoading,
+    symbol: symbolResult.data as string | undefined,
+    name: nameResult.data as string | undefined,
+    decimals: (decimalsResult.data as number | undefined) || 18,
+    error: symbolResult.error || nameResult.error || decimalsResult.error,
+  };
+}

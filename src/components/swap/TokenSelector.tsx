@@ -38,7 +38,8 @@ function saveImportedToken(token: TokenInfo) {
   }
 }
 
-function TokenBalance({ token, address }: { token: TokenInfo; address?: `0x${string}` }) {
+// Separate component to display token balance from wallet
+const TokenBalanceDisplay = ({ token, address }: { token: TokenInfo; address?: `0x${string}` }) => {
   const { data: nativeBalance } = useBalance({ address });
   const { data: tokenBalance } = useTokenBalance(
     !token.isNative ? (token.address as `0x${string}`) : undefined,
@@ -61,7 +62,7 @@ function TokenBalance({ token, address }: { token: TokenInfo; address?: `0x${str
       {formattedBalance}
     </span>
   );
-}
+};
 
 export function TokenSelector({ selectedToken, onSelect, disabledToken, label }: TokenSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -277,7 +278,7 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
                             <div className="font-medium text-sm">{token.symbol}</div>
                             <div className="text-xs text-muted-foreground">{token.name}</div>
                           </div>
-                          <TokenBalance token={token} address={address as `0x${string}`} />
+                          <TokenBalanceDisplay token={token} address={address as `0x${string}`} />
                         </button>
                       );
                     })}

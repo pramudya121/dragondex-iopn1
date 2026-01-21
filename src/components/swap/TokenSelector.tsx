@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Search, X, Loader2, AlertCircle, Check, Plus } from 'lucide-react';
 import { TOKEN_LIST, TokenInfo } from '@/config/contracts';
@@ -57,10 +57,9 @@ function TokenBalance({ token, address }: { token: TokenInfo; address?: `0x${str
   });
 
   return (
-    <div className="text-right">
-      <p className="font-medium text-foreground">{formattedBalance}</p>
-      <p className="text-xs text-muted-foreground">Balance</p>
-    </div>
+    <span className="text-sm text-muted-foreground font-medium tabular-nums">
+      {formattedBalance}
+    </span>
   );
 }
 
@@ -68,7 +67,7 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [importedTokens, setImportedTokens] = useState<TokenInfo[]>([]);
-  const [isImporting, setIsImporting] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { address } = useAccount();
 
   // Check if search is a valid address for import
@@ -81,6 +80,19 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
   useEffect(() => {
     setImportedTokens(getImportedTokens());
   }, []);
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
 
   // Combine default tokens with imported tokens
   const allTokens = [...TOKEN_LIST, ...importedTokens.filter(
@@ -107,7 +119,7 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
       symbol: symbol,
       name: name || symbol,
       decimals: decimals || 18,
-      logoURI: '/tokens/opn.jpg', // Default logo
+      logoURI: '/tokens/opn.jpg',
     };
 
     saveImportedToken(newToken);
@@ -118,25 +130,20 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
     toast.success(`Token ${symbol} imported successfully!`);
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       {label && (
         <span className="text-xs text-muted-foreground mb-1.5 block">{label}</span>
       )}
+      
+      {/* Token Button */}
       <button
-        onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted/70 hover:bg-muted border border-border/50 hover:border-primary/30 transition-all min-w-[140px]"
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-xl transition-all min-w-[130px]",
+          "bg-muted/80 hover:bg-muted border border-border/50 hover:border-primary/40",
+          isOpen && "border-primary/50 bg-muted"
+        )}
       >
         {selectedToken ? (
           <>
@@ -151,173 +158,141 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
             <span className="font-semibold">{selectedToken.symbol}</span>
           </>
         ) : (
-          <span className="text-muted-foreground">Select token</span>
+          <span className="text-muted-foreground">Select</span>
         )}
-        <ChevronDown className="w-4 h-4 ml-auto text-muted-foreground" />
+        <ChevronDown className={cn(
+          "w-4 h-4 ml-auto text-muted-foreground transition-transform",
+          isOpen && "rotate-180"
+        )} />
       </button>
 
-      {/* Modal Overlay - Centered like reference */}
+      {/* Inline Dropdown */}
       <AnimatePresence>
         {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
-              onClick={() => setIsOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: 'spring', duration: 0.3 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-50 px-4"
-            >
-              <div className="bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-border/30">
-                  <h3 className="text-lg font-bold">Select Token</h3>
-                  <button
-                    onClick={() => setIsOpen(false)}
-                    className="p-2 rounded-lg hover:bg-muted/70 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Search */}
-                <div className="p-4">
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search by name, symbol, or paste address"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="pl-11 py-6 bg-muted/30 border-border/30 rounded-xl text-base"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                {/* Import Token Section - Show when valid address is entered */}
-                {isAddressSearch && !addressAlreadyExists && (
-                  <div className="px-4 pb-3">
-                    <div className="bg-muted/50 rounded-xl p-4 border border-border/30">
-                      {isValidating ? (
-                        <div className="flex items-center gap-3">
-                          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                          <span className="text-sm text-muted-foreground">Validating token contract...</span>
-                        </div>
-                      ) : isValid && symbol ? (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                              <Check className="w-5 h-5 text-primary" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-semibold">{symbol}</p>
-                              <p className="text-xs text-muted-foreground">{name || symbol}</p>
-                            </div>
-                          </div>
-                          <Button 
-                            onClick={handleImportToken} 
-                            className="w-full btn-dragon"
-                            size="sm"
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Import {symbol}
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3 text-destructive">
-                          <AlertCircle className="w-5 h-5" />
-                          <span className="text-sm">Invalid token contract</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Token List Header */}
-                <div className="px-5 pb-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Default Tokens
-                  </p>
-                </div>
-
-                {/* Token List */}
-                <div className="max-h-[360px] overflow-y-auto pb-4">
-                  {filteredTokens.length === 0 && !isAddressSearch ? (
-                    <div className="p-8 text-center text-muted-foreground">
-                      <Search className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                      <p className="font-medium">No tokens found</p>
-                      <p className="text-xs mt-1">Try a different search term</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-1 px-3">
-                      {filteredTokens.map((token) => {
-                        const isDisabled = disabledToken?.address === token.address;
-                        const isSelected = selectedToken?.address === token.address;
-                        const isImported = importedTokens.find(
-                          t => t.address.toLowerCase() === token.address.toLowerCase()
-                        );
-
-                        return (
-                          <button
-                            key={token.address}
-                            onClick={() => {
-                              if (!isDisabled) {
-                                onSelect(token);
-                                setIsOpen(false);
-                                setSearch('');
-                              }
-                            }}
-                            disabled={isDisabled}
-                            className={cn(
-                              "w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all",
-                              isDisabled
-                                ? "opacity-40 cursor-not-allowed"
-                                : "hover:bg-muted/60 cursor-pointer",
-                              isSelected && "bg-primary/10 border border-primary/30"
-                            )}
-                          >
-                            <div className="relative">
-                              <img
-                                src={token.logoURI}
-                                alt={token.symbol}
-                                className="w-10 h-10 rounded-full"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = '/tokens/opn.jpg';
-                                }}
-                              />
-                              {isImported && (
-                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                                  <Plus className="w-2.5 h-2.5 text-primary-foreground" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <div className="font-semibold text-base">{token.symbol}</div>
-                              <div className="text-sm text-muted-foreground">{token.name}</div>
-                            </div>
-                            <TokenBalance token={token} address={address as `0x${string}`} />
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer */}
-                <div className="p-4 border-t border-border/30 bg-muted/20">
-                  <p className="text-xs text-muted-foreground text-center">
-                    Can't find a token? Enter the contract address above
-                  </p>
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-full mt-2 w-80 z-50"
+          >
+            <div className="bg-card/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-2xl overflow-hidden">
+              {/* Search */}
+              <div className="p-3 border-b border-border/30">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search or paste address"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9 py-2 bg-muted/40 border-border/30 rounded-lg text-sm"
+                    autoFocus
+                  />
                 </div>
               </div>
-            </motion.div>
-          </>
+
+              {/* Import Section */}
+              {isAddressSearch && !addressAlreadyExists && (
+                <div className="p-3 border-b border-border/30">
+                  <div className="bg-muted/40 rounded-lg p-3">
+                    {isValidating ? (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        <span className="text-muted-foreground">Validating...</span>
+                      </div>
+                    ) : isValid && symbol ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{symbol}</p>
+                          <p className="text-xs text-muted-foreground">{name || symbol}</p>
+                        </div>
+                        <Button onClick={handleImportToken} size="sm" className="btn-dragon h-7 text-xs">
+                          <Plus className="w-3 h-3 mr-1" /> Import
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-destructive text-sm">
+                        <AlertCircle className="w-4 h-4" />
+                        <span>Invalid token</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Token List */}
+              <div className="max-h-64 overflow-y-auto">
+                {filteredTokens.length === 0 && !isAddressSearch ? (
+                  <div className="p-6 text-center text-muted-foreground">
+                    <Search className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">No tokens found</p>
+                  </div>
+                ) : (
+                  <div className="py-1">
+                    {filteredTokens.map((token) => {
+                      const isDisabled = disabledToken?.address === token.address;
+                      const isSelected = selectedToken?.address === token.address;
+                      const isImported = importedTokens.find(
+                        t => t.address.toLowerCase() === token.address.toLowerCase()
+                      );
+
+                      return (
+                        <button
+                          key={token.address}
+                          onClick={() => {
+                            if (!isDisabled) {
+                              onSelect(token);
+                              setIsOpen(false);
+                              setSearch('');
+                            }
+                          }}
+                          disabled={isDisabled}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5 transition-all",
+                            isDisabled
+                              ? "opacity-40 cursor-not-allowed"
+                              : "hover:bg-muted/60 cursor-pointer",
+                            isSelected && "bg-primary/10"
+                          )}
+                        >
+                          <div className="relative">
+                            <img
+                              src={token.logoURI}
+                              alt={token.symbol}
+                              className="w-8 h-8 rounded-full"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/tokens/opn.jpg';
+                              }}
+                            />
+                            {isImported && (
+                              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full flex items-center justify-center">
+                                <Plus className="w-2 h-2 text-primary-foreground" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="font-medium text-sm">{token.symbol}</div>
+                            <div className="text-xs text-muted-foreground">{token.name}</div>
+                          </div>
+                          <TokenBalance token={token} address={address as `0x${string}`} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-2 border-t border-border/30 bg-muted/20">
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Paste contract address to import
+                </p>
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

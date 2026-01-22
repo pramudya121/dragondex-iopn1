@@ -126,14 +126,14 @@ export function WalletButton() {
           {isConnecting ? 'Connecting...' : 'Connect Wallet'}
         </Button>
 
-        {/* Professional Wallet Modal */}
+        {/* Professional Wallet Modal - Full Layout */}
         <AnimatePresence>
           {showWalletModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
               onClick={() => setShowWalletModal(false)}
             >
               <motion.div
@@ -141,31 +141,31 @@ export function WalletButton() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 transition={{ type: 'spring', duration: 0.3 }}
-                className="w-full max-w-[680px] mx-4"
+                className="w-full max-w-[780px]"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="bg-background border border-border/40 rounded-2xl shadow-2xl overflow-hidden">
-                  {/* Header */}
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
-                    <h2 className="text-lg font-bold">Hubungkan Dompet</h2>
-                    <button
-                      onClick={() => setShowWalletModal(false)}
-                      className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <X className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                  </div>
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowWalletModal(false)}
+                  className="absolute top-4 right-4 p-2 rounded-full bg-muted/60 hover:bg-muted transition-colors z-10"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2">
+                <div className="bg-[#0a0a0a] border border-border/30 rounded-2xl shadow-2xl overflow-hidden">
+                  <div className="flex flex-col md:flex-row min-h-[480px]">
                     {/* Left Panel - Wallet List */}
-                    <div className="p-6 border-b md:border-b-0 md:border-r border-border/30">
+                    <div className="flex-1 p-6 md:p-8">
+                      <h2 className="text-xl font-bold mb-6">Hubungkan Dompet</h2>
+                      
                       {/* Installed Wallets */}
-                      <div className="mb-5">
-                        <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">Terinstal</p>
-                        <div className="space-y-1.5">
-                          {installedWallets.slice(0, 4).map((connector) => {
+                      <div className="mb-6">
+                        <p className="text-sm font-semibold text-primary mb-4">Terinstal</p>
+                        <div className="space-y-2">
+                          {installedWallets.map((connector) => {
                             const walletInfo = WALLETS[connector.name] || { name: connector.name, icon: '', color: '#888' };
                             const isConnectingThis = connectingWallet === connector.name;
+                            const isRecent = ['MetaMask', 'Rabby Wallet'].includes(connector.name);
                             
                             return (
                               <button
@@ -173,17 +173,17 @@ export function WalletButton() {
                                 onClick={() => handleConnect(connector)}
                                 disabled={isConnectingThis}
                                 className={cn(
-                                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all",
-                                  "hover:bg-primary/10 border border-transparent hover:border-primary/20",
+                                  "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all",
+                                  "hover:bg-primary/10",
                                   isConnectingThis && "opacity-70 bg-primary/5"
                                 )}
                               >
-                                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-muted/60 border border-border/30">
+                                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-muted/50">
                                   {walletInfo.icon ? (
                                     <img
                                       src={walletInfo.icon}
                                       alt={walletInfo.name}
-                                      className="w-6 h-6"
+                                      className="w-7 h-7"
                                       onError={(e) => {
                                         (e.target as HTMLImageElement).style.display = 'none';
                                       }}
@@ -192,11 +192,14 @@ export function WalletButton() {
                                     <Wallet className="w-5 h-5 text-muted-foreground" />
                                   )}
                                 </div>
-                                <span className="flex-1 text-left font-medium text-sm">
-                                  {walletInfo.name}
-                                </span>
+                                <div className="flex-1 text-left">
+                                  <span className="font-medium">{walletInfo.name}</span>
+                                  {isRecent && (
+                                    <span className="block text-xs text-primary">Terkini</span>
+                                  )}
+                                </div>
                                 {isConnectingThis && (
-                                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
                                 )}
                               </button>
                             );
@@ -206,8 +209,8 @@ export function WalletButton() {
 
                       {/* Popular Wallets */}
                       <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Populer</p>
-                        <div className="space-y-1.5">
+                        <p className="text-sm font-semibold text-muted-foreground mb-4">Populer</p>
+                        <div className="space-y-2">
                           {popularWalletNames.map((walletName) => {
                             const walletInfo = WALLETS[walletName];
                             if (!walletInfo) return null;
@@ -215,21 +218,20 @@ export function WalletButton() {
                             return (
                               <button
                                 key={walletName}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-muted/40 opacity-50 cursor-not-allowed"
-                                disabled
+                                className="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all hover:bg-muted/30 group"
                               >
-                                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-muted/40 border border-border/20">
+                                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-muted/40">
                                   {walletInfo.icon ? (
                                     <img
                                       src={walletInfo.icon}
                                       alt={walletInfo.name}
-                                      className="w-6 h-6 grayscale"
+                                      className="w-7 h-7"
                                     />
                                   ) : (
                                     <Wallet className="w-5 h-5 text-muted-foreground" />
                                   )}
                                 </div>
-                                <span className="flex-1 text-left font-medium text-sm text-muted-foreground">
+                                <span className="font-medium group-hover:text-foreground transition-colors">
                                   {walletInfo.name}
                                 </span>
                               </button>
@@ -240,56 +242,47 @@ export function WalletButton() {
                     </div>
 
                     {/* Right Panel - Info */}
-                    <div className="p-6 bg-muted/20">
-                      <h3 className="text-base font-bold mb-5">Apa itu Dompet?</h3>
+                    <div className="flex-1 p-6 md:p-8 bg-[#111111] border-t md:border-t-0 md:border-l border-border/30 flex flex-col">
+                      <h3 className="text-xl font-bold mb-6">Apa itu Dompet?</h3>
                       
-                      <div className="space-y-4">
-                        <div className="flex gap-3">
-                          <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/10 flex items-center justify-center border border-primary/20">
-                            <Smartphone className="w-5 h-5 text-primary" />
+                      <div className="space-y-6 flex-1">
+                        {/* Info Item 1 */}
+                        <div className="flex gap-4">
+                          <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/30 to-secondary/20 flex items-center justify-center">
+                            <Smartphone className="w-7 h-7 text-primary" />
                           </div>
                           <div className="flex-1">
-                            <p className="font-semibold text-sm mb-0.5">Rumah untuk Aset Digital</p>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                              Dompet digunakan untuk mengirim, menerima, dan menyimpan aset digital Anda.
+                            <p className="font-bold mb-1">Sebuah Rumah untuk Aset Digital Anda</p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              Dompet digunakan untuk mengirim, menerima, menyimpan, dan menampilkan aset digital seperti Ethereum dan NFTs.
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex gap-3">
-                          <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/10 flex items-center justify-center border border-blue-500/20">
-                            <Shield className="w-5 h-5 text-blue-400" />
+                        {/* Info Item 2 */}
+                        <div className="flex gap-4">
+                          <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/30 to-cyan-500/20 flex items-center justify-center">
+                            <Shield className="w-7 h-7 text-blue-400" />
                           </div>
                           <div className="flex-1">
-                            <p className="font-semibold text-sm mb-0.5">Cara Baru untuk Masuk</p>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                              Cukup hubungkan dompet Anda tanpa perlu membuat akun baru.
+                            <p className="font-bold mb-1">Cara Baru untuk Masuk</p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              Alih-alih membuat akun dan kata sandi baru di setiap situs web, cukup hubungkan dompet Anda.
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Dragon Logo */}
-                      <div className="mt-6 flex justify-center">
-                        <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/15 to-secondary/10 p-2 border border-primary/15">
-                          <img 
-                            src={dragonLogo} 
-                            alt="DragonDEX" 
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                      </div>
-
-                      {/* CTA */}
-                      <div className="mt-5 space-y-2">
-                        <Button className="w-full btn-dragon h-10 text-sm">
+                      {/* CTA Buttons */}
+                      <div className="mt-8 space-y-3">
+                        <Button className="w-full btn-dragon h-12 text-base font-semibold">
                           Dapatkan Dompet
                         </Button>
                         <a 
                           href="https://ethereum.org/wallets" 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="block text-center text-xs text-primary hover:underline py-1"
+                          className="block text-center text-sm text-primary hover:underline py-2"
                         >
                           Pelajari lebih lanjut
                         </a>

@@ -126,43 +126,44 @@ export function WalletButton() {
           {isConnecting ? 'Connecting...' : 'Connect Wallet'}
         </Button>
 
-        {/* Professional Wallet Modal - Reference Style */}
+        {/* Professional Wallet Modal */}
         <AnimatePresence>
           {showWalletModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
               onClick={() => setShowWalletModal(false)}
             >
               <motion.div
-                initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                transition={{ type: 'spring', duration: 0.4 }}
-                className="w-full max-w-[720px] relative"
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: 'spring', duration: 0.3 }}
+                className="w-full max-w-[680px] mx-4"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Close Button */}
-                <button
-                  onClick={() => setShowWalletModal(false)}
-                  className="absolute -top-2 -right-2 p-2 rounded-full bg-muted/80 hover:bg-muted transition-colors z-10 border border-border/30"
-                >
-                  <X className="w-4 h-4 text-muted-foreground" />
-                </button>
+                <div className="bg-background border border-border/40 rounded-2xl shadow-2xl overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
+                    <h2 className="text-lg font-bold">Hubungkan Dompet</h2>
+                    <button
+                      onClick={() => setShowWalletModal(false)}
+                      className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <X className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                  </div>
 
-                <div className="bg-[#0d0d0d] border border-border/30 rounded-2xl shadow-2xl overflow-hidden">
-                  <div className="flex flex-col md:flex-row">
+                  <div className="grid grid-cols-1 md:grid-cols-2">
                     {/* Left Panel - Wallet List */}
-                    <div className="flex-1 p-6 border-b md:border-b-0 md:border-r border-border/30">
-                      <h2 className="text-xl font-bold mb-6">Hubungkan Dompet</h2>
-                      
+                    <div className="p-6 border-b md:border-b-0 md:border-r border-border/30">
                       {/* Installed Wallets */}
-                      <div className="mb-6">
-                        <p className="text-sm text-primary font-semibold mb-3">Terinstal</p>
-                        <div className="space-y-1">
-                          {installedWallets.slice(0, 5).map((connector) => {
+                      <div className="mb-5">
+                        <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">Terinstal</p>
+                        <div className="space-y-1.5">
+                          {installedWallets.slice(0, 4).map((connector) => {
                             const walletInfo = WALLETS[connector.name] || { name: connector.name, icon: '', color: '#888' };
                             const isConnectingThis = connectingWallet === connector.name;
                             
@@ -172,17 +173,17 @@ export function WalletButton() {
                                 onClick={() => handleConnect(connector)}
                                 disabled={isConnectingThis}
                                 className={cn(
-                                  "w-full flex items-center gap-3 p-3 rounded-xl transition-all group",
-                                  "hover:bg-muted/40",
-                                  isConnectingThis && "opacity-70"
+                                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all",
+                                  "hover:bg-primary/10 border border-transparent hover:border-primary/20",
+                                  isConnectingThis && "opacity-70 bg-primary/5"
                                 )}
                               >
-                                <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center bg-muted/50">
+                                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-muted/60 border border-border/30">
                                   {walletInfo.icon ? (
                                     <img
                                       src={walletInfo.icon}
                                       alt={walletInfo.name}
-                                      className="w-7 h-7"
+                                      className="w-6 h-6"
                                       onError={(e) => {
                                         (e.target as HTMLImageElement).style.display = 'none';
                                       }}
@@ -191,14 +192,9 @@ export function WalletButton() {
                                     <Wallet className="w-5 h-5 text-muted-foreground" />
                                   )}
                                 </div>
-                                <div className="flex-1 text-left">
-                                  <span className="font-medium text-sm group-hover:text-primary transition-colors">
-                                    {walletInfo.name}
-                                  </span>
-                                  {['MetaMask', 'Rabby Wallet'].includes(connector.name) && (
-                                    <span className="ml-2 text-[10px] text-primary font-medium">Terkini</span>
-                                  )}
-                                </div>
+                                <span className="flex-1 text-left font-medium text-sm">
+                                  {walletInfo.name}
+                                </span>
                                 {isConnectingThis && (
                                   <Loader2 className="w-4 h-4 animate-spin text-primary" />
                                 )}
@@ -210,8 +206,8 @@ export function WalletButton() {
 
                       {/* Popular Wallets */}
                       <div>
-                        <p className="text-sm text-muted-foreground font-semibold mb-3">Populer</p>
-                        <div className="space-y-1">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Populer</p>
+                        <div className="space-y-1.5">
                           {popularWalletNames.map((walletName) => {
                             const walletInfo = WALLETS[walletName];
                             if (!walletInfo) return null;
@@ -219,20 +215,21 @@ export function WalletButton() {
                             return (
                               <button
                                 key={walletName}
-                                className="w-full flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-muted/40 group opacity-60"
+                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-muted/40 opacity-50 cursor-not-allowed"
+                                disabled
                               >
-                                <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center bg-muted/50">
+                                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-muted/40 border border-border/20">
                                   {walletInfo.icon ? (
                                     <img
                                       src={walletInfo.icon}
                                       alt={walletInfo.name}
-                                      className="w-7 h-7"
+                                      className="w-6 h-6 grayscale"
                                     />
                                   ) : (
                                     <Wallet className="w-5 h-5 text-muted-foreground" />
                                   )}
                                 </div>
-                                <span className="font-medium text-sm group-hover:text-primary transition-colors">
+                                <span className="flex-1 text-left font-medium text-sm text-muted-foreground">
                                   {walletInfo.name}
                                 </span>
                               </button>
@@ -243,58 +240,56 @@ export function WalletButton() {
                     </div>
 
                     {/* Right Panel - Info */}
-                    <div className="flex-1 p-6 bg-[#111111]">
-                      <h3 className="text-lg font-bold mb-6">Apa itu Dompet?</h3>
+                    <div className="p-6 bg-muted/20">
+                      <h3 className="text-base font-bold mb-5">Apa itu Dompet?</h3>
                       
-                      <div className="space-y-5">
-                        {/* Info Item 1 */}
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary/30 to-secondary/20 flex items-center justify-center">
-                            <Smartphone className="w-6 h-6 text-primary" />
+                      <div className="space-y-4">
+                        <div className="flex gap-3">
+                          <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/10 flex items-center justify-center border border-primary/20">
+                            <Smartphone className="w-5 h-5 text-primary" />
                           </div>
-                          <div>
-                            <p className="font-semibold text-sm mb-1">Sebuah Rumah untuk Aset Digital Anda</p>
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm mb-0.5">Rumah untuk Aset Digital</p>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                              Dompet digunakan untuk mengirim, menerima, menyimpan, dan menampilkan aset digital seperti Ethereum dan NFTs.
+                              Dompet digunakan untuk mengirim, menerima, dan menyimpan aset digital Anda.
                             </p>
                           </div>
                         </div>
 
-                        {/* Info Item 2 */}
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/30 to-cyan-500/20 flex items-center justify-center">
-                            <Shield className="w-6 h-6 text-blue-400" />
+                        <div className="flex gap-3">
+                          <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/10 flex items-center justify-center border border-blue-500/20">
+                            <Shield className="w-5 h-5 text-blue-400" />
                           </div>
-                          <div>
-                            <p className="font-semibold text-sm mb-1">Cara Baru untuk Masuk</p>
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm mb-0.5">Cara Baru untuk Masuk</p>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                              Alih-alih membuat akun dan kata sandi baru di setiap situs web, cukup hubungkan dompet Anda.
+                              Cukup hubungkan dompet Anda tanpa perlu membuat akun baru.
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Logo */}
+                      {/* Dragon Logo */}
                       <div className="mt-6 flex justify-center">
-                        <div className="w-32 h-32 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/10 p-3 border border-primary/20">
+                        <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/15 to-secondary/10 p-2 border border-primary/15">
                           <img 
                             src={dragonLogo} 
-                            alt="Dragon DEX" 
+                            alt="DragonDEX" 
                             className="w-full h-full object-contain"
                           />
                         </div>
                       </div>
 
-                      {/* CTA Button */}
-                      <div className="mt-6 space-y-3">
-                        <Button className="w-full btn-dragon h-11">
+                      {/* CTA */}
+                      <div className="mt-5 space-y-2">
+                        <Button className="w-full btn-dragon h-10 text-sm">
                           Dapatkan Dompet
                         </Button>
                         <a 
                           href="https://ethereum.org/wallets" 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="block text-center text-sm text-primary hover:underline"
+                          className="block text-center text-xs text-primary hover:underline py-1"
                         >
                           Pelajari lebih lanjut
                         </a>

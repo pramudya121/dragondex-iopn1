@@ -183,17 +183,18 @@ export function WalletButton() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md"
+              className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md overflow-y-auto"
               onClick={() => setShowWalletModal(false)}
             >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="relative w-full max-w-[720px] mx-4"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="min-h-full flex items-center justify-center p-4 py-8">
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className="relative w-full max-w-[720px]"
+                  onClick={(e) => e.stopPropagation()}
+                >
                 <div className="bg-gradient-to-br from-[#0d0d0d] to-[#1a1a1a] border border-border/40 rounded-2xl shadow-2xl overflow-hidden">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
@@ -332,6 +333,7 @@ export function WalletButton() {
                   </div>
                 </div>
               </motion.div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

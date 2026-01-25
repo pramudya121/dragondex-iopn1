@@ -7,6 +7,7 @@ import { Marquee } from '@/components/ui/magic/Marquee';
 import { NumberTicker } from '@/components/ui/magic/NumberTicker';
 import { RotatingLogo } from '@/components/ui/premium/RotatingLogo';
 import { HoverEffect } from '@/components/ui/aceternity/HoverEffect';
+import { BorderBeam } from '@/components/ui/magic/BorderBeam';
 import { useAllPairsLength } from '@/hooks/useContract';
 import dragonLogo from '@/assets/dragon-logo.png';
 
@@ -82,16 +83,16 @@ export default function Index() {
         </Marquee>
       </div>
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-8 md:py-12">
         {/* Hero Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }} 
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <RotatingLogo src={dragonLogo} alt="DragonDEX" size={80} />
-            <h1 className="text-5xl md:text-7xl font-black gradient-text dragon-glow-text">
+          <div className="flex items-center justify-center gap-3 md:gap-4 mb-6">
+            <RotatingLogo src={dragonLogo} alt="DragonDEX" size={60} className="md:w-20 md:h-20" />
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black gradient-text dragon-glow-text">
               DRAGONDEX
             </h1>
           </div>
@@ -100,7 +101,7 @@ export default function Index() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8"
+            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8"
           >
             The premier decentralized exchange on OPN Testnet. 
             Swap, provide liquidity, and earn with the power of the dragon.
@@ -111,31 +112,32 @@ export default function Index() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex flex-wrap items-center justify-center gap-8 mb-8"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8"
           >
-            <div className="text-center">
-              <p className="text-3xl font-bold text-primary">
+            <div className="stat-card text-center relative overflow-hidden">
+              <BorderBeam size={60} duration={10} />
+              <p className="text-2xl md:text-3xl font-bold text-primary">
                 $<NumberTicker value={694556130} />
               </p>
-              <p className="text-sm text-muted-foreground">Total Value Locked</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Total Value Locked</p>
             </div>
-            <div className="w-px h-12 bg-border hidden sm:block" />
-            <div className="text-center">
-              <p className="text-3xl font-bold text-secondary">
+            <div className="stat-card text-center relative overflow-hidden">
+              <BorderBeam size={60} duration={10} delay={1} />
+              <p className="text-2xl md:text-3xl font-bold text-secondary">
                 <NumberTicker value={Number(pairsCount || 0)} />
               </p>
-              <p className="text-sm text-muted-foreground">Active Pools</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Active Pools</p>
             </div>
-            <div className="w-px h-12 bg-border hidden sm:block" />
-            <div className="text-center">
-              <p className="text-3xl font-bold text-accent">
+            <div className="stat-card text-center relative overflow-hidden">
+              <BorderBeam size={60} duration={10} delay={2} />
+              <p className="text-2xl md:text-3xl font-bold text-accent">
                 <NumberTicker value={45892} />
               </p>
-              <p className="text-sm text-muted-foreground">Traders</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Traders</p>
             </div>
           </motion.div>
 
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
             <ShimmerButton onClick={() => document.getElementById('swap-section')?.scrollIntoView({ behavior: 'smooth' })}>
               <Flame className="w-5 h-5 mr-2" />
               Start Trading
@@ -146,15 +148,15 @@ export default function Index() {
               rel="noopener noreferrer"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="px-6 py-3 rounded-xl border border-border hover:border-primary/50 transition-colors font-medium"
+              className="px-5 md:px-6 py-3 rounded-xl border border-border hover:border-primary/50 transition-colors font-medium text-sm md:text-base"
             >
               Get Testnet OPN
             </motion.a>
           </div>
         </motion.div>
 
-        {/* Swap Card */}
-        <div id="swap-section">
+        {/* Swap Card - Centered */}
+        <div id="swap-section" className="flex justify-center mb-16 md:mb-24">
           <SwapCard />
         </div>
 
@@ -163,13 +165,15 @@ export default function Index() {
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
           transition={{ delay: 0.5 }} 
-          className="mt-24"
+          className="max-w-6xl mx-auto"
         >
-          <h2 className="text-3xl font-bold text-center mb-4">Why DRAGONDEX?</h2>
-          <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">
-            Built for speed, security, and simplicity. Experience DeFi the way it should be.
-          </p>
-          <HoverEffect items={features} className="max-w-5xl mx-auto" />
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">Why DRAGONDEX?</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Built for speed, security, and simplicity. Experience DeFi the way it should be.
+            </p>
+          </div>
+          <HoverEffect items={features} />
         </motion.div>
 
         {/* CTA Section */}
@@ -177,17 +181,17 @@ export default function Index() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="mt-24 text-center"
+          className="mt-16 md:mt-24 text-center"
         >
-          <div className="glass-card p-12 max-w-3xl mx-auto relative overflow-hidden">
+          <div className="glass-card p-8 md:p-12 max-w-3xl mx-auto relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" />
             <div className="relative z-10">
-              <Flame className="w-12 h-12 mx-auto mb-4 text-primary" />
-              <h3 className="text-2xl font-bold mb-4">Ready to breathe fire?</h3>
-              <p className="text-muted-foreground mb-6">
+              <Flame className="w-10 md:w-12 h-10 md:h-12 mx-auto mb-4 text-primary" />
+              <h3 className="text-xl md:text-2xl font-bold mb-4">Ready to breathe fire?</h3>
+              <p className="text-muted-foreground mb-6 text-sm md:text-base">
                 Join thousands of traders on the most powerful DEX on OPN Testnet
               </p>
-              <ShimmerButton>
+              <ShimmerButton onClick={() => document.getElementById('swap-section')?.scrollIntoView({ behavior: 'smooth' })}>
                 Launch App
               </ShimmerButton>
             </div>

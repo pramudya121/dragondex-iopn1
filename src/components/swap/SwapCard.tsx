@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDownUp, Settings, Loader2, ExternalLink, Check, Info, X, Flame } from 'lucide-react';
-import { useAccount, useBalance } from 'wagmi';
+import { ArrowDownUp, Settings, Loader2, ExternalLink, Check, Info, X, Flame, Wallet, QrCode, HelpCircle } from 'lucide-react';
+import { useAccount, useBalance, useConnect, Connector } from 'wagmi';
 import { parseUnits, formatUnits, formatEther, parseEther } from 'viem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,66 @@ import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+// Wallet icons data
+const WALLET_ICONS: Record<string, { icon: string; color: string }> = {
+  'MetaMask': {
+    icon: 'https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/SVG_MetaMask_Icon_Color.svg',
+    color: '#F6851B',
+  },
+  'WalletConnect': {
+    icon: 'https://avatars.githubusercontent.com/u/37784886?s=200&v=4',
+    color: '#3B99FC',
+  },
+  'Coinbase Wallet': {
+    icon: 'https://avatars.githubusercontent.com/u/18060234?s=200&v=4',
+    color: '#0052FF',
+  },
+  'Rabby Wallet': {
+    icon: 'https://raw.githubusercontent.com/nicepicks/wallet-icons/main/rabby.svg',
+    color: '#7C8FEC',
+  },
+  'OKX Wallet': {
+    icon: 'https://avatars.githubusercontent.com/u/85024987?s=200&v=4',
+    color: '#000000',
+  },
+  'Trust Wallet': {
+    icon: 'https://avatars.githubusercontent.com/u/32179889?s=200&v=4',
+    color: '#3375BB',
+  },
+  'Bitget Wallet': {
+    icon: 'https://avatars.githubusercontent.com/u/76869728?s=200&v=4',
+    color: '#00D4AA',
+  },
+};
+
+// Inline wallet icon component
+const InlineWalletIcon = ({ name }: { name: string }) => {
+  const [error, setError] = useState(false);
+  const walletInfo = WALLET_ICONS[name];
+
+  if (!walletInfo || error) {
+    return (
+      <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
+        <Wallet className="w-5 h-5 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-10 h-10 rounded-xl overflow-hidden bg-muted/30 flex items-center justify-center">
+      <img
+        src={walletInfo.icon}
+        alt={name}
+        className="w-6 h-6 object-contain"
+        onError={() => setError(true)}
+      />
+    </div>
+  );
+};
+
 export function SwapCard() {
   const { address, isConnected } = useAccount();
+  const { connectors, connect, isPending: isConnecting } = useConnect();
   const { isCorrectNetwork, switchToOPN } = useWallet();
 
   const [fromToken, setFromToken] = useState<TokenInfo | null>(TOKEN_LIST[0]);
@@ -25,9 +83,24 @@ export function SwapCard() {
   const [toAmount, setToAmount] = useState('');
   const [slippage, setSlippage] = useState(0.5);
   const [showSettings, setShowSettings] = useState(false);
+  const [connectingWallet, setConnectingWallet] = useState<string | null>(null);
 
   const router = useRouter();
   const { prices, getPrice } = useTokenPrices();
+
+  // Filter wallets for display
+  const displayWallets = connectors.filter(c => c.name !== 'Injected');
+
+  const handleConnect = async (connector: Connector) => {
+    setConnectingWallet(connector.name);
+    try {
+      await connect({ connector });
+    } catch (error) {
+      console.error('Connection failed:', error);
+    } finally {
+      setConnectingWallet(null);
+    }
+  };
   const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash } = useApprove();
 
   const { data: nativeBalance } = useBalance({ address });
@@ -363,10 +436,81 @@ export function SwapCard() {
             </motion.div>
           )}
 
-          {/* Action Button */}
+          {/* Action Button / Wallet Connect */}
           <div className="pt-2">
             {!isConnected ? (
-              <Button className="w-full btn-dragon h-12" disabled>Connect Wallet</Button>
+              /* Inline Wallet Connect Panel */
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Wallet className="w-4 h-4" />
+                  <span>Connect wallet to swap</span>
+                </div>
+                
+                {/* Wallet Options */}
+                <div className="space-y-2">
+                  {/* WalletConnect first */}
+                  {displayWallets.find(c => c.name === 'WalletConnect') && (
+                    <button
+                      onClick={() => handleConnect(displayWallets.find(c => c.name === 'WalletConnect')!)}
+                      disabled={connectingWallet === 'WalletConnect'}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                        "bg-muted/30 hover:bg-muted/50 border border-border/50 hover:border-primary/30"
+                      )}
+                    >
+                      <InlineWalletIcon name="WalletConnect" />
+                      <span className="flex-1 text-left font-medium">WalletConnect</span>
+                      {connectingWallet === 'WalletConnect' ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      ) : (
+                        <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">
+                          <QrCode className="w-3 h-3" />
+                          QR
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  
+                  {/* Other installed wallets */}
+                  {displayWallets
+                    .filter(c => c.name !== 'WalletConnect')
+                    .slice(0, 3)
+                    .map((connector) => (
+                      <button
+                        key={connector.uid}
+                        onClick={() => handleConnect(connector)}
+                        disabled={connectingWallet === connector.name}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                          "hover:bg-muted/40 border border-transparent hover:border-border/50"
+                        )}
+                      >
+                        <InlineWalletIcon name={connector.name} />
+                        <span className="flex-1 text-left font-medium">{connector.name}</span>
+                        {connectingWallet === connector.name ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        ) : (
+                          <span className="px-2 py-1 text-xs font-medium bg-green-500/20 text-green-400 rounded border border-green-500/30">
+                            INSTALLED
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                </div>
+                
+                {/* Get Wallet Link */}
+                <div className="text-center pt-2 border-t border-border/30">
+                  <span className="text-xs text-muted-foreground">New to crypto? </span>
+                  <a 
+                    href="https://ethereum.org/wallets" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline font-medium"
+                  >
+                    Get a wallet
+                  </a>
+                </div>
+              </div>
             ) : !isCorrectNetwork ? (
               <Button onClick={switchToOPN} className="w-full h-12" variant="destructive">Switch to OPN Network</Button>
             ) : needsApproval ? (

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, ChevronDown, Copy, ExternalLink, LogOut, Check, Loader2, X, Smartphone, Shield } from 'lucide-react';
+import { Wallet, ChevronDown, Copy, ExternalLink, LogOut, Check, Loader2, X, HelpCircle, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useWallet } from '@/hooks/useWallet';
 import { formatEther } from 'viem';
@@ -176,164 +176,113 @@ export function WalletButton() {
           {isConnecting ? 'Connecting...' : 'Connect Wallet'}
         </Button>
 
-        {/* Professional Wallet Modal */}
+        {/* Simple Wallet Modal */}
         <AnimatePresence>
           {showWalletModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md overflow-y-auto"
+              className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
               onClick={() => setShowWalletModal(false)}
             >
-              <div className="min-h-full flex items-center justify-center p-4 py-8">
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="relative w-full max-w-[720px]"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                <div className="bg-gradient-to-br from-[#0d0d0d] to-[#1a1a1a] border border-border/40 rounded-2xl shadow-2xl overflow-hidden">
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="w-full max-w-md"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="bg-[#121212] border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
                   {/* Header */}
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
-                    <h2 className="text-lg font-bold text-foreground">Hubungkan Dompet</h2>
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-border/30">
+                    <div className="flex items-center gap-2">
+                      <HelpCircle className="w-5 h-5 text-muted-foreground" />
+                      <h2 className="text-base font-semibold text-foreground">Connect Wallet</h2>
+                    </div>
                     <button
                       onClick={() => setShowWalletModal(false)}
-                      className="p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
                     >
                       <X className="w-4 h-4 text-muted-foreground" />
                     </button>
                   </div>
 
+                  {/* Wallet List */}
+                  <div className="p-3 space-y-1">
+                    {/* WalletConnect - prioritized at top */}
+                    {connectors.find(c => c.name === 'WalletConnect') && (
+                      <button
+                        onClick={() => handleConnect(connectors.find(c => c.name === 'WalletConnect')!)}
+                        disabled={connectingWallet === 'WalletConnect'}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                          "bg-muted/30 hover:bg-muted/50 border border-border/50 hover:border-primary/30"
+                        )}
+                      >
+                        <WalletIcon walletInfo={WALLETS['WalletConnect']} size="md" />
+                        <span className="flex-1 text-left font-medium text-foreground">WalletConnect</span>
+                        {connectingWallet === 'WalletConnect' ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        ) : (
+                          <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">
+                            <QrCode className="w-3 h-3" />
+                            QR CODE
+                          </span>
+                        )}
+                      </button>
+                    )}
 
-                  {/* Content Grid */}
-                  <div className="grid md:grid-cols-2">
-                    {/* Left Panel - Wallet List */}
-                    <div className="p-6 space-y-6">
-                      {/* Installed Wallets */}
-                      <div>
-                        <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">
-                          Terinstal
-                        </p>
-                        <div className="space-y-1.5">
-                          {installedWallets.map((connector) => {
-                            const walletInfo = WALLETS[connector.name] || { 
-                              name: connector.name, 
-                              icon: '', 
-                              color: '#888' 
-                            };
-                            const isConnectingThis = connectingWallet === connector.name;
-                            const isRecent = ['MetaMask', 'Rabby Wallet'].includes(connector.name);
-                            
-                            return (
-                              <button
-                                key={connector.uid}
-                                onClick={() => handleConnect(connector)}
-                                disabled={isConnectingThis}
-                                className={cn(
-                                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
-                                  "hover:bg-primary/10 hover:border-primary/30",
-                                  "border border-transparent",
-                                  isConnectingThis && "opacity-70 bg-primary/5 border-primary/20"
-                                )}
-                              >
-                                <WalletIcon walletInfo={walletInfo} size="md" />
-                                <div className="flex-1 text-left">
-                                  <span className="font-medium text-foreground">{walletInfo.name}</span>
-                                  {isRecent && (
-                                    <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold bg-primary/20 text-primary rounded-full">
-                                      Terkini
-                                    </span>
-                                  )}
-                                </div>
-                                {isConnectingThis && (
-                                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
+                    {/* Installed Wallets */}
+                    {installedWallets
+                      .filter(c => c.name !== 'WalletConnect')
+                      .map((connector) => {
+                        const walletInfo = WALLETS[connector.name] || { 
+                          name: connector.name, 
+                          icon: '', 
+                          color: '#888' 
+                        };
+                        const isConnectingThis = connectingWallet === connector.name;
+                        
+                        return (
+                          <button
+                            key={connector.uid}
+                            onClick={() => handleConnect(connector)}
+                            disabled={isConnectingThis}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                              "hover:bg-muted/40 border border-transparent hover:border-border/50"
+                            )}
+                          >
+                            <WalletIcon walletInfo={walletInfo} size="md" />
+                            <span className="flex-1 text-left font-medium text-foreground">{walletInfo.name}</span>
+                            {isConnectingThis ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            ) : (
+                              <span className="px-2 py-1 text-xs font-medium bg-green-500/20 text-green-400 rounded border border-green-500/30">
+                                INSTALLED
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                  </div>
 
-                      {/* Popular Wallets */}
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                          Populer
-                        </p>
-                        <div className="space-y-1.5">
-                          {popularWalletNames.map((walletName) => {
-                            const walletInfo = WALLETS[walletName];
-                            if (!walletInfo) return null;
-                            
-                            return (
-                              <button
-                                key={walletName}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-muted/40 border border-transparent hover:border-border/50"
-                              >
-                                <WalletIcon walletInfo={walletInfo} size="md" />
-                                <span className="font-medium text-muted-foreground hover:text-foreground transition-colors">
-                                  {walletInfo.name}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Panel - Info */}
-                    <div className="p-6 bg-[#0a0a0a] border-t md:border-t-0 md:border-l border-border/30 flex flex-col">
-                      <h3 className="text-lg font-bold mb-6 text-foreground">Apa itu Dompet?</h3>
-                      
-                      <div className="space-y-5 flex-1">
-                        {/* Info Item 1 */}
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
-                            <Smartphone className="w-6 h-6 text-primary" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-semibold text-foreground mb-1">Rumah untuk Aset Digital</p>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              Dompet digunakan untuk mengirim, menerima, dan menyimpan aset digital seperti Ethereum dan NFTs.
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Info Item 2 */}
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/30 to-blue-500/10 flex items-center justify-center">
-                            <Shield className="w-6 h-6 text-blue-400" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-semibold text-foreground mb-1">Cara Baru untuk Masuk</p>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              Cukup hubungkan dompet Anda tanpa perlu membuat akun baru di setiap situs.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* CTA */}
-                      <div className="mt-6 pt-4 border-t border-border/30">
-                        <Button className="w-full btn-dragon h-11 text-sm font-semibold">
-                          Dapatkan Dompet
-                        </Button>
-                        <a 
-                          href="https://ethereum.org/wallets" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="block text-center text-sm text-primary hover:underline mt-3"
-                        >
-                          Pelajari lebih lanjut →
-                        </a>
-                      </div>
-                    </div>
+                  {/* Footer */}
+                  <div className="px-5 py-4 border-t border-border/30 text-center">
+                    <span className="text-sm text-muted-foreground">Haven't got a wallet? </span>
+                    <a 
+                      href="https://ethereum.org/wallets" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline font-medium"
+                    >
+                      Get started
+                    </a>
                   </div>
                 </div>
               </motion.div>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>

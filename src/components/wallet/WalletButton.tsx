@@ -5,70 +5,120 @@ import { Button } from '@/components/ui/button';
 import { useWallet } from '@/hooks/useWallet';
 import { formatEther } from 'viem';
 import { cn } from '@/lib/utils';
-import dragonLogo from '@/assets/dragon-logo.png';
 
 interface WalletInfo {
   name: string;
   icon: string;
+  fallbackIcon?: string;
   color: string;
 }
 
+// Reliable wallet icons with fallbacks
 const WALLETS: Record<string, WalletInfo> = {
   'MetaMask': {
     name: 'MetaMask',
-    icon: 'https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg',
+    icon: 'https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/SVG_MetaMask_Icon_Color.svg',
+    fallbackIcon: 'https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg',
     color: '#F6851B',
   },
   'Rabby Wallet': {
     name: 'Rabby Wallet',
-    icon: 'https://rabby.io/assets/images/logo.svg',
+    icon: 'https://raw.githubusercontent.com/nicepicks/wallet-icons/main/rabby.svg',
     color: '#7C8FEC',
   },
   'Keplr': {
     name: 'Keplr',
-    icon: 'https://assets.keplr.app/icon.png',
+    icon: 'https://raw.githubusercontent.com/nicepicks/wallet-icons/main/keplr.png',
     color: '#7B68EE',
   },
   'SubWallet': {
     name: 'SubWallet',
-    icon: 'https://subwallet.app/favicon.ico',
+    icon: 'https://raw.githubusercontent.com/nicepicks/wallet-icons/main/subwallet.svg',
     color: '#004BFF',
   },
   'Phantom': {
     name: 'Phantom',
-    icon: 'https://phantom.app/favicon.ico',
+    icon: 'https://raw.githubusercontent.com/nicepicks/wallet-icons/main/phantom.svg',
     color: '#AB9FF2',
   },
   'Rainbow': {
     name: 'Rainbow',
-    icon: 'https://rainbow.me/favicon.ico',
+    icon: 'https://avatars.githubusercontent.com/u/48327834?s=200&v=4',
     color: '#001E59',
   },
   'Base Account': {
     name: 'Base Account',
-    icon: 'https://www.base.org/favicon.ico',
+    icon: 'https://avatars.githubusercontent.com/u/108554348?s=200&v=4',
     color: '#0052FF',
   },
   'WalletConnect': {
     name: 'WalletConnect',
-    icon: 'https://walletconnect.com/favicon.ico',
+    icon: 'https://avatars.githubusercontent.com/u/37784886?s=200&v=4',
     color: '#3B99FC',
   },
   'OKX Wallet': {
     name: 'OKX Wallet',
-    icon: 'https://static.okx.com/cdn/wallet/logo/okx-wallet.svg',
-    color: '#FFFFFF',
+    icon: 'https://avatars.githubusercontent.com/u/85024987?s=200&v=4',
+    color: '#000000',
   },
   'Bitget Wallet': {
     name: 'Bitget Wallet',
-    icon: 'https://img.bitgetimg.com/cms/assets/imgs/bitget-wallet/logo.png',
+    icon: 'https://avatars.githubusercontent.com/u/76869728?s=200&v=4',
     color: '#00D4AA',
+  },
+  'Coinbase Wallet': {
+    name: 'Coinbase Wallet',
+    icon: 'https://avatars.githubusercontent.com/u/18060234?s=200&v=4',
+    color: '#0052FF',
+  },
+  'Trust Wallet': {
+    name: 'Trust Wallet',
+    icon: 'https://avatars.githubusercontent.com/u/32179889?s=200&v=4',
+    color: '#3375BB',
   },
   'Injected': {
     name: 'Browser Wallet',
     icon: '',
     color: '#888888',
   },
+};
+
+// Fallback icon component with proper error handling
+const WalletIcon = ({ walletInfo, size = 'md' }: { walletInfo: WalletInfo; size?: 'sm' | 'md' }) => {
+  const [imgError, setImgError] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
+  const sizeClasses = size === 'md' ? 'w-8 h-8' : 'w-6 h-6';
+  const containerClasses = size === 'md' ? 'w-11 h-11' : 'w-9 h-9';
+
+  const currentIcon = useFallback && walletInfo.fallbackIcon ? walletInfo.fallbackIcon : walletInfo.icon;
+
+  if (!walletInfo.icon || imgError) {
+    return (
+      <div 
+        className={cn(containerClasses, "rounded-xl flex items-center justify-center")}
+        style={{ backgroundColor: walletInfo.color + '20' }}
+      >
+        <Wallet className={cn(sizeClasses, "text-muted-foreground")} style={{ color: walletInfo.color }} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn(containerClasses, "rounded-xl overflow-hidden flex items-center justify-center bg-muted/30")}>
+      <img
+        src={currentIcon}
+        alt={walletInfo.name}
+        className={cn(sizeClasses, "object-contain")}
+        onError={() => {
+          if (!useFallback && walletInfo.fallbackIcon) {
+            setUseFallback(true);
+          } else {
+            setImgError(true);
+          }
+        }}
+      />
+    </div>
+  );
 };
 
 export function WalletButton() {
@@ -112,7 +162,7 @@ export function WalletButton() {
 
   // Separate installed vs popular wallets
   const installedWallets = connectors.filter(c => c.name !== 'Injected');
-  const popularWalletNames = ['Rainbow', 'Base Account', 'WalletConnect'];
+  const popularWalletNames = ['Rainbow', 'Coinbase Wallet', 'Trust Wallet', 'WalletConnect'];
 
   if (!isConnected) {
     return (
@@ -126,44 +176,53 @@ export function WalletButton() {
           {isConnecting ? 'Connecting...' : 'Connect Wallet'}
         </Button>
 
-        {/* Professional Wallet Modal - Full Layout */}
+        {/* Professional Wallet Modal */}
         <AnimatePresence>
           {showWalletModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md"
               onClick={() => setShowWalletModal(false)}
             >
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                transition={{ type: 'spring', duration: 0.3 }}
-                className="w-full max-w-[780px]"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="relative w-full max-w-[720px] mx-4"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Close Button */}
-                <button
-                  onClick={() => setShowWalletModal(false)}
-                  className="absolute top-4 right-4 p-2 rounded-full bg-muted/60 hover:bg-muted transition-colors z-10"
-                >
-                  <X className="w-4 h-4 text-muted-foreground" />
-                </button>
+                <div className="bg-gradient-to-br from-[#0d0d0d] to-[#1a1a1a] border border-border/40 rounded-2xl shadow-2xl overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
+                    <h2 className="text-lg font-bold text-foreground">Hubungkan Dompet</h2>
+                    <button
+                      onClick={() => setShowWalletModal(false)}
+                      className="p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <X className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
 
-                <div className="bg-[#0a0a0a] border border-border/30 rounded-2xl shadow-2xl overflow-hidden">
-                  <div className="flex flex-col md:flex-row min-h-[480px]">
+
+                  {/* Content Grid */}
+                  <div className="grid md:grid-cols-2">
                     {/* Left Panel - Wallet List */}
-                    <div className="flex-1 p-6 md:p-8">
-                      <h2 className="text-xl font-bold mb-6">Hubungkan Dompet</h2>
-                      
+                    <div className="p-6 space-y-6">
                       {/* Installed Wallets */}
-                      <div className="mb-6">
-                        <p className="text-sm font-semibold text-primary mb-4">Terinstal</p>
-                        <div className="space-y-2">
+                      <div>
+                        <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-3">
+                          Terinstal
+                        </p>
+                        <div className="space-y-1.5">
                           {installedWallets.map((connector) => {
-                            const walletInfo = WALLETS[connector.name] || { name: connector.name, icon: '', color: '#888' };
+                            const walletInfo = WALLETS[connector.name] || { 
+                              name: connector.name, 
+                              icon: '', 
+                              color: '#888' 
+                            };
                             const isConnectingThis = connectingWallet === connector.name;
                             const isRecent = ['MetaMask', 'Rabby Wallet'].includes(connector.name);
                             
@@ -173,29 +232,19 @@ export function WalletButton() {
                                 onClick={() => handleConnect(connector)}
                                 disabled={isConnectingThis}
                                 className={cn(
-                                  "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all",
-                                  "hover:bg-primary/10",
-                                  isConnectingThis && "opacity-70 bg-primary/5"
+                                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                                  "hover:bg-primary/10 hover:border-primary/30",
+                                  "border border-transparent",
+                                  isConnectingThis && "opacity-70 bg-primary/5 border-primary/20"
                                 )}
                               >
-                                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-muted/50">
-                                  {walletInfo.icon ? (
-                                    <img
-                                      src={walletInfo.icon}
-                                      alt={walletInfo.name}
-                                      className="w-7 h-7"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
-                                      }}
-                                    />
-                                  ) : (
-                                    <Wallet className="w-5 h-5 text-muted-foreground" />
-                                  )}
-                                </div>
+                                <WalletIcon walletInfo={walletInfo} size="md" />
                                 <div className="flex-1 text-left">
-                                  <span className="font-medium">{walletInfo.name}</span>
+                                  <span className="font-medium text-foreground">{walletInfo.name}</span>
                                   {isRecent && (
-                                    <span className="block text-xs text-primary">Terkini</span>
+                                    <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold bg-primary/20 text-primary rounded-full">
+                                      Terkini
+                                    </span>
                                   )}
                                 </div>
                                 {isConnectingThis && (
@@ -209,8 +258,10 @@ export function WalletButton() {
 
                       {/* Popular Wallets */}
                       <div>
-                        <p className="text-sm font-semibold text-muted-foreground mb-4">Populer</p>
-                        <div className="space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                          Populer
+                        </p>
+                        <div className="space-y-1.5">
                           {popularWalletNames.map((walletName) => {
                             const walletInfo = WALLETS[walletName];
                             if (!walletInfo) return null;
@@ -218,20 +269,10 @@ export function WalletButton() {
                             return (
                               <button
                                 key={walletName}
-                                className="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all hover:bg-muted/30 group"
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-muted/40 border border-transparent hover:border-border/50"
                               >
-                                <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-muted/40">
-                                  {walletInfo.icon ? (
-                                    <img
-                                      src={walletInfo.icon}
-                                      alt={walletInfo.name}
-                                      className="w-7 h-7"
-                                    />
-                                  ) : (
-                                    <Wallet className="w-5 h-5 text-muted-foreground" />
-                                  )}
-                                </div>
-                                <span className="font-medium group-hover:text-foreground transition-colors">
+                                <WalletIcon walletInfo={walletInfo} size="md" />
+                                <span className="font-medium text-muted-foreground hover:text-foreground transition-colors">
                                   {walletInfo.name}
                                 </span>
                               </button>
@@ -242,49 +283,49 @@ export function WalletButton() {
                     </div>
 
                     {/* Right Panel - Info */}
-                    <div className="flex-1 p-6 md:p-8 bg-[#111111] border-t md:border-t-0 md:border-l border-border/30 flex flex-col">
-                      <h3 className="text-xl font-bold mb-6">Apa itu Dompet?</h3>
+                    <div className="p-6 bg-[#0a0a0a] border-t md:border-t-0 md:border-l border-border/30 flex flex-col">
+                      <h3 className="text-lg font-bold mb-6 text-foreground">Apa itu Dompet?</h3>
                       
-                      <div className="space-y-6 flex-1">
+                      <div className="space-y-5 flex-1">
                         {/* Info Item 1 */}
                         <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/30 to-secondary/20 flex items-center justify-center">
-                            <Smartphone className="w-7 h-7 text-primary" />
+                          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
+                            <Smartphone className="w-6 h-6 text-primary" />
                           </div>
                           <div className="flex-1">
-                            <p className="font-bold mb-1">Sebuah Rumah untuk Aset Digital Anda</p>
+                            <p className="font-semibold text-foreground mb-1">Rumah untuk Aset Digital</p>
                             <p className="text-sm text-muted-foreground leading-relaxed">
-                              Dompet digunakan untuk mengirim, menerima, menyimpan, dan menampilkan aset digital seperti Ethereum dan NFTs.
+                              Dompet digunakan untuk mengirim, menerima, dan menyimpan aset digital seperti Ethereum dan NFTs.
                             </p>
                           </div>
                         </div>
 
                         {/* Info Item 2 */}
                         <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/30 to-cyan-500/20 flex items-center justify-center">
-                            <Shield className="w-7 h-7 text-blue-400" />
+                          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/30 to-blue-500/10 flex items-center justify-center">
+                            <Shield className="w-6 h-6 text-blue-400" />
                           </div>
                           <div className="flex-1">
-                            <p className="font-bold mb-1">Cara Baru untuk Masuk</p>
+                            <p className="font-semibold text-foreground mb-1">Cara Baru untuk Masuk</p>
                             <p className="text-sm text-muted-foreground leading-relaxed">
-                              Alih-alih membuat akun dan kata sandi baru di setiap situs web, cukup hubungkan dompet Anda.
+                              Cukup hubungkan dompet Anda tanpa perlu membuat akun baru di setiap situs.
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      {/* CTA Buttons */}
-                      <div className="mt-8 space-y-3">
-                        <Button className="w-full btn-dragon h-12 text-base font-semibold">
+                      {/* CTA */}
+                      <div className="mt-6 pt-4 border-t border-border/30">
+                        <Button className="w-full btn-dragon h-11 text-sm font-semibold">
                           Dapatkan Dompet
                         </Button>
                         <a 
                           href="https://ethereum.org/wallets" 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="block text-center text-sm text-primary hover:underline py-2"
+                          className="block text-center text-sm text-primary hover:underline mt-3"
                         >
-                          Pelajari lebih lanjut
+                          Pelajari lebih lanjut →
                         </a>
                       </div>
                     </div>

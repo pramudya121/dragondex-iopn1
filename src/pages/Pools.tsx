@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Droplets, Plus, RefreshCw, Search, Grid, List, TrendingUp, DollarSign, BarChart3, Percent, Loader2, ExternalLink } from 'lucide-react';
+import { Droplets, Plus, RefreshCw, Search, Grid, List, DollarSign, BarChart3, Percent, Loader2, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { BackgroundGradient } from '@/components/ui/aceternity/BackgroundGradien
 import { NumberTicker } from '@/components/ui/magic/NumberTicker';
 import { Spotlight } from '@/components/ui/magic/Spotlight';
 import { BorderBeam } from '@/components/ui/magic/BorderBeam';
+import { PoolCardSkeleton, StatCardSkeleton } from '@/components/ui/loading/Skeleton';
 import { cn } from '@/lib/utils';
 import { formatUnits } from 'viem';
 
@@ -42,7 +43,7 @@ function PoolCard({ pool, index, prices }: { pool: LiquidityPool; index: number;
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
-        className="bg-card/95 backdrop-blur-sm rounded-2xl p-5 h-full border border-border/50"
+        className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 md:p-5 h-full border border-border/50"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -51,23 +52,23 @@ function PoolCard({ pool, index, prices }: { pool: LiquidityPool; index: number;
               <img 
                 src={token0Logo} 
                 alt={pool.token0Symbol} 
-                className="w-10 h-10 rounded-full border-2 border-background"
+                className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-background"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
               />
               <img 
                 src={token1Logo} 
                 alt={pool.token1Symbol} 
-                className="w-10 h-10 rounded-full border-2 border-background"
+                className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-background"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
               />
             </div>
             <div>
-              <h3 className="font-bold text-lg">{pool.token0Symbol}/{pool.token1Symbol}</h3>
+              <h3 className="font-bold text-base md:text-lg">{pool.token0Symbol}/{pool.token1Symbol}</h3>
               <span className="text-xs text-muted-foreground">Fee: 0.3%</span>
             </div>
           </div>
           <span className={cn(
-            "px-2.5 py-1 rounded-full text-xs font-medium",
+            "px-2 py-1 rounded-full text-xs font-medium",
             hasLiquidity ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"
           )}>
             {hasLiquidity ? 'Active' : 'Empty'}
@@ -78,7 +79,7 @@ function PoolCard({ pool, index, prices }: { pool: LiquidityPool; index: number;
         {hasLiquidity && tvl > 0 && (
           <div className="bg-primary/10 rounded-xl p-3 mb-4 text-center">
             <p className="text-xs text-muted-foreground mb-1">Total Value Locked</p>
-            <p className="text-xl font-bold text-primary">
+            <p className="text-lg md:text-xl font-bold text-primary">
               ${tvl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
@@ -91,12 +92,12 @@ function PoolCard({ pool, index, prices }: { pool: LiquidityPool; index: number;
               <img 
                 src={token0Logo} 
                 alt={pool.token0Symbol} 
-                className="w-5 h-5 rounded-full"
+                className="w-4 h-4 md:w-5 md:h-5 rounded-full"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
               />
-              <span className="text-muted-foreground">{pool.token0Symbol}</span>
+              <span className="text-muted-foreground text-xs md:text-sm">{pool.token0Symbol}</span>
             </div>
-            <span className="font-medium">
+            <span className="font-medium text-xs md:text-sm">
               {reserve0Formatted.toLocaleString(undefined, { maximumFractionDigits: 4 })}
             </span>
           </div>
@@ -105,12 +106,12 @@ function PoolCard({ pool, index, prices }: { pool: LiquidityPool; index: number;
               <img 
                 src={token1Logo} 
                 alt={pool.token1Symbol} 
-                className="w-5 h-5 rounded-full"
+                className="w-4 h-4 md:w-5 md:h-5 rounded-full"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
               />
-              <span className="text-muted-foreground">{pool.token1Symbol}</span>
+              <span className="text-muted-foreground text-xs md:text-sm">{pool.token1Symbol}</span>
             </div>
-            <span className="font-medium">
+            <span className="font-medium text-xs md:text-sm">
               {reserve1Formatted.toLocaleString(undefined, { maximumFractionDigits: 4 })}
             </span>
           </div>
@@ -120,13 +121,13 @@ function PoolCard({ pool, index, prices }: { pool: LiquidityPool; index: number;
         <div className="grid grid-cols-2 gap-2 mb-4">
           <div className="bg-muted/30 rounded-lg p-2 text-center">
             <p className="text-xs text-muted-foreground">LP Supply</p>
-            <p className="font-semibold text-sm">
+            <p className="font-semibold text-xs md:text-sm">
               {totalSupplyFormatted.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </p>
           </div>
           <div className="bg-muted/30 rounded-lg p-2 text-center">
             <p className="text-xs text-muted-foreground">APR</p>
-            <p className="font-semibold text-sm text-success">
+            <p className="font-semibold text-xs md:text-sm text-success">
               {hasLiquidity ? '~12.5%' : '-'}
             </p>
           </div>
@@ -193,112 +194,123 @@ export default function Pools() {
   }, [pools, prices]);
 
   return (
-    <div className="container mx-auto px-4 py-8 relative min-h-screen">
+    <div className="container mx-auto px-4 py-6 md:py-8 relative min-h-screen">
       <Spotlight className="hidden md:block" />
       
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
-          <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm mb-4">
+        <div className="text-center mb-6 md:mb-8">
+          <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm mb-3 md:mb-4">
             ✨ Liquidity Pools
           </span>
-          <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-3">Liquidity Pools</h1>
-          <p className="text-muted-foreground max-w-lg mx-auto">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-2 md:mb-3">Liquidity Pools</h1>
+          <p className="text-sm md:text-base text-muted-foreground max-w-lg mx-auto">
             Explore and provide liquidity to earn trading fees on OPN Testnet
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="relative overflow-hidden"
-          >
-            <div className="stat-card flex items-center gap-3">
-              <BorderBeam size={60} duration={10} />
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Droplets className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Pools</p>
-                <p className="text-xl font-bold">
-                  <NumberTicker value={pairCount} />
-                </p>
-              </div>
-            </div>
-          </motion.div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+          {isLoading ? (
+            <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </>
+          ) : (
+            <>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="relative overflow-hidden"
+              >
+                <div className="stat-card flex items-center gap-2 md:gap-3">
+                  <BorderBeam size={60} duration={10} />
+                  <div className="p-1.5 md:p-2 rounded-lg bg-primary/10">
+                    <Droplets className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] md:text-xs text-muted-foreground">Total Pools</p>
+                    <p className="text-lg md:text-xl font-bold">
+                      <NumberTicker value={pairCount} />
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="relative overflow-hidden"
-          >
-            <div className="stat-card flex items-center gap-3">
-              <BorderBeam size={60} duration={10} delay={1} />
-              <div className="p-2 rounded-lg bg-success/10">
-                <DollarSign className="w-5 h-5 text-success" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total TVL</p>
-                <p className="text-xl font-bold text-success">
-                  ${totalTVL > 0 ? totalTVL.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0'}
-                </p>
-              </div>
-            </div>
-          </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="relative overflow-hidden"
+              >
+                <div className="stat-card flex items-center gap-2 md:gap-3">
+                  <BorderBeam size={60} duration={10} delay={1} />
+                  <div className="p-1.5 md:p-2 rounded-lg bg-success/10">
+                    <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] md:text-xs text-muted-foreground">Total TVL</p>
+                    <p className="text-lg md:text-xl font-bold text-success">
+                      ${totalTVL > 0 ? totalTVL.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '0'}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="relative overflow-hidden"
-          >
-            <div className="stat-card flex items-center gap-3">
-              <BorderBeam size={60} duration={10} delay={2} />
-              <div className="p-2 rounded-lg bg-secondary/10">
-                <BarChart3 className="w-5 h-5 text-secondary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Tokens Listed</p>
-                <p className="text-xl font-bold">
-                  <NumberTicker value={TOKEN_LIST.length} />
-                </p>
-              </div>
-            </div>
-          </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="relative overflow-hidden"
+              >
+                <div className="stat-card flex items-center gap-2 md:gap-3">
+                  <BorderBeam size={60} duration={10} delay={2} />
+                  <div className="p-1.5 md:p-2 rounded-lg bg-secondary/10">
+                    <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-secondary" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] md:text-xs text-muted-foreground">Tokens</p>
+                    <p className="text-lg md:text-xl font-bold">
+                      <NumberTicker value={TOKEN_LIST.length} />
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="relative overflow-hidden"
-          >
-            <div className="stat-card flex items-center gap-3">
-              <BorderBeam size={60} duration={10} delay={3} />
-              <div className="p-2 rounded-lg bg-accent/10">
-                <Percent className="w-5 h-5 text-accent" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Pool Fee</p>
-                <p className="text-xl font-bold">0.3%</p>
-              </div>
-            </div>
-          </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="relative overflow-hidden"
+              >
+                <div className="stat-card flex items-center gap-2 md:gap-3">
+                  <BorderBeam size={60} duration={10} delay={3} />
+                  <div className="p-1.5 md:p-2 rounded-lg bg-accent/10">
+                    <Percent className="w-4 h-4 md:w-5 md:h-5 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] md:text-xs text-muted-foreground">Pool Fee</p>
+                    <p className="text-lg md:text-xl font-bold">0.3%</p>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
         </div>
 
         {/* Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 md:flex-none">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search pools..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-48 md:w-64 bg-muted/50"
+                className="pl-10 w-full md:w-48 lg:w-64 bg-muted/50"
               />
             </div>
             
@@ -309,7 +321,7 @@ export default function Pools() {
                   key={f}
                   onClick={() => setFilter(f as any)}
                   className={cn(
-                    "px-3 py-1.5 rounded-md text-xs font-medium transition-colors capitalize",
+                    "px-2 md:px-3 py-1.5 rounded-md text-xs font-medium transition-colors capitalize",
                     filter === f ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -354,12 +366,17 @@ export default function Pools() {
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading State with Skeletons */}
         {isLoading ? (
-          <div className="glass-card p-12 text-center">
-            <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
-            <h3 className="text-xl font-bold mb-2">Loading Pools</h3>
-            <p className="text-muted-foreground">Fetching data from blockchain...</p>
+          <div className={cn(
+            "grid gap-4",
+            viewMode === 'grid' 
+              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+              : 'grid-cols-1 md:grid-cols-2'
+          )}>
+            {[...Array(8)].map((_, i) => (
+              <PoolCardSkeleton key={i} />
+            ))}
           </div>
         ) : filteredPools.length > 0 ? (
           <div className={cn(
@@ -373,12 +390,12 @@ export default function Pools() {
             ))}
           </div>
         ) : (
-          <div className="glass-card p-12 text-center">
-            <Droplets className="w-16 h-16 mx-auto mb-4 text-primary opacity-50" />
-            <h3 className="text-xl font-bold mb-2">
+          <div className="glass-card p-8 md:p-12 text-center">
+            <Droplets className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-primary opacity-50" />
+            <h3 className="text-lg md:text-xl font-bold mb-2">
               {pairCount === 0 ? 'No Pools Yet' : 'No Pools Found'}
             </h3>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-sm md:text-base text-muted-foreground mb-6">
               {pairCount === 0 
                 ? 'Be the first to create a liquidity pool!' 
                 : 'Try a different search or filter'}

@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDownUp, Plus, Minus, Loader2, Check, AlertCircle, ExternalLink, RefreshCw, Droplets, Info } from 'lucide-react';
+import { ArrowDownUp, Plus, Minus, Loader2, Check, AlertCircle, ExternalLink, RefreshCw, Droplets, Info, Calculator, TrendingUp } from 'lucide-react';
 import { useAccount, useBalance } from 'wagmi';
 import { parseEther, formatEther, parseUnits, formatUnits } from 'viem';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { TokenSelector } from '@/components/swap/TokenSelector';
 import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffect';
 import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
 import { Spotlight } from '@/components/ui/magic/Spotlight';
+import { GlowingStarsBackground } from '@/components/ui/aceternity/GlowingStars';
 import { cn } from '@/lib/utils';
 
 export default function Liquidity() {
@@ -27,6 +28,8 @@ export default function Liquidity() {
   const [tokenB, setTokenB] = useState<TokenInfo | null>(TOKEN_LIST[2]); // DRAGON
   const [amountA, setAmountA] = useState('');
   const [amountB, setAmountB] = useState('');
+  const [isAutoCalculating, setIsAutoCalculating] = useState(false);
+  const [lastEditedField, setLastEditedField] = useState<'A' | 'B' | null>(null);
   const [approvalStepA, setApprovalStepA] = useState<'idle' | 'approving' | 'approved'>('idle');
   const [approvalStepB, setApprovalStepB] = useState<'idle' | 'approving' | 'approved'>('idle');
   
@@ -101,6 +104,80 @@ export default function Liquidity() {
   const amountBBigInt = amountB ? parseUnits(amountB, tokenB?.decimals || 18) : 0n;
   const needsApprovalA = tokenA && !tokenA.isNative && allowanceA !== undefined && allowanceA < amountABigInt;
   const needsApprovalB = tokenB && !tokenB.isNative && allowanceB !== undefined && allowanceB < amountBBigInt;
+
+  // Auto-calculate the second token amount based on pool reserves
+  const calculateOptimalAmount = useCallback((inputAmount: string, isTokenA: boolean): string => {
+    if (!inputAmount || parseFloat(inputAmount) === 0 || !reserves) return '';
+    
+    const [reserve0, reserve1] = reserves;
+    if (reserve0 === 0n || reserve1 === 0n) return ''; // New pool, no ratio yet
+    
+    try {
+      const inputBigInt = parseUnits(inputAmount, isTokenA ? (tokenA?.decimals || 18) : (tokenB?.decimals || 18));
+      
+      // Calculate optimal amount: amountB = (amountA * reserveB) / reserveA
+      let optimalAmount: bigint;
+      if (isTokenA) {
+        optimalAmount = (inputBigInt * reserve1) / reserve0;
+      } else {
+        optimalAmount = (inputBigInt * reserve0) / reserve1;
+      }
+      
+      const decimals = isTokenA ? (tokenB?.decimals || 18) : (tokenA?.decimals || 18);
+      return parseFloat(formatUnits(optimalAmount, decimals)).toFixed(6);
+    } catch {
+      return '';
+    }
+  }, [reserves, tokenA, tokenB]);
+
+  // Handle amount A change with auto-calculation
+  const handleAmountAChange = (value: string) => {
+    setAmountA(value);
+    setLastEditedField('A');
+    
+    if (value && reserves && reserves[0] > 0n) {
+      setIsAutoCalculating(true);
+      const calculatedB = calculateOptimalAmount(value, true);
+      if (calculatedB) {
+        setAmountB(calculatedB);
+      }
+      setTimeout(() => setIsAutoCalculating(false), 300);
+    }
+  };
+
+  // Handle amount B change with auto-calculation
+  const handleAmountBChange = (value: string) => {
+    setAmountB(value);
+    setLastEditedField('B');
+    
+    if (value && reserves && reserves[0] > 0n) {
+      setIsAutoCalculating(true);
+      const calculatedA = calculateOptimalAmount(value, false);
+      if (calculatedA) {
+        setAmountA(calculatedA);
+      }
+      setTimeout(() => setIsAutoCalculating(false), 300);
+    }
+  };
+
+  // Pool price ratio
+  const priceRatio = useMemo(() => {
+    if (!reserves || reserves[0] === 0n || reserves[1] === 0n) return null;
+    const reserve0 = parseFloat(formatUnits(reserves[0], tokenA?.decimals || 18));
+    const reserve1 = parseFloat(formatUnits(reserves[1], tokenB?.decimals || 18));
+    return {
+      aPerB: reserve0 / reserve1,
+      bPerA: reserve1 / reserve0
+    };
+  }, [reserves, tokenA, tokenB]);
+
+  // Pool share calculation
+  const poolShare = useMemo(() => {
+    if (!amountA || !amountB || !reserves || reserves[0] === 0n) return null;
+    const inputA = parseFloat(amountA);
+    const currentA = parseFloat(formatUnits(reserves[0], tokenA?.decimals || 18));
+    return ((inputA / (currentA + inputA)) * 100).toFixed(2);
+  }, [amountA, amountB, reserves, tokenA]);
 
   const handleWrap = () => { 
     if (wrapAmount) deposit(parseEther(wrapAmount)); 
@@ -194,18 +271,20 @@ export default function Liquidity() {
   return (
     <div className="container mx-auto px-4 py-8 relative">
       <Spotlight className="hidden md:block" />
+      <GlowingStarsBackground starCount={20} className="opacity-30" />
       
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-lg mx-auto">
-        {/* Hero */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-lg mx-auto relative z-10">
+        {/* Hero with TextGenerateEffect */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm mb-4">
             <Droplets className="w-4 h-4" />
             Liquidity Management
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-2">Liquidity</h1>
-          <p className="text-muted-foreground">
-            Provide liquidity to earn 0.3% on every trade
-          </p>
+          <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-3">Liquidity</h1>
+          <TextGenerateEffect 
+            words="Provide liquidity and earn 0.3% on every trade. Auto-calculation helps you add the perfect ratio."
+            className="text-sm md:text-base text-muted-foreground font-normal"
+          />
         </div>
 
         <MovingBorder duration={3000} borderRadius="1.5rem">
@@ -290,19 +369,58 @@ export default function Liquidity() {
               <TabsContent value="add">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-lg">Add Liquidity</h3>
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      Add Liquidity
+                      {isAutoCalculating && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="flex items-center gap-1 text-xs text-primary"
+                        >
+                          <Calculator className="w-3 h-3 animate-pulse" />
+                          Auto
+                        </motion.div>
+                      )}
+                    </h3>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Info className="w-3 h-3" />
                       Earn 0.3% fees
                     </span>
                   </div>
+
+                  {/* Pool Info Banner */}
+                  {priceRatio && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-primary/10 border border-primary/20 rounded-xl p-3"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">Pool Rate</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-background/50 rounded-lg p-2 text-center">
+                          <p className="text-muted-foreground">1 {tokenA?.symbol} =</p>
+                          <p className="font-semibold">{priceRatio.bPerA.toFixed(4)} {tokenB?.symbol}</p>
+                        </div>
+                        <div className="bg-background/50 rounded-lg p-2 text-center">
+                          <p className="text-muted-foreground">1 {tokenB?.symbol} =</p>
+                          <p className="font-semibold">{priceRatio.aPerB.toFixed(4)} {tokenA?.symbol}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                   
                   {/* Token A */}
-                  <div className="token-input">
+                  <div className={cn(
+                    "token-input transition-all duration-200",
+                    lastEditedField === 'A' && "ring-2 ring-primary/30"
+                  )}>
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-sm text-muted-foreground">First Token</span>
                       <button 
-                        onClick={() => setAmountA(getTokenADisplayBalance())}
+                        onClick={() => handleAmountAChange(getTokenADisplayBalance())}
                         className="text-xs text-muted-foreground hover:text-primary transition-colors"
                       >
                         Balance: {getTokenADisplayBalance()}
@@ -313,25 +431,40 @@ export default function Liquidity() {
                         type="number" 
                         placeholder="0.0" 
                         value={amountA} 
-                        onChange={(e) => setAmountA(e.target.value)} 
+                        onChange={(e) => handleAmountAChange(e.target.value)} 
                         className="flex-1 text-xl font-bold bg-transparent border-none p-0 h-auto focus-visible:ring-0" 
                       />
                       <TokenSelector selectedToken={tokenA} onSelect={setTokenA} disabledToken={tokenB} />
                     </div>
                   </div>
                   
-                  <div className="flex justify-center">
-                    <div className="p-2 rounded-full bg-muted">
-                      <Plus className="w-5 h-5 text-muted-foreground" />
+                  <div className="flex justify-center relative">
+                    <div className={cn(
+                      "p-2 rounded-full bg-muted transition-colors",
+                      isAutoCalculating && "bg-primary/20"
+                    )}>
+                      <Plus className={cn(
+                        "w-5 h-5 text-muted-foreground transition-colors",
+                        isAutoCalculating && "text-primary"
+                      )} />
                     </div>
+                    {priceRatio && (
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 text-xs text-muted-foreground flex items-center gap-1">
+                        <Calculator className="w-3 h-3" />
+                        Auto-sync
+                      </div>
+                    )}
                   </div>
                   
                   {/* Token B */}
-                  <div className="token-input">
+                  <div className={cn(
+                    "token-input transition-all duration-200",
+                    lastEditedField === 'B' && "ring-2 ring-primary/30"
+                  )}>
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-sm text-muted-foreground">Second Token</span>
                       <button 
-                        onClick={() => setAmountB(getTokenBDisplayBalance())}
+                        onClick={() => handleAmountBChange(getTokenBDisplayBalance())}
                         className="text-xs text-muted-foreground hover:text-primary transition-colors"
                       >
                         Balance: {getTokenBDisplayBalance()}
@@ -342,12 +475,24 @@ export default function Liquidity() {
                         type="number" 
                         placeholder="0.0" 
                         value={amountB} 
-                        onChange={(e) => setAmountB(e.target.value)} 
+                        onChange={(e) => handleAmountBChange(e.target.value)} 
                         className="flex-1 text-xl font-bold bg-transparent border-none p-0 h-auto focus-visible:ring-0" 
                       />
                       <TokenSelector selectedToken={tokenB} onSelect={setTokenB} disabledToken={tokenA} />
                     </div>
                   </div>
+
+                  {/* Pool Share Info */}
+                  {poolShare && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="bg-muted/50 rounded-xl p-3 text-center"
+                    >
+                      <p className="text-xs text-muted-foreground">Your Pool Share</p>
+                      <p className="text-lg font-bold text-primary">{poolShare}%</p>
+                    </motion.div>
+                  )}
 
                   {/* Approval Steps */}
                   {(needsApprovalA || needsApprovalB) && (

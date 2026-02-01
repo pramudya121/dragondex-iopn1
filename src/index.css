@@ -79,9 +79,35 @@
     --sidebar-ring: 0 85% 50%;
   }
 
+  /* Light theme overrides */
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 10%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    
+    --muted: 0 0% 92%;
+    --muted-foreground: 0 0% 40%;
+    
+    --border: 0 0% 85%;
+    --input: 0 0% 90%;
+  }
+
   .dark {
     --background: 0 0% 4%;
     --foreground: 0 0% 98%;
+  }
+
+  /* Smooth theme transition */
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition: background-color 0.5s ease, border-color 0.5s ease, color 0.3s ease !important;
   }
 }
 

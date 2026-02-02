@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, memo } from "react";
 
 interface Star {
   id: number;
@@ -13,32 +13,56 @@ interface Star {
 interface GlowingStarsBackgroundProps {
   className?: string;
   starCount?: number;
+  maxRadius?: number;
+  color?: string;
 }
 
-export function GlowingStarsBackground({
+export const GlowingStarsBackground = memo(function GlowingStarsBackground({
   className,
   starCount = 50,
+  maxRadius = 1.5,
+  color = 'white',
 }: GlowingStarsBackgroundProps) {
-  const [stars, setStars] = useState<Star[]>([]);
+  const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Generate stars only once with useMemo
+  const stars = useMemo(() => {
+    const newStars: Star[] = [];
+    for (let i = 0; i < starCount; i++) {
+      newStars.push({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        radius: Math.random() * maxRadius + 0.5,
+        opacity: Math.random() * 0.5 + 0.3,
+        twinkleSpeed: Math.random() > 0.5 ? Math.random() * 3 + 1 : null,
+      });
+    }
+    return newStars;
+  }, [starCount, maxRadius]);
+
+  // Intersection observer for performance
   useEffect(() => {
-    const generateStars = () => {
-      const newStars: Star[] = [];
-      for (let i = 0; i < starCount; i++) {
-        newStars.push({
-          id: i,
-          x: Math.random() * 100,
-          y: Math.random() * 100,
-          radius: Math.random() * 1.5 + 0.5,
-          opacity: Math.random() * 0.5 + 0.3,
-          twinkleSpeed: Math.random() > 0.5 ? Math.random() * 3 + 1 : null,
-        });
-      }
-      setStars(newStars);
-    };
-    generateStars();
-  }, [starCount]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setIsVisible(entries[0]?.isIntersecting ?? false);
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Check for reduced motion preference
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
 
   return (
     <div
@@ -47,39 +71,47 @@ export function GlowingStarsBackground({
         "absolute inset-0 overflow-hidden pointer-events-none",
         className
       )}
+      aria-hidden="true"
     >
-      {stars.map((star) => (
+      {isVisible && stars.map((star) => (
         <div
           key={star.id}
-          className="absolute rounded-full bg-white"
+          className="absolute rounded-full"
           style={{
             left: `${star.x}%`,
             top: `${star.y}%`,
             width: `${star.radius * 2}px`,
             height: `${star.radius * 2}px`,
+            backgroundColor: color,
             opacity: star.opacity,
-            animation: star.twinkleSpeed
+            animation: !prefersReducedMotion && star.twinkleSpeed
               ? `twinkle ${star.twinkleSpeed}s ease-in-out infinite`
               : undefined,
+            willChange: star.twinkleSpeed ? 'opacity' : undefined,
           }}
         />
       ))}
-      {/* Glow effect */}
+      {/* Gradient overlay for depth */}
       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
     </div>
   );
-}
+});
 
 interface GlowingStarsCardProps {
   children: React.ReactNode;
   className?: string;
+  starCount?: number;
 }
 
-export function GlowingStarsCard({ children, className }: GlowingStarsCardProps) {
+export const GlowingStarsCard = memo(function GlowingStarsCard({ 
+  children, 
+  className,
+  starCount = 30,
+}: GlowingStarsCardProps) {
   return (
     <div className={cn("relative overflow-hidden rounded-2xl", className)}>
-      <GlowingStarsBackground starCount={30} />
+      <GlowingStarsBackground starCount={starCount} />
       <div className="relative z-10">{children}</div>
     </div>
   );
-}
+});

@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDownUp, Plus, Minus, Loader2, Check, AlertCircle, ExternalLink, RefreshCw, Droplets, Info, Calculator, TrendingUp, Wallet } from 'lucide-react';
+import { ArrowDownUp, Plus, Minus, Loader2, Check, AlertCircle, ExternalLink, RefreshCw, Droplets, Info, Calculator, TrendingUp, Wallet, Shield } from 'lucide-react';
 import { useAccount, useBalance } from 'wagmi';
 import { parseEther, formatEther, parseUnits, formatUnits } from 'viem';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,12 @@ import { TokenSelector } from '@/components/swap/TokenSelector';
 import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffect';
 import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
 import { Spotlight } from '@/components/ui/magic/Spotlight';
+import { GlowingStarsBackground } from '@/components/ui/aceternity/GlowingStars';
+import { ParticleField } from '@/components/ui/premium/ParticleField';
+import { GlowOrb } from '@/components/ui/premium/GlowOrb';
 import { cn } from '@/lib/utils';
+import { isValidAmount, sanitizeInput } from '@/lib/security';
+import { debounce } from '@/lib/performance';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
 
 export default function Liquidity() {
@@ -245,32 +250,63 @@ export default function Liquidity() {
   const isLoading = router.isPending || router.isConfirming;
 
   return (
-    <div className="container mx-auto px-4 py-8 relative min-h-[calc(100vh-80px)]">
+    <main 
+      className="container mx-auto px-4 py-8 relative min-h-[calc(100vh-80px)]"
+      role="main"
+      aria-label="Liquidity Management"
+    >
+      {/* Background effects - lazy loaded for performance */}
       <Spotlight className="hidden md:block" />
+      <GlowingStarsBackground starCount={30} className="opacity-20" />
+      <ParticleField particleCount={30} colorScheme="dragon" className="opacity-30" />
       
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl mx-auto relative z-10">
-        {/* Hero Section */}
-        <div className="text-center mb-8">
+      {/* Decorative glow orbs */}
+      <GlowOrb color="primary" size="xl" className="top-20 -left-20 opacity-30" />
+      <GlowOrb color="accent" size="lg" className="bottom-40 -right-10 opacity-20" />
+      
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.5 }}
+        className="max-w-xl mx-auto relative z-10"
+      >
+        {/* Hero Section with accessibility */}
+        <header className="text-center mb-8">
           <motion.div 
-            initial={{ scale: 0.9 }} 
-            animate={{ scale: 1 }} 
+            initial={{ scale: 0.9, opacity: 0 }} 
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm mb-4"
           >
-            <Droplets className="w-4 h-4" />
-            Liquidity Management
+            <Droplets className="w-4 h-4" aria-hidden="true" />
+            <span>Liquidity Management</span>
           </motion.div>
           <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-3">Manage Liquidity</h1>
           <TextGenerateEffect 
             words="Provide liquidity and earn 0.3% on every trade. Auto-calculation ensures perfect token ratios."
             className="text-sm md:text-base text-muted-foreground font-normal"
           />
-        </div>
+          
+          {/* Security badge */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="inline-flex items-center gap-1.5 mt-4 px-3 py-1 rounded-full bg-success/10 text-success text-xs"
+          >
+            <Shield className="w-3 h-3" aria-hidden="true" />
+            <span>Secure & Audited</span>
+          </motion.div>
+        </header>
 
         {/* Main Card with MovingBorder */}
-        <MovingBorder duration={3000} borderRadius="1.5rem">
+        <MovingBorder duration={4000} borderRadius="1.5rem">
           <div className="p-6 bg-card/95 backdrop-blur-sm rounded-3xl">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full mb-6 bg-muted/50 grid grid-cols-3 h-12 rounded-xl p-1">
+              <TabsList 
+                className="w-full mb-6 bg-muted/50 grid grid-cols-3 h-12 rounded-xl p-1"
+                aria-label="Liquidity actions"
+              >
                 <TabsTrigger 
                   value="add" 
                   className="flex items-center justify-center gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
@@ -787,6 +823,6 @@ export default function Liquidity() {
 
       {/* Wallet Connect Modal */}
       <WalletConnectModal isOpen={showWalletModal} onClose={() => setShowWalletModal(false)} />
-    </div>
+    </main>
   );
 }

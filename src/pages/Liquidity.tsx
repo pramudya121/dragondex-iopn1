@@ -1,12 +1,12 @@
-import { useState, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDownUp, Plus, Minus, Loader2, Check, AlertCircle, ExternalLink, RefreshCw, Droplets, Info, Calculator, TrendingUp, Wallet, Shield } from 'lucide-react';
+import { Plus, Minus, Loader2, Check, ExternalLink, Droplets, Info, Calculator, TrendingUp, Wallet, Shield, AlertCircle } from 'lucide-react';
 import { useAccount, useBalance } from 'wagmi';
 import { parseEther, formatEther, parseUnits, formatUnits } from 'viem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useWETH, useTokenBalance, useRouter, useApprove, useTokenAllowance, useGetPair, usePairReserves, useApprovePair, usePairBalance, usePairAllowance } from '@/hooks/useContract';
+import { useTokenBalance, useRouter, useApprove, useTokenAllowance, useGetPair, usePairReserves, useApprovePair, usePairBalance, usePairAllowance } from '@/hooks/useContract';
 import { CONTRACTS, TOKEN_LIST, TokenInfo } from '@/config/contracts';
 import { TokenSelector } from '@/components/swap/TokenSelector';
 import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffect';
@@ -16,18 +16,12 @@ import { GlowingStarsBackground } from '@/components/ui/aceternity/GlowingStars'
 import { ParticleField } from '@/components/ui/premium/ParticleField';
 import { GlowOrb } from '@/components/ui/premium/GlowOrb';
 import { cn } from '@/lib/utils';
-import { isValidAmount, sanitizeInput } from '@/lib/security';
-import { debounce } from '@/lib/performance';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
 
 export default function Liquidity() {
   const { address, isConnected } = useAccount();
   const [activeTab, setActiveTab] = useState('add');
   const [showWalletModal, setShowWalletModal] = useState(false);
-  
-  // Wrap/Unwrap state
-  const [wrapAmount, setWrapAmount] = useState('');
-  const [unwrapAmount, setUnwrapAmount] = useState('');
   
   // Add Liquidity state
   const [tokenA, setTokenA] = useState<TokenInfo | null>(TOKEN_LIST[1]); // WOPN
@@ -41,11 +35,6 @@ export default function Liquidity() {
   
   // Remove Liquidity state
   const [removePercent, setRemovePercent] = useState(25);
-  
-  // Hooks
-  const { data: opnBalance } = useBalance({ address });
-  const { data: wopnBalance } = useTokenBalance(CONTRACTS.WETH as `0x${string}`, address);
-  const { deposit, withdraw, isPending: wethPending, isConfirming: wethConfirming, hash: wethHash } = useWETH();
   
   // Token balances
   const { data: tokenABalance } = useTokenBalance(
@@ -176,14 +165,6 @@ export default function Liquidity() {
   }, [amountA, amountB, reserves, tokenA]);
 
   // Handlers
-  const handleWrap = () => { 
-    if (wrapAmount) deposit(parseEther(wrapAmount)); 
-  };
-  
-  const handleUnwrap = () => { 
-    if (unwrapAmount && wopnBalance) withdraw(parseEther(unwrapAmount)); 
-  };
-
   const handleApproveA = () => {
     if (!tokenA || tokenA.isNative) return;
     setApprovalStepA('approving');
@@ -304,7 +285,7 @@ export default function Liquidity() {
           <div className="p-6 bg-card/95 backdrop-blur-sm rounded-3xl">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList 
-                className="w-full mb-6 bg-muted/50 grid grid-cols-3 h-12 rounded-xl p-1"
+                className="w-full mb-6 bg-muted/50 grid grid-cols-2 h-12 rounded-xl p-1"
                 aria-label="Liquidity actions"
               >
                 <TabsTrigger 
@@ -312,21 +293,14 @@ export default function Liquidity() {
                   className="flex items-center justify-center gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Add</span>
+                  <span>Add</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="remove" 
                   className="flex items-center justify-center gap-2 rounded-lg data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground transition-all"
                 >
                   <Minus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Remove</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="wrap" 
-                  className="flex items-center justify-center gap-2 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground transition-all"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  <span className="hidden sm:inline">Wrap</span>
+                  <span>Remove</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -686,122 +660,6 @@ export default function Liquidity() {
                 </AnimatePresence>
               </TabsContent>
 
-              {/* ============ WRAP/UNWRAP TAB ============ */}
-              <TabsContent value="wrap" className="mt-0">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key="wrap"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    className="space-y-5"
-                  >
-                    <div className="text-center mb-2">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <RefreshCw className="w-5 h-5 text-secondary" />
-                        <h3 className="font-semibold text-lg">Wrap / Unwrap</h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Convert native OPN ↔ WOPN (Wrapped OPN) for DEX trading</p>
-                    </div>
-                    
-                    {/* Wrap Section */}
-                    <div className="bg-muted/30 rounded-xl p-4 space-y-3">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <img src="/tokens/opn.jpg" alt="OPN" className="w-6 h-6 rounded-full" />
-                          <span className="font-medium">OPN</span>
-                          <span className="text-xs text-muted-foreground">→ WOPN</span>
-                        </div>
-                        <button 
-                          onClick={() => opnBalance && setWrapAmount(formatEther(opnBalance.value))}
-                          className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Balance: {opnBalance ? parseFloat(formatEther(opnBalance.value)).toFixed(4) : '0'}
-                        </button>
-                      </div>
-                      <div className="flex gap-3">
-                        <Input 
-                          type="number" 
-                          placeholder="0.0" 
-                          value={wrapAmount} 
-                          onChange={(e) => setWrapAmount(e.target.value)} 
-                          className="flex-1 text-xl font-bold" 
-                        />
-                        <Button 
-                          onClick={handleWrap} 
-                          disabled={!isConnected || wethPending || wethConfirming || !wrapAmount} 
-                          className="min-w-[100px] btn-dragon"
-                        >
-                          {wethPending || wethConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Wrap'}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Swap Arrow */}
-                    <div className="flex justify-center">
-                      <div className="p-2 rounded-full bg-muted">
-                        <ArrowDownUp className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                    </div>
-                    
-                    {/* Unwrap Section */}
-                    <div className="bg-muted/30 rounded-xl p-4 space-y-3">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <img src="/tokens/opn.jpg" alt="WOPN" className="w-6 h-6 rounded-full" />
-                          <span className="font-medium">WOPN</span>
-                          <span className="text-xs text-muted-foreground">→ OPN</span>
-                        </div>
-                        <button 
-                          onClick={() => wopnBalance && setUnwrapAmount(formatEther(wopnBalance))}
-                          className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Balance: {wopnBalance ? parseFloat(formatEther(wopnBalance)).toFixed(4) : '0'}
-                        </button>
-                      </div>
-                      <div className="flex gap-3">
-                        <Input 
-                          type="number" 
-                          placeholder="0.0" 
-                          value={unwrapAmount} 
-                          onChange={(e) => setUnwrapAmount(e.target.value)} 
-                          className="flex-1 text-xl font-bold" 
-                        />
-                        <Button 
-                          onClick={handleUnwrap} 
-                          disabled={!isConnected || wethPending || wethConfirming || !unwrapAmount} 
-                          variant="outline"
-                          className="min-w-[100px]"
-                        >
-                          {wethPending || wethConfirming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Unwrap'}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Connect Wallet if not connected */}
-                    {!isConnected && (
-                      <Button onClick={() => setShowWalletModal(true)} className="w-full h-12 text-base">
-                        <Wallet className="w-5 h-5 mr-2" />
-                        Connect Wallet
-                      </Button>
-                    )}
-                    
-                    {/* Transaction Link */}
-                    {wethHash && (
-                      <motion.a 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        href={`https://testnet.iopn.tech/tx/${wethHash}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 text-sm text-success bg-success/10 py-3 rounded-xl"
-                      >
-                        <Check className="w-4 h-4" /> Transaction Submitted <ExternalLink className="w-3 h-3" />
-                      </motion.a>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </TabsContent>
             </Tabs>
           </div>
         </MovingBorder>

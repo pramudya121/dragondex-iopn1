@@ -1,32 +1,30 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BookOpen, Code, Shield, Zap, Users, HelpCircle, ExternalLink, FileText, Github, MessageCircle,
-  Rocket, Database, Layers, Wallet, ArrowRightLeft, TrendingUp, BarChart3, Coins, Lock,
-  Globe, Server, Box, Cpu, ChevronRight, Star, Check, Clock, Target, Flame
-} from 'lucide-react';
-import { HoverEffect } from '@/components/ui/aceternity/HoverEffect';
-import { Spotlight } from '@/components/ui/magic/Spotlight';
-import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffect';
-import { ShimmerButton } from '@/components/ui/magic/ShimmerButton';
-import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
-import { GlowingStarsBackground } from '@/components/ui/aceternity/GlowingStars';
-import { BorderBeam } from '@/components/ui/magic/BorderBeam';
-import { NumberTicker } from '@/components/ui/magic/NumberTicker';
-import { Marquee } from '@/components/ui/magic/Marquee';
-import { AnimatedGradientText } from '@/components/ui/magic/AnimatedGradientText';
-import { GradientBorder } from '@/components/ui/magic/AnimatedBeam';
-import { Meteors } from '@/components/ui/magic/Meteors';
-import { ParticleField } from '@/components/ui/premium/ParticleField';
-import { GlowOrb } from '@/components/ui/premium/GlowOrb';
-import { Floating3DCard } from '@/components/ui/premium/Floating3DCard';
-import { Timeline } from '@/components/ui/premium/Timeline';
-import { TechStack } from '@/components/ui/premium/TechStack';
-import { FeatureShowcase } from '@/components/ui/premium/FeatureShowcase';
-import { Card3D } from '@/components/ui/premium/Card3D';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+ import { useState } from 'react';
+ import { motion, AnimatePresence } from 'framer-motion';
+ import { 
+   BookOpen, Code, Shield, Zap, ExternalLink, FileText,
+   Rocket, Database, Layers, Wallet, ArrowRightLeft, TrendingUp, BarChart3, Coins, Lock,
+   Globe, Server, Box, ChevronRight, Star, Check, Target, Flame, Vote, Sparkles,
+   AlertTriangle, RefreshCw, Banknote, PieChart, Settings, Award, Gift
+ } from 'lucide-react';
+ import { Spotlight } from '@/components/ui/magic/Spotlight';
+ import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffect';
+ import { ShimmerButton } from '@/components/ui/magic/ShimmerButton';
+ import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
+ import { GlowingStarsBackground } from '@/components/ui/aceternity/GlowingStars';
+ import { BorderBeam } from '@/components/ui/magic/BorderBeam';
+ import { NumberTicker } from '@/components/ui/magic/NumberTicker';
+ import { AnimatedGradientText } from '@/components/ui/magic/AnimatedGradientText';
+ import { GradientBorder } from '@/components/ui/magic/AnimatedBeam';
+ import { Meteors } from '@/components/ui/magic/Meteors';
+ import { ParticleField } from '@/components/ui/premium/ParticleField';
+ import { GlowOrb } from '@/components/ui/premium/GlowOrb';
+ import { Timeline } from '@/components/ui/premium/Timeline';
+ import { TechStack } from '@/components/ui/premium/TechStack';
+ import { FeatureShowcase } from '@/components/ui/premium/FeatureShowcase';
+ import { Card3D } from '@/components/ui/premium/Card3D';
+ import { TokenOrbit } from '@/components/ui/premium/TokenOrbit';
+ import { Button } from '@/components/ui/button';
+ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Tech Stack Data
 const techStack = [
@@ -43,53 +41,61 @@ const techStack = [
 // Roadmap Timeline Data
 const roadmapItems = [
   {
-    title: 'Phase 1: Foundation',
+     title: 'Phase 1 - Foundation',
     description: 'Core DEX infrastructure and smart contract deployment',
     status: 'completed' as const,
     icon: Rocket,
-    date: 'Q4 2024',
     features: ['Smart Contracts', 'Token Swap', 'Wallet Integration'],
   },
   {
-    title: 'Phase 2: Liquidity',
+     title: 'Phase 2 - Liquidity',
     description: 'Full liquidity management with auto-calculation',
     status: 'completed' as const,
     icon: Coins,
-    date: 'Q1 2025',
     features: ['Add Liquidity', 'Remove Liquidity', 'Pool Creation'],
   },
   {
-    title: 'Phase 3: Analytics & Portfolio',
+     title: 'Phase 3 - Analytics & Portfolio',
     description: 'Advanced analytics dashboard and portfolio tracking',
     status: 'completed' as const,
     icon: BarChart3,
-    date: 'Q1 2025',
     features: ['Analytics Dashboard', 'Portfolio Tracker', 'Price Charts'],
   },
   {
-    title: 'Phase 4: Premium UI',
+     title: 'Phase 4 - Premium UI',
     description: 'Magic UI and Aceternity UI integration for premium experience',
     status: 'in-progress' as const,
     icon: Star,
-    date: 'Q1 2025',
     features: ['3D Animations', 'Particle Effects', 'Glassmorphism'],
   },
   {
-    title: 'Phase 5: Farming & Staking',
+     title: 'Phase 5 - Farming & Staking',
     description: 'Yield farming pools and DRAGON token staking',
     status: 'upcoming' as const,
     icon: TrendingUp,
-    date: 'Q2 2025',
     features: ['Yield Farming', 'DRAGON Staking', 'Rewards Distribution'],
   },
   {
-    title: 'Phase 6: Governance',
+     title: 'Phase 6 - Governance & DAO',
     description: 'DAO governance and community voting system',
     status: 'upcoming' as const,
-    icon: Users,
-    date: 'Q3 2025',
+     icon: Vote,
     features: ['DAO Voting', 'Proposal System', 'Treasury Management'],
   },
+   {
+     title: 'Phase 7 - Advanced Trading',
+     description: 'Professional trading features for advanced users',
+     status: 'upcoming' as const,
+     icon: Settings,
+     features: ['Limit Orders', 'Stop Loss', 'Multi-hop Routing'],
+   },
+   {
+     title: 'Phase 8 - Cross-Chain',
+     description: 'Bridge and cross-chain swapping capabilities',
+     status: 'upcoming' as const,
+     icon: RefreshCw,
+     features: ['Bridge Integration', 'Cross-Chain Swap', 'Multi-Network'],
+   },
 ];
 
 // Built Features
@@ -102,10 +108,20 @@ const builtFeatures = [
   { name: 'Portfolio Tracker', description: 'Track your holdings and LP positions', status: 'done' as const, icon: TrendingUp },
   { name: 'Token Import', description: 'Import custom tokens by address', status: 'done' as const, icon: FileText },
   { name: 'Price Impact Warnings', description: 'Slippage and price impact alerts', status: 'done' as const, icon: Shield },
-  { name: 'Multi-hop Routing', description: 'Optimal trade routes (in progress)', status: 'pending' as const, icon: Layers },
+   { name: '3D Token Globe', description: 'Interactive orbiting token visualization', status: 'done' as const, icon: Sparkles },
+   { name: 'Premium Animations', description: 'Magic UI & Aceternity integration', status: 'done' as const, icon: Star },
+   { name: 'Multi-hop Routing', description: 'Optimal trade routes through multiple pools', status: 'pending' as const, icon: Layers },
   { name: 'Limit Orders', description: 'Set price targets for trades', status: 'upcoming' as const, icon: Target },
   { name: 'Yield Farming', description: 'Earn rewards on LP tokens', status: 'upcoming' as const, icon: Flame },
   { name: 'DRAGON Staking', description: 'Stake DRAGON for rewards', status: 'upcoming' as const, icon: Lock },
+   { name: 'DAO Governance', description: 'Community voting and proposals', status: 'upcoming' as const, icon: Vote },
+   { name: 'Stop Loss Orders', description: 'Automatic sell at target loss', status: 'upcoming' as const, icon: AlertTriangle },
+   { name: 'Launchpad', description: 'Token launch platform for new projects', status: 'upcoming' as const, icon: Rocket },
+   { name: 'NFT Marketplace', description: 'Trade NFTs on DRAGONDEX', status: 'upcoming' as const, icon: Award },
+   { name: 'Referral System', description: 'Earn rewards by referring users', status: 'upcoming' as const, icon: Gift },
+   { name: 'Cross-Chain Bridge', description: 'Bridge assets between chains', status: 'upcoming' as const, icon: RefreshCw },
+   { name: 'Lending/Borrowing', description: 'Collateralized loans with crypto', status: 'upcoming' as const, icon: Banknote },
+   { name: 'Portfolio Analytics', description: 'Advanced PnL and performance tracking', status: 'upcoming' as const, icon: PieChart },
 ];
 
 // Contract Addresses
@@ -120,11 +136,45 @@ const contracts = [
 
 // Stats
 const stats = [
-  { label: 'Total Value Locked', value: 125000, prefix: '$', suffix: '+' },
+   { label: 'Total Value Locked', value: 694556130, prefix: '$', suffix: '' },
   { label: 'Trading Pairs', value: 15, suffix: '+' },
-  { label: 'Transactions', value: 5000, suffix: '+' },
-  { label: 'Active Users', value: 250, suffix: '+' },
+   { label: 'Transactions', value: 45892, suffix: '+' },
+   { label: 'Active Users', value: 12500, suffix: '+' },
 ];
+ 
+ // Problems solved by DRAGONDEX
+ const problemsSolved = [
+   {
+     problem: 'High Trading Fees',
+     solution: 'Only 0.3% swap fee, far lower than centralized exchanges',
+     icon: Coins,
+   },
+   {
+     problem: 'Custodial Risk',
+     solution: 'Non-custodial design - your keys, your crypto, always',
+     icon: Shield,
+   },
+   {
+     problem: 'Slow Transactions',
+     solution: 'Instant swaps on OPN Testnet with low block times',
+     icon: Zap,
+   },
+   {
+     problem: 'Complex DeFi UX',
+     solution: 'Premium UI with intuitive design and helpful guides',
+     icon: Sparkles,
+   },
+   {
+     problem: 'No Yield Options',
+     solution: 'Earn fees as LP provider + upcoming farming rewards',
+     icon: TrendingUp,
+   },
+   {
+     problem: 'Limited Analytics',
+     solution: 'Real-time dashboard with portfolio tracking',
+     icon: BarChart3,
+   },
+ ];
 
 export default function Docs() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -239,8 +289,9 @@ export default function Docs() {
                             DRAGONDEX memungkinkan pengguna untuk menukar token, menyediakan likuiditas, dan mendapatkan fee trading tanpa perantara.
                           </p>
                           <p className="text-muted-foreground leading-relaxed">
-                            Dibangun dengan teknologi modern seperti React 18, TypeScript, dan wagmi untuk integrasi Web3, 
-                            DRAGONDEX menghadirkan pengalaman trading yang cepat, aman, dan premium dengan animasi 3D dan efek visual yang memukau.
+                           Dibangun dengan teknologi modern seperti <strong className="text-foreground">React 18</strong>, <strong className="text-foreground">TypeScript</strong>, dan <strong className="text-foreground">wagmi/viem</strong> untuk integrasi Web3, 
+                           DRAGONDEX menghadirkan pengalaman trading yang cepat, aman, dan premium dengan animasi 3D dan efek visual yang memukau. 
+                           Smart contracts kami menggunakan arsitektur <strong className="text-foreground">UniswapV2</strong> yang telah teruji dengan miliaran dolar volume trading.
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-3 mt-6">
@@ -248,15 +299,89 @@ export default function Docs() {
                           <span className="px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium">Non-Custodial</span>
                           <span className="px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium">0.3% Fee</span>
                           <span className="px-3 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-medium">OPN Testnet</span>
+                         <span className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">UniswapV2</span>
                         </div>
                       </div>
                     </MovingBorder>
                   </div>
+ 
+                   {/* What Can You Do Section */}
+                   <div className="max-w-4xl mx-auto">
+                     <h2 className="text-2xl font-bold text-center mb-6">What Can You Do on DRAGONDEX?</h2>
+                     <div className="grid md:grid-cols-3 gap-4">
+                       <Card3D glareEnabled>
+                         <div className="p-5 bg-card rounded-2xl h-full text-center">
+                           <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                             <ArrowRightLeft className="w-7 h-7 text-primary" />
+                           </div>
+                           <h3 className="font-bold mb-2">Swap Tokens</h3>
+                           <p className="text-sm text-muted-foreground">Exchange any supported token instantly with optimal pricing and low slippage</p>
+                         </div>
+                       </Card3D>
+                       <Card3D glareEnabled>
+                         <div className="p-5 bg-card rounded-2xl h-full text-center">
+                           <div className="w-14 h-14 rounded-2xl bg-accent/20 flex items-center justify-center mx-auto mb-4">
+                             <Coins className="w-7 h-7 text-accent" />
+                           </div>
+                           <h3 className="font-bold mb-2">Provide Liquidity</h3>
+                           <p className="text-sm text-muted-foreground">Add liquidity to pools and earn 0.3% fee on every trade in your pool</p>
+                         </div>
+                       </Card3D>
+                       <Card3D glareEnabled>
+                         <div className="p-5 bg-card rounded-2xl h-full text-center">
+                           <div className="w-14 h-14 rounded-2xl bg-secondary/20 flex items-center justify-center mx-auto mb-4">
+                             <Database className="w-7 h-7 text-secondary" />
+                           </div>
+                           <h3 className="font-bold mb-2">Create Pools</h3>
+                           <p className="text-sm text-muted-foreground">Launch new trading pairs for any ERC-20 compatible tokens</p>
+                         </div>
+                       </Card3D>
+                     </div>
+                   </div>
+ 
+                   {/* Problems Solved Section */}
+                   <div className="max-w-4xl mx-auto">
+                     <h2 className="text-2xl font-bold text-center mb-6">Problems We Solve</h2>
+                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                       {problemsSolved.map((item, idx) => {
+                         const Icon = item.icon;
+                         return (
+                           <motion.div
+                             key={idx}
+                             initial={{ opacity: 0, y: 20 }}
+                             whileInView={{ opacity: 1, y: 0 }}
+                             viewport={{ once: true }}
+                             transition={{ delay: idx * 0.1 }}
+                             className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all"
+                           >
+                             <div className="flex items-start gap-3">
+                               <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                                 <Icon className="w-5 h-5 text-destructive" />
+                               </div>
+                               <div>
+                                 <p className="font-semibold text-destructive text-sm mb-1">{item.problem}</p>
+                                 <p className="text-xs text-muted-foreground">→ {item.solution}</p>
+                               </div>
+                             </div>
+                           </motion.div>
+                         );
+                       })}
+                     </div>
+                   </div>
 
                   {/* Key Features Grid */}
                   <div>
                     <h2 className="text-2xl font-bold text-center mb-8">Platform Features</h2>
-                    <FeatureShowcase features={builtFeatures} columns={3} />
+                     <FeatureShowcase features={builtFeatures} columns={4} />
+                   </div>
+ 
+                   {/* Token Globe Preview */}
+                   <div className="max-w-4xl mx-auto text-center">
+                     <h2 className="text-2xl font-bold mb-4">Interactive Token Ecosystem</h2>
+                     <p className="text-muted-foreground mb-8">Watch our supported tokens orbit in our unique 3D solar system visualization</p>
+                     <div className="h-[400px] relative">
+                       <TokenOrbit className="w-full h-full" />
+                     </div>
                   </div>
 
                   {/* Blockchain Info */}
@@ -503,7 +628,7 @@ export default function Docs() {
                         <div className="bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-all group">
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
                                 <Code className="w-6 h-6" />
                               </div>
                               <div>
@@ -512,14 +637,14 @@ export default function Docs() {
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
-                              <code className="text-xs bg-muted px-3 py-2 rounded-lg font-mono">
+                             <code className="text-xs bg-muted px-3 py-2 rounded-lg font-mono break-all">
                                 {contract.address.slice(0, 10)}...{contract.address.slice(-8)}
                               </code>
                               <a
                                 href={`https://testnet.iopn.tech/address/${contract.address}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                               className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors shrink-0"
                               >
                                 <ExternalLink className="w-4 h-4" />
                               </a>

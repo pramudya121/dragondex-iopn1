@@ -7,6 +7,7 @@ import { WagmiProvider } from 'wagmi';
 import { config } from '@/config/wagmi';
 import { Layout } from '@/components/layout/Layout';
 import Index from "./pages/Index";
+import Swap from "./pages/Swap";
 import Liquidity from "./pages/Liquidity";
 import Pools from "./pages/Pools";
 import Analytics from "./pages/Analytics";
@@ -27,6 +28,7 @@ const App = () => (
           <Layout>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/swap" element={<Swap />} />
               <Route path="/liquidity" element={<Liquidity />} />
               <Route path="/pools" element={<Pools />} />
               <Route path="/create-pool" element={<CreatePool />} />

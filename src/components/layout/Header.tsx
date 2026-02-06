@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ExternalLink, ArrowLeftRight, Droplets, LayoutGrid, BarChart3, Wallet, BookOpen } from 'lucide-react';
+import { Menu, X, ExternalLink, ArrowLeftRight, Droplets, LayoutGrid, BarChart3, Wallet, BookOpen, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { FloatingDock } from '@/components/ui/aceternity/FloatingDock';
@@ -9,7 +9,8 @@ import { ThemeToggle } from '@/components/ui/premium/ThemeToggle';
 import dragonLogo from '@/assets/dragon-logo.png';
 
 const navItems = [
-  { name: 'Swap', path: '/', icon: ArrowLeftRight },
+  { name: 'Home', path: '/', icon: Home },
+  { name: 'Swap', path: '/swap', icon: ArrowLeftRight },
   { name: 'Liquidity', path: '/liquidity', icon: Droplets },
   { name: 'Pools', path: '/pools', icon: LayoutGrid },
   { name: 'Analytics', path: '/analytics', icon: BarChart3 },
@@ -17,7 +18,7 @@ const navItems = [
   { name: 'Docs', path: '/docs', icon: BookOpen },
 ];
 
-const dockItems = navItems.slice(0, 5).map(item => ({
+const dockItems = navItems.slice(0, 6).map(item => ({
   title: item.name,
   icon: item.icon,
   href: item.path,
@@ -74,7 +75,6 @@ export function Header() {
               </a>
               <WalletButton />
               
-              {/* Mobile Menu Button */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -124,7 +124,7 @@ export function Header() {
         </AnimatePresence>
       </header>
 
-      {/* Floating Dock for Mobile - hidden on desktop */}
+      {/* Floating Dock for Mobile */}
       <div className="lg:hidden">
         <FloatingDock items={dockItems} />
       </div>

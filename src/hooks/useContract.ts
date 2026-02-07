@@ -274,6 +274,7 @@ export function useApprovePair() {
   return { approve, hash, isPending, isConfirming, isSuccess, error };
 }
 
+
 // ============= ROUTER READ HOOKS =============
 export function useGetAmountsOut(amountIn: bigint | undefined, path: `0x${string}`[]) {
   const result = useReadContract({
@@ -351,7 +352,7 @@ export function useTokenAllowance(
 }
 
 export function useApprove() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
   
   const approve = (tokenAddress: `0x${string}`, spender: `0x${string}`, amount: bigint) => {
@@ -363,7 +364,7 @@ export function useApprove() {
     });
   };
   
-  return { approve, hash, isPending, isConfirming, isSuccess, error };
+  return { approve, hash, isPending, isConfirming, isSuccess, error, reset };
 }
 
 export function useTokenSymbol(tokenAddress: `0x${string}` | undefined) {

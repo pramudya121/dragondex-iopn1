@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Loader2, Check, ExternalLink, Droplets, Info, Calculator, TrendingUp, Wallet, Shield, AlertCircle } from 'lucide-react';
 import { useAccount, useBalance } from 'wagmi';
@@ -17,6 +17,7 @@ import { ParticleField } from '@/components/ui/premium/ParticleField';
 import { GlowOrb } from '@/components/ui/premium/GlowOrb';
 import { cn } from '@/lib/utils';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
+import { toast } from 'sonner';
 
 export default function Liquidity() {
   const { address, isConnected } = useAccount();
@@ -30,8 +31,6 @@ export default function Liquidity() {
   const [amountB, setAmountB] = useState('');
   const [isAutoCalculating, setIsAutoCalculating] = useState(false);
   const [lastEditedField, setLastEditedField] = useState<'A' | 'B' | null>(null);
-  const [approvalStepA, setApprovalStepA] = useState<'idle' | 'approving' | 'approved'>('idle');
-  const [approvalStepB, setApprovalStepB] = useState<'idle' | 'approving' | 'approved'>('idle');
   
   // Remove Liquidity state
   const [removePercent, setRemovePercent] = useState(25);
@@ -49,7 +48,6 @@ export default function Liquidity() {
   // Native balance for OPN
   const { data: nativeOPNBalance } = useBalance({ address });
   
-  // Get display balance for token A
   const getTokenADisplayBalance = () => {
     if (!tokenA) return '0';
     if (tokenA.isNative) {
@@ -58,7 +56,6 @@ export default function Liquidity() {
     return tokenABalance ? parseFloat(formatUnits(tokenABalance, tokenA.decimals)).toFixed(4) : '0';
   };
   
-  // Get display balance for token B
   const getTokenBDisplayBalance = () => {
     if (!tokenB) return '0';
     if (tokenB.isNative) {
@@ -67,13 +64,13 @@ export default function Liquidity() {
     return tokenBBalance ? parseFloat(formatUnits(tokenBBalance, tokenB.decimals)).toFixed(4) : '0';
   };
   
-  // Allowances
-  const { data: allowanceA } = useTokenAllowance(
+  // Allowances for add liquidity
+  const { data: allowanceA, refetch: refetchAllowanceA } = useTokenAllowance(
     tokenA && !tokenA.isNative ? (tokenA.address as `0x${string}`) : undefined,
     address,
     CONTRACTS.ROUTER as `0x${string}`
   );
-  const { data: allowanceB } = useTokenAllowance(
+  const { data: allowanceB, refetch: refetchAllowanceB } = useTokenAllowance(
     tokenB && !tokenB.isNative ? (tokenB.address as `0x${string}`) : undefined,
     address,
     CONTRACTS.ROUTER as `0x${string}`
@@ -85,19 +82,111 @@ export default function Liquidity() {
     tokenB && !tokenB.isNative ? (tokenB.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`)
   );
   const { data: reserves } = usePairReserves(pairAddress);
-  const { data: lpBalance } = usePairBalance(pairAddress, address);
-  const { data: lpAllowance } = usePairAllowance(pairAddress, address);
+  const { data: lpBalance, refetch: refetchLpBalance } = usePairBalance(pairAddress, address);
+  const { data: lpAllowance, refetch: refetchLpAllowance } = usePairAllowance(pairAddress, address);
   
-  // Router & Approve hooks
+  // Router hook
   const router = useRouter();
-  const { approve: approveToken, isPending: approvePending } = useApprove();
-  const { approve: approvePair, isPending: pairApprovePending } = useApprovePair();
+  
+  // Separate approve hooks for token A and token B
+  const { 
+    approve: approveTokenA, 
+    isPending: approveAPending, 
+    isSuccess: approveASuccess, 
+    hash: approveAHash,
+    isConfirming: approveAConfirming 
+  } = useApprove();
+  
+  const { 
+    approve: approveTokenB, 
+    isPending: approveBPending, 
+    isSuccess: approveBSuccess, 
+    hash: approveBHash,
+    isConfirming: approveBConfirming 
+  } = useApprove();
+  
+  // LP token approve hook
+  const { 
+    approve: approvePairFn, 
+    isPending: pairApprovePending, 
+    isSuccess: pairApproveSuccess, 
+    hash: pairApproveHash,
+    isConfirming: pairApproveConfirming 
+  } = useApprovePair();
 
-  // Check if approvals needed
+  // Check if approvals needed for add liquidity
   const amountABigInt = amountA ? parseUnits(amountA, tokenA?.decimals || 18) : 0n;
   const amountBBigInt = amountB ? parseUnits(amountB, tokenB?.decimals || 18) : 0n;
-  const needsApprovalA = tokenA && !tokenA.isNative && allowanceA !== undefined && allowanceA < amountABigInt;
-  const needsApprovalB = tokenB && !tokenB.isNative && allowanceB !== undefined && allowanceB < amountBBigInt;
+  const needsApprovalA = tokenA && !tokenA.isNative && amountABigInt > 0n && allowanceA !== undefined && allowanceA < amountABigInt;
+  const needsApprovalB = tokenB && !tokenB.isNative && amountBBigInt > 0n && allowanceB !== undefined && allowanceB < amountBBigInt;
+
+  // Watch approve A success
+  useEffect(() => {
+    if (approveASuccess && approveAHash) {
+      toast.success(`${tokenA?.symbol} Approved!`, {
+        description: `${tokenA?.symbol} has been approved for liquidity`,
+        action: {
+          label: 'View TX',
+          onClick: () => window.open(`https://testnet.iopn.tech/tx/${approveAHash}`, '_blank'),
+        },
+      });
+      refetchAllowanceA();
+    }
+  }, [approveASuccess, approveAHash, tokenA, refetchAllowanceA]);
+
+  // Watch approve B success
+  useEffect(() => {
+    if (approveBSuccess && approveBHash) {
+      toast.success(`${tokenB?.symbol} Approved!`, {
+        description: `${tokenB?.symbol} has been approved for liquidity`,
+        action: {
+          label: 'View TX',
+          onClick: () => window.open(`https://testnet.iopn.tech/tx/${approveBHash}`, '_blank'),
+        },
+      });
+      refetchAllowanceB();
+    }
+  }, [approveBSuccess, approveBHash, tokenB, refetchAllowanceB]);
+
+  // Watch LP approve success
+  useEffect(() => {
+    if (pairApproveSuccess && pairApproveHash) {
+      toast.success('LP Tokens Approved!', {
+        description: 'LP tokens approved for removal',
+        action: {
+          label: 'View TX',
+          onClick: () => window.open(`https://testnet.iopn.tech/tx/${pairApproveHash}`, '_blank'),
+        },
+      });
+      refetchLpAllowance();
+    }
+  }, [pairApproveSuccess, pairApproveHash, refetchLpAllowance]);
+
+  // Watch router success (add/remove liquidity)
+  useEffect(() => {
+    if (router.isSuccess && router.hash) {
+      toast.success(activeTab === 'add' ? 'Liquidity Added!' : 'Liquidity Removed!', {
+        description: `Transaction confirmed on-chain`,
+        action: {
+          label: 'View TX',
+          onClick: () => window.open(`https://testnet.iopn.tech/tx/${router.hash}`, '_blank'),
+        },
+      });
+      setAmountA('');
+      setAmountB('');
+      refetchLpBalance();
+      refetchLpAllowance();
+    }
+  }, [router.isSuccess, router.hash, activeTab, refetchLpBalance, refetchLpAllowance]);
+
+  // Watch router error
+  useEffect(() => {
+    if (router.error) {
+      toast.error('Transaction Failed', {
+        description: router.error.message.slice(0, 100),
+      });
+    }
+  }, [router.error]);
 
   // Auto-calculate the second token amount based on pool reserves
   const calculateOptimalAmount = useCallback((inputAmount: string, isTokenA: boolean): string => {
@@ -123,7 +212,6 @@ export default function Liquidity() {
     }
   }, [reserves, tokenA, tokenB]);
 
-  // Handle amount changes with auto-calculation
   const handleAmountAChange = (value: string) => {
     setAmountA(value);
     setLastEditedField('A');
@@ -148,7 +236,6 @@ export default function Liquidity() {
     }
   };
 
-  // Pool price ratio
   const priceRatio = useMemo(() => {
     if (!reserves || reserves[0] === 0n || reserves[1] === 0n) return null;
     const reserve0 = parseFloat(formatUnits(reserves[0], tokenA?.decimals || 18));
@@ -156,7 +243,6 @@ export default function Liquidity() {
     return { aPerB: reserve0 / reserve1, bPerA: reserve1 / reserve0 };
   }, [reserves, tokenA, tokenB]);
 
-  // Pool share calculation
   const poolShare = useMemo(() => {
     if (!amountA || !amountB || !reserves || reserves[0] === 0n) return null;
     const inputA = parseFloat(amountA);
@@ -167,18 +253,19 @@ export default function Liquidity() {
   // Handlers
   const handleApproveA = () => {
     if (!tokenA || tokenA.isNative) return;
-    setApprovalStepA('approving');
-    approveToken(tokenA.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, parseUnits('999999999', tokenA.decimals));
+    toast.loading(`Approving ${tokenA.symbol}...`, { id: 'approve-a' });
+    approveTokenA(tokenA.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, parseUnits('999999999', tokenA.decimals));
   };
 
   const handleApproveB = () => {
     if (!tokenB || tokenB.isNative) return;
-    setApprovalStepB('approving');
-    approveToken(tokenB.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, parseUnits('999999999', tokenB.decimals));
+    toast.loading(`Approving ${tokenB.symbol}...`, { id: 'approve-b' });
+    approveTokenB(tokenB.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, parseUnits('999999999', tokenB.decimals));
   };
 
   const handleAddLiquidity = () => {
     if (!address || !tokenA || !tokenB || !amountA || !amountB) return;
+    toast.loading('Adding liquidity...', { id: 'add-liq' });
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
     
     if (tokenA.isNative || tokenB.isNative) {
@@ -211,11 +298,13 @@ export default function Liquidity() {
 
   const handleApproveLPTokens = () => {
     if (!pairAddress || !lpBalance) return;
-    approvePair(pairAddress, lpBalance);
+    toast.loading('Approving LP tokens...', { id: 'approve-lp' });
+    approvePairFn(pairAddress, lpBalance);
   };
 
   const handleRemoveLiquidity = () => {
     if (!address || !tokenA || !tokenB || !lpBalance || !pairAddress) return;
+    toast.loading('Removing liquidity...', { id: 'remove-liq' });
     const liquidityToRemove = (lpBalance * BigInt(removePercent)) / 100n;
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
     
@@ -227,7 +316,8 @@ export default function Liquidity() {
     }
   };
 
-  const needsLPApproval = lpBalance && lpAllowance !== undefined && lpAllowance < (lpBalance * BigInt(removePercent)) / 100n;
+  const liquidityToRemove = lpBalance ? (lpBalance * BigInt(removePercent)) / 100n : 0n;
+  const needsLPApproval = lpBalance && lpBalance > 0n && removePercent > 0 && lpAllowance !== undefined && lpAllowance < liquidityToRemove;
   const isLoading = router.isPending || router.isConfirming;
 
   return (
@@ -236,12 +326,9 @@ export default function Liquidity() {
       role="main"
       aria-label="Liquidity Management"
     >
-      {/* Background effects - lazy loaded for performance */}
       <Spotlight className="hidden md:block" />
       <GlowingStarsBackground starCount={30} className="opacity-20" />
       <ParticleField particleCount={30} colorScheme="dragon" className="opacity-30" />
-      
-      {/* Decorative glow orbs */}
       <GlowOrb color="primary" size="xl" className="top-20 -left-20 opacity-30" />
       <GlowOrb color="accent" size="lg" className="bottom-40 -right-10 opacity-20" />
       
@@ -251,7 +338,6 @@ export default function Liquidity() {
         transition={{ duration: 0.5 }}
         className="max-w-xl mx-auto relative z-10"
       >
-        {/* Hero Section with accessibility */}
         <header className="text-center mb-8">
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }} 
@@ -267,8 +353,6 @@ export default function Liquidity() {
             words="Provide liquidity and earn 0.3% on every trade. Auto-calculation ensures perfect token ratios."
             className="text-sm md:text-base text-muted-foreground font-normal"
           />
-          
-          {/* Security badge */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -280,14 +364,10 @@ export default function Liquidity() {
           </motion.div>
         </header>
 
-        {/* Main Card with MovingBorder */}
         <MovingBorder duration={4000} borderRadius="1.5rem">
           <div className="p-6 bg-card/95 backdrop-blur-sm rounded-3xl">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList 
-                className="w-full mb-6 bg-muted/50 grid grid-cols-2 h-12 rounded-xl p-1"
-                aria-label="Liquidity actions"
-              >
+              <TabsList className="w-full mb-6 bg-muted/50 grid grid-cols-2 h-12 rounded-xl p-1">
                 <TabsTrigger 
                   value="add" 
                   className="flex items-center justify-center gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
@@ -314,7 +394,6 @@ export default function Liquidity() {
                     exit={{ opacity: 0, x: 20 }}
                     className="space-y-4"
                   >
-                    {/* Header */}
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-lg flex items-center gap-2">
                         <Plus className="w-5 h-5 text-primary" />
@@ -448,12 +527,15 @@ export default function Liquidity() {
                       </motion.div>
                     )}
 
-                    {/* Approval Steps */}
+                    {/* Approval Steps for Add Liquidity */}
                     {isConnected && (needsApprovalA || needsApprovalB) && (
                       <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 space-y-3">
                         <p className="text-sm font-medium flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-warning" />
                           Token Approval Required
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          You must approve tokens before adding liquidity for the first time.
                         </p>
                         <div className="grid gap-2">
                           {needsApprovalA && (
@@ -462,12 +544,10 @@ export default function Liquidity() {
                               variant="outline" 
                               size="sm"
                               className="w-full"
-                              disabled={approvePending || approvalStepA === 'approved'}
+                              disabled={approveAPending || approveAConfirming}
                             >
-                              {approvalStepA === 'approving' ? (
+                              {approveAPending || approveAConfirming ? (
                                 <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Approving {tokenA?.symbol}...</>
-                              ) : approvalStepA === 'approved' ? (
-                                <><Check className="w-4 h-4 mr-2 text-success" /> {tokenA?.symbol} Approved</>
                               ) : (
                                 <>Approve {tokenA?.symbol}</>
                               )}
@@ -479,12 +559,10 @@ export default function Liquidity() {
                               variant="outline" 
                               size="sm"
                               className="w-full"
-                              disabled={approvePending || approvalStepB === 'approved'}
+                              disabled={approveBPending || approveBConfirming}
                             >
-                              {approvalStepB === 'approving' ? (
+                              {approveBPending || approveBConfirming ? (
                                 <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Approving {tokenB?.symbol}...</>
-                              ) : approvalStepB === 'approved' ? (
-                                <><Check className="w-4 h-4 mr-2 text-success" /> {tokenB?.symbol} Approved</>
                               ) : (
                                 <>Approve {tokenB?.symbol}</>
                               )}
@@ -494,7 +572,7 @@ export default function Liquidity() {
                       </div>
                     )}
 
-                    {/* Add Liquidity Button or Connect Wallet */}
+                    {/* Add Liquidity Button */}
                     {!isConnected ? (
                       <Button onClick={() => setShowWalletModal(true)} className="w-full h-12 text-base btn-dragon">
                         <Wallet className="w-5 h-5 mr-2" />
@@ -504,7 +582,7 @@ export default function Liquidity() {
                       <Button 
                         onClick={handleAddLiquidity}
                         className="w-full h-12 text-base btn-dragon"
-                        disabled={isLoading || !amountA || !amountB || needsApprovalA || needsApprovalB}
+                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB}
                       >
                         {isLoading ? (
                           <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Adding Liquidity...</>
@@ -620,20 +698,29 @@ export default function Liquidity() {
                       </motion.div>
                     )}
 
-                    {/* LP Approval */}
+                    {/* LP Token Approval for Remove */}
                     {isConnected && needsLPApproval && (
-                      <Button 
-                        onClick={handleApproveLPTokens}
-                        variant="outline" 
-                        className="w-full h-12"
-                        disabled={pairApprovePending}
-                      >
-                        {pairApprovePending ? (
-                          <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Approving LP Tokens...</>
-                        ) : (
-                          <>Approve LP Tokens</>
-                        )}
-                      </Button>
+                      <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 space-y-3">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-warning" />
+                          LP Token Approval Required
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          You must approve LP tokens before removing liquidity for the first time.
+                        </p>
+                        <Button 
+                          onClick={handleApproveLPTokens}
+                          variant="outline" 
+                          className="w-full h-12"
+                          disabled={pairApprovePending || pairApproveConfirming}
+                        >
+                          {pairApprovePending || pairApproveConfirming ? (
+                            <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Approving LP Tokens...</>
+                          ) : (
+                            <>Approve LP Tokens</>
+                          )}
+                        </Button>
+                      </div>
                     )}
 
                     {/* Remove Button */}
@@ -647,7 +734,7 @@ export default function Liquidity() {
                         onClick={handleRemoveLiquidity}
                         className="w-full h-12 text-base"
                         variant="destructive"
-                        disabled={isLoading || !lpBalance || lpBalance === 0n || removePercent === 0 || needsLPApproval}
+                        disabled={isLoading || !lpBalance || lpBalance === 0n || removePercent === 0 || !!needsLPApproval}
                       >
                         {isLoading ? (
                           <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Removing Liquidity...</>
@@ -679,7 +766,6 @@ export default function Liquidity() {
         )}
       </motion.div>
 
-      {/* Wallet Connect Modal */}
       <WalletConnectModal isOpen={showWalletModal} onClose={() => setShowWalletModal(false)} />
     </main>
   );

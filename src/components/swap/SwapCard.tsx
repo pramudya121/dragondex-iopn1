@@ -66,6 +66,12 @@ export function SwapCard() {
     return allowance !== undefined && allowance < amountIn;
   }, [fromToken, allowance, amountIn]);
 
+  // Check if pool has liquidity
+  const hasLiquidity = useMemo(() => {
+    if (!reserves) return false;
+    return reserves[0] > 0n && reserves[1] > 0n;
+  }, [reserves]);
+
   // Watch for approval success
   useEffect(() => {
     if (approveSuccess && approveHash) {
@@ -83,6 +89,7 @@ export function SwapCard() {
   // Watch for swap success
   useEffect(() => {
     if (router.isSuccess && router.hash) {
+      toast.dismiss('swap');
       toast.success('Swap Successful!', {
         description: `Swapped ${fromAmount} ${fromToken?.symbol} for ${toAmount} ${toToken?.symbol}`,
         action: {
@@ -397,10 +404,12 @@ export function SwapCard() {
                   "w-full h-12",
                   isHighImpact ? "bg-destructive hover:bg-destructive/90" : "btn-dragon"
                 )}
-                disabled={!fromAmount || isLoading || parseFloat(fromAmount) > parseFloat(fromBalance)}
+                disabled={!fromAmount || isLoading || parseFloat(fromAmount) > parseFloat(fromBalance) || !hasLiquidity || !amountsOut}
               >
                 {isLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Swapping...</>
+                ) : !hasLiquidity && fromToken && toToken ? (
+                  <>No Liquidity for {fromToken?.symbol}/{toToken?.symbol}</>
                 ) : parseFloat(fromAmount) > parseFloat(fromBalance) ? (
                   <>Insufficient {fromToken?.symbol}</>
                 ) : isHighImpact ? (

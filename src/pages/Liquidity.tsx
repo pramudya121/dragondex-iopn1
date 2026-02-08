@@ -6,7 +6,7 @@ import { parseEther, formatEther, parseUnits, formatUnits } from 'viem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTokenBalance, useRouter, useApprove, useTokenAllowance, useGetPair, usePairReserves, useApprovePair, usePairBalance, usePairAllowance } from '@/hooks/useContract';
+import { useTokenBalance, useRouter, useApprove, useTokenAllowance, useGetPair, usePairReserves, useApprovePair, usePairBalance, usePairAllowance, usePairTokens, usePairTotalSupply } from '@/hooks/useContract';
 import { CONTRACTS, TOKEN_LIST, TokenInfo } from '@/config/contracts';
 import { TokenSelector } from '@/components/swap/TokenSelector';
 import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffect';
@@ -18,6 +18,8 @@ import { GlowOrb } from '@/components/ui/premium/GlowOrb';
 import { cn } from '@/lib/utils';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
 import { toast } from 'sonner';
+
+const MAX_UINT256 = 2n ** 256n - 1n;
 
 export default function Liquidity() {
   const { address, isConnected } = useAccount();
@@ -77,13 +79,32 @@ export default function Liquidity() {
   );
   
   // Get pair info
-  const { data: pairAddress } = useGetPair(
-    tokenA && !tokenA.isNative ? (tokenA.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`),
-    tokenB && !tokenB.isNative ? (tokenB.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`)
-  );
-  const { data: reserves } = usePairReserves(pairAddress);
-  const { data: lpBalance, refetch: refetchLpBalance } = usePairBalance(pairAddress, address);
-  const { data: lpAllowance, refetch: refetchLpAllowance } = usePairAllowance(pairAddress, address);
+  const tokenAAddr = tokenA && !tokenA.isNative ? (tokenA.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`);
+  const tokenBAddr = tokenB && !tokenB.isNative ? (tokenB.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`);
+  const { data: pairAddress } = useGetPair(tokenAAddr, tokenBAddr);
+  const validPair = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
+  const { data: reserves } = usePairReserves(validPair);
+  const { token0: pairToken0 } = usePairTokens(validPair);
+  const { data: lpBalance, refetch: refetchLpBalance } = usePairBalance(validPair, address);
+  const { data: lpAllowance, refetch: refetchLpAllowance } = usePairAllowance(validPair, address);
+  const { data: lpTotalSupply } = usePairTotalSupply(validPair);
+  
+  // Determine if tokenA is token0 in the pair (reserves are ordered by token0/token1)
+  const isTokenAToken0 = useMemo(() => {
+    if (!pairToken0 || !tokenAAddr) return true;
+    return pairToken0.toLowerCase() === tokenAAddr.toLowerCase();
+  }, [pairToken0, tokenAAddr]);
+  
+  // Map reserves correctly: reserveA = reserve for tokenA, reserveB = reserve for tokenB
+  const reserveA = useMemo(() => {
+    if (!reserves) return 0n;
+    return isTokenAToken0 ? reserves[0] : reserves[1];
+  }, [reserves, isTokenAToken0]);
+  
+  const reserveB = useMemo(() => {
+    if (!reserves) return 0n;
+    return isTokenAToken0 ? reserves[1] : reserves[0];
+  }, [reserves, isTokenAToken0]);
   
   // Router hook
   const router = useRouter();
@@ -123,6 +144,7 @@ export default function Liquidity() {
   // Watch approve A success
   useEffect(() => {
     if (approveASuccess && approveAHash) {
+      toast.dismiss('approve-a');
       toast.success(`${tokenA?.symbol} Approved!`, {
         description: `${tokenA?.symbol} has been approved for liquidity`,
         action: {
@@ -130,13 +152,14 @@ export default function Liquidity() {
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${approveAHash}`, '_blank'),
         },
       });
-      refetchAllowanceA();
+      setTimeout(() => refetchAllowanceA(), 1000);
     }
-  }, [approveASuccess, approveAHash, tokenA, refetchAllowanceA]);
+  }, [approveASuccess, approveAHash]);
 
   // Watch approve B success
   useEffect(() => {
     if (approveBSuccess && approveBHash) {
+      toast.dismiss('approve-b');
       toast.success(`${tokenB?.symbol} Approved!`, {
         description: `${tokenB?.symbol} has been approved for liquidity`,
         action: {
@@ -144,13 +167,14 @@ export default function Liquidity() {
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${approveBHash}`, '_blank'),
         },
       });
-      refetchAllowanceB();
+      setTimeout(() => refetchAllowanceB(), 1000);
     }
-  }, [approveBSuccess, approveBHash, tokenB, refetchAllowanceB]);
+  }, [approveBSuccess, approveBHash]);
 
   // Watch LP approve success
   useEffect(() => {
     if (pairApproveSuccess && pairApproveHash) {
+      toast.dismiss('approve-lp');
       toast.success('LP Tokens Approved!', {
         description: 'LP tokens approved for removal',
         action: {
@@ -158,9 +182,9 @@ export default function Liquidity() {
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${pairApproveHash}`, '_blank'),
         },
       });
-      refetchLpAllowance();
+      setTimeout(() => refetchLpAllowance(), 1000);
     }
-  }, [pairApproveSuccess, pairApproveHash, refetchLpAllowance]);
+  }, [pairApproveSuccess, pairApproveHash]);
 
   // Watch router success (add/remove liquidity)
   useEffect(() => {
@@ -188,35 +212,36 @@ export default function Liquidity() {
     }
   }, [router.error]);
 
-  // Auto-calculate the second token amount based on pool reserves
+  // Auto-calculate the second token amount based on correctly-mapped reserves
   const calculateOptimalAmount = useCallback((inputAmount: string, isTokenA: boolean): string => {
-    if (!inputAmount || parseFloat(inputAmount) === 0 || !reserves) return '';
-    
-    const [reserve0, reserve1] = reserves;
-    if (reserve0 === 0n || reserve1 === 0n) return '';
+    if (!inputAmount || parseFloat(inputAmount) === 0) return '';
+    if (reserveA === 0n || reserveB === 0n) return ''; // New pool, no ratio to calc
     
     try {
-      const inputBigInt = parseUnits(inputAmount, isTokenA ? (tokenA?.decimals || 18) : (tokenB?.decimals || 18));
+      const inputDecimals = isTokenA ? (tokenA?.decimals || 18) : (tokenB?.decimals || 18);
+      const outputDecimals = isTokenA ? (tokenB?.decimals || 18) : (tokenA?.decimals || 18);
+      const inputBigInt = parseUnits(inputAmount, inputDecimals);
       
       let optimalAmount: bigint;
       if (isTokenA) {
-        optimalAmount = (inputBigInt * reserve1) / reserve0;
+        // User entered tokenA amount, calculate tokenB: amountB = amountA * reserveB / reserveA
+        optimalAmount = (inputBigInt * reserveB) / reserveA;
       } else {
-        optimalAmount = (inputBigInt * reserve0) / reserve1;
+        // User entered tokenB amount, calculate tokenA: amountA = amountB * reserveA / reserveB
+        optimalAmount = (inputBigInt * reserveA) / reserveB;
       }
       
-      const decimals = isTokenA ? (tokenB?.decimals || 18) : (tokenA?.decimals || 18);
-      return parseFloat(formatUnits(optimalAmount, decimals)).toFixed(6);
+      return parseFloat(formatUnits(optimalAmount, outputDecimals)).toFixed(6);
     } catch {
       return '';
     }
-  }, [reserves, tokenA, tokenB]);
+  }, [reserveA, reserveB, tokenA, tokenB]);
 
   const handleAmountAChange = (value: string) => {
     setAmountA(value);
     setLastEditedField('A');
     
-    if (value && reserves && reserves[0] > 0n) {
+    if (value && reserveA > 0n && reserveB > 0n) {
       setIsAutoCalculating(true);
       const calculatedB = calculateOptimalAmount(value, true);
       if (calculatedB) setAmountB(calculatedB);
@@ -228,7 +253,7 @@ export default function Liquidity() {
     setAmountB(value);
     setLastEditedField('B');
     
-    if (value && reserves && reserves[0] > 0n) {
+    if (value && reserveA > 0n && reserveB > 0n) {
       setIsAutoCalculating(true);
       const calculatedA = calculateOptimalAmount(value, false);
       if (calculatedA) setAmountA(calculatedA);
@@ -237,30 +262,30 @@ export default function Liquidity() {
   };
 
   const priceRatio = useMemo(() => {
-    if (!reserves || reserves[0] === 0n || reserves[1] === 0n) return null;
-    const reserve0 = parseFloat(formatUnits(reserves[0], tokenA?.decimals || 18));
-    const reserve1 = parseFloat(formatUnits(reserves[1], tokenB?.decimals || 18));
-    return { aPerB: reserve0 / reserve1, bPerA: reserve1 / reserve0 };
-  }, [reserves, tokenA, tokenB]);
+    if (reserveA === 0n || reserveB === 0n) return null;
+    const resA = parseFloat(formatUnits(reserveA, tokenA?.decimals || 18));
+    const resB = parseFloat(formatUnits(reserveB, tokenB?.decimals || 18));
+    return { aPerB: resA / resB, bPerA: resB / resA };
+  }, [reserveA, reserveB, tokenA, tokenB]);
 
   const poolShare = useMemo(() => {
-    if (!amountA || !amountB || !reserves || reserves[0] === 0n) return null;
+    if (!amountA || !amountB || reserveA === 0n) return null;
     const inputA = parseFloat(amountA);
-    const currentA = parseFloat(formatUnits(reserves[0], tokenA?.decimals || 18));
+    const currentA = parseFloat(formatUnits(reserveA, tokenA?.decimals || 18));
     return ((inputA / (currentA + inputA)) * 100).toFixed(2);
-  }, [amountA, amountB, reserves, tokenA]);
+  }, [amountA, amountB, reserveA, tokenA]);
 
-  // Handlers
+  // Handlers - approve with MAX_UINT256 so user doesn't need to re-approve
   const handleApproveA = () => {
     if (!tokenA || tokenA.isNative) return;
     toast.loading(`Approving ${tokenA.symbol}...`, { id: 'approve-a' });
-    approveTokenA(tokenA.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, parseUnits('999999999', tokenA.decimals));
+    approveTokenA(tokenA.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, MAX_UINT256);
   };
 
   const handleApproveB = () => {
     if (!tokenB || tokenB.isNative) return;
     toast.loading(`Approving ${tokenB.symbol}...`, { id: 'approve-b' });
-    approveTokenB(tokenB.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, parseUnits('999999999', tokenB.decimals));
+    approveTokenB(tokenB.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, MAX_UINT256);
   };
 
   const handleAddLiquidity = () => {
@@ -297,13 +322,13 @@ export default function Liquidity() {
   };
 
   const handleApproveLPTokens = () => {
-    if (!pairAddress || !lpBalance) return;
+    if (!validPair || !lpBalance) return;
     toast.loading('Approving LP tokens...', { id: 'approve-lp' });
-    approvePairFn(pairAddress, lpBalance);
+    approvePairFn(validPair, MAX_UINT256);
   };
 
   const handleRemoveLiquidity = () => {
-    if (!address || !tokenA || !tokenB || !lpBalance || !pairAddress) return;
+    if (!address || !tokenA || !tokenB || !lpBalance || !validPair) return;
     toast.loading('Removing liquidity...', { id: 'remove-liq' });
     const liquidityToRemove = (lpBalance * BigInt(removePercent)) / 100n;
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
@@ -672,7 +697,7 @@ export default function Liquidity() {
                     </div>
 
                     {/* Expected Output Preview */}
-                    {lpBalance && lpBalance > 0n && removePercent > 0 && reserves && (
+                    {lpBalance && lpBalance > 0n && removePercent > 0 && lpTotalSupply && lpTotalSupply > 0n && (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -685,14 +710,14 @@ export default function Liquidity() {
                               {tokenA && <img src={tokenA.logoURI} alt={tokenA.symbol} className="w-5 h-5 rounded-full" />}
                               <span className="text-sm">{tokenA?.symbol}</span>
                             </div>
-                            <span className="font-medium">~{(parseFloat(formatUnits(reserves[0], tokenA?.decimals || 18)) * (removePercent / 100) * (parseFloat(formatEther(lpBalance)) / parseFloat(formatEther(reserves[0] + reserves[1])))).toFixed(4)}</span>
+                            <span className="font-medium">~{(parseFloat(formatUnits(reserveA, tokenA?.decimals || 18)) * (removePercent / 100) * parseFloat(formatEther(lpBalance)) / parseFloat(formatEther(lpTotalSupply))).toFixed(4)}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
                               {tokenB && <img src={tokenB.logoURI} alt={tokenB.symbol} className="w-5 h-5 rounded-full" />}
                               <span className="text-sm">{tokenB?.symbol}</span>
                             </div>
-                            <span className="font-medium">~{(parseFloat(formatUnits(reserves[1], tokenB?.decimals || 18)) * (removePercent / 100) * (parseFloat(formatEther(lpBalance)) / parseFloat(formatEther(reserves[0] + reserves[1])))).toFixed(4)}</span>
+                            <span className="font-medium">~{(parseFloat(formatUnits(reserveB, tokenB?.decimals || 18)) * (removePercent / 100) * parseFloat(formatEther(lpBalance)) / parseFloat(formatEther(lpTotalSupply))).toFixed(4)}</span>
                           </div>
                         </div>
                       </motion.div>

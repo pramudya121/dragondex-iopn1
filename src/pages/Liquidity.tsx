@@ -81,13 +81,26 @@ export default function Liquidity() {
   // Get pair info
   const tokenAAddr = tokenA && !tokenA.isNative ? (tokenA.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`);
   const tokenBAddr = tokenB && !tokenB.isNative ? (tokenB.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`);
-  const { data: pairAddress } = useGetPair(tokenAAddr, tokenBAddr);
+  const { data: pairAddress, refetch: refetchPair } = useGetPair(tokenAAddr, tokenBAddr);
   const validPair = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
-  const { data: reserves } = usePairReserves(validPair);
+  const { data: reserves, refetch: refetchReserves } = usePairReserves(validPair);
   const { token0: pairToken0 } = usePairTokens(validPair);
   const { data: lpBalance, refetch: refetchLpBalance } = usePairBalance(validPair, address);
   const { data: lpAllowance, refetch: refetchLpAllowance } = usePairAllowance(validPair, address);
   const { data: lpTotalSupply } = usePairTotalSupply(validPair);
+
+  // Refetch data periodically for freshness
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchPair();
+      if (validPair) {
+        refetchReserves();
+        refetchLpBalance();
+        refetchLpAllowance();
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [refetchPair, refetchReserves, refetchLpBalance, refetchLpAllowance, validPair]);
   
   // Determine if tokenA is token0 in the pair (reserves are ordered by token0/token1)
   const isTokenAToken0 = useMemo(() => {

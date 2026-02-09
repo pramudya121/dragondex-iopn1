@@ -39,11 +39,18 @@ export function SwapCard() {
   );
 
   // Get pair for price impact calculation
-  const { data: pairAddress } = useGetPair(
-    fromToken?.isNative ? (CONTRACTS.WETH as `0x${string}`) : (fromToken?.address as `0x${string}`),
-    toToken?.isNative ? (CONTRACTS.WETH as `0x${string}`) : (toToken?.address as `0x${string}`)
-  );
-  const { data: reserves } = usePairReserves(pairAddress);
+  const fromAddr = useMemo(() => {
+    if (!fromToken) return undefined;
+    return (fromToken.isNative ? CONTRACTS.WETH : fromToken.address) as `0x${string}`;
+  }, [fromToken]);
+  const toAddr = useMemo(() => {
+    if (!toToken) return undefined;
+    return (toToken.isNative ? CONTRACTS.WETH : toToken.address) as `0x${string}`;
+  }, [toToken]);
+  
+  const { data: pairAddress, refetch: refetchPair } = useGetPair(fromAddr, toAddr);
+  const validPairAddress = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
+  const { data: reserves, refetch: refetchReserves } = usePairReserves(validPairAddress);
 
   const swapPath = useMemo(() => {
     if (!fromToken || !toToken) return [];
@@ -68,9 +75,19 @@ export function SwapCard() {
 
   // Check if pool has liquidity
   const hasLiquidity = useMemo(() => {
+    if (!validPairAddress) return false;
     if (!reserves) return false;
     return reserves[0] > 0n && reserves[1] > 0n;
-  }, [reserves]);
+  }, [validPairAddress, reserves]);
+
+  // Refetch pair and reserves periodically to keep data fresh
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchPair();
+      if (validPairAddress) refetchReserves();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [refetchPair, refetchReserves, validPairAddress]);
 
   // Watch for approval success
   useEffect(() => {
@@ -404,10 +421,14 @@ export function SwapCard() {
                   "w-full h-12",
                   isHighImpact ? "bg-destructive hover:bg-destructive/90" : "btn-dragon"
                 )}
-                disabled={!fromAmount || isLoading || parseFloat(fromAmount) > parseFloat(fromBalance) || !hasLiquidity || !amountsOut}
+                disabled={!fromAmount || isLoading || parseFloat(fromAmount) > parseFloat(fromBalance) || (!hasLiquidity && !!fromToken && !!toToken && fromAmount !== '') || (!amountsOut && hasLiquidity && !!fromAmount)}
               >
                 {isLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Swapping...</>
+                ) : !fromAmount ? (
+                  <>Enter Amount</>
+                ) : !validPairAddress && fromToken && toToken ? (
+                  <>No Pool Found</>
                 ) : !hasLiquidity && fromToken && toToken ? (
                   <>No Liquidity for {fromToken?.symbol}/{toToken?.symbol}</>
                 ) : parseFloat(fromAmount) > parseFloat(fromBalance) ? (

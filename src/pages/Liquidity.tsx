@@ -81,13 +81,15 @@ export default function Liquidity() {
   // Get pair info
   const tokenAAddr = tokenA && !tokenA.isNative ? (tokenA.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`);
   const tokenBAddr = tokenB && !tokenB.isNative ? (tokenB.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`);
-  const { data: pairAddress, refetch: refetchPair } = useGetPair(tokenAAddr, tokenBAddr);
+  const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(tokenAAddr, tokenBAddr);
   const validPair = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
-  const { data: reserves, refetch: refetchReserves } = usePairReserves(validPair);
+  const { data: reserves, refetch: refetchReserves, isLoading: isReservesLoading } = usePairReserves(validPair);
   const { token0: pairToken0 } = usePairTokens(validPair);
   const { data: lpBalance, refetch: refetchLpBalance } = usePairBalance(validPair, address);
   const { data: lpAllowance, refetch: refetchLpAllowance } = usePairAllowance(validPair, address);
   const { data: lpTotalSupply } = usePairTotalSupply(validPair);
+  
+  const isPoolDataLoading = isPairLoading || (!!validPair && isReservesLoading);
 
   // Refetch data periodically for freshness
   useEffect(() => {
@@ -249,6 +251,19 @@ export default function Liquidity() {
       return '';
     }
   }, [reserveA, reserveB, tokenA, tokenB]);
+
+  // Re-calculate when reserves load or change
+  useEffect(() => {
+    if (reserveA > 0n && reserveB > 0n) {
+      if (amountA && lastEditedField === 'A') {
+        const calculatedB = calculateOptimalAmount(amountA, true);
+        if (calculatedB) setAmountB(calculatedB);
+      } else if (amountB && lastEditedField === 'B') {
+        const calculatedA = calculateOptimalAmount(amountB, false);
+        if (calculatedA) setAmountA(calculatedA);
+      }
+    }
+  }, [reserveA, reserveB]); // Only trigger when reserves change
 
   const handleAmountAChange = (value: string) => {
     setAmountA(value);
@@ -454,7 +469,17 @@ export default function Liquidity() {
                     </div>
 
                     {/* Pool Rate Info */}
-                    {priceRatio && (
+                    {isPoolDataLoading && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="bg-muted/30 rounded-xl p-4 text-center"
+                      >
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-primary" />
+                        <p className="text-sm text-muted-foreground">Loading pool data...</p>
+                      </motion.div>
+                    )}
+                    {!isPoolDataLoading && priceRatio && (
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}

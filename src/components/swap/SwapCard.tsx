@@ -48,9 +48,9 @@ export function SwapCard() {
     return (toToken.isNative ? CONTRACTS.WETH : toToken.address) as `0x${string}`;
   }, [toToken]);
   
-  const { data: pairAddress, refetch: refetchPair } = useGetPair(fromAddr, toAddr);
+  const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(fromAddr, toAddr);
   const validPairAddress = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
-  const { data: reserves, refetch: refetchReserves } = usePairReserves(validPairAddress);
+  const { data: reserves, refetch: refetchReserves, isLoading: isReservesLoading } = usePairReserves(validPairAddress);
 
   const swapPath = useMemo(() => {
     if (!fromToken || !toToken) return [];
@@ -79,6 +79,8 @@ export function SwapCard() {
     if (!reserves) return false;
     return reserves[0] > 0n && reserves[1] > 0n;
   }, [validPairAddress, reserves]);
+
+  const isPoolDataLoading = isPairLoading || (!!validPairAddress && isReservesLoading);
 
   // Refetch pair and reserves periodically to keep data fresh
   useEffect(() => {
@@ -421,12 +423,14 @@ export function SwapCard() {
                   "w-full h-12",
                   isHighImpact ? "bg-destructive hover:bg-destructive/90" : "btn-dragon"
                 )}
-                disabled={!fromAmount || isLoading || parseFloat(fromAmount) > parseFloat(fromBalance) || (!hasLiquidity && !!fromToken && !!toToken && fromAmount !== '') || (!amountsOut && hasLiquidity && !!fromAmount)}
+                disabled={!fromAmount || isLoading || isPoolDataLoading || parseFloat(fromAmount) > parseFloat(fromBalance) || (!hasLiquidity && !isPoolDataLoading && !!fromToken && !!toToken && fromAmount !== '') || (!amountsOut && hasLiquidity && !!fromAmount)}
               >
                 {isLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Swapping...</>
                 ) : !fromAmount ? (
                   <>Enter Amount</>
+                ) : isPoolDataLoading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Checking Pool...</>
                 ) : !validPairAddress && fromToken && toToken ? (
                   <>No Pool Found</>
                 ) : !hasLiquidity && fromToken && toToken ? (

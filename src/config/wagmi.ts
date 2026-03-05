@@ -12,7 +12,7 @@ export const opnTestnet = defineChain({
     symbol: 'OPN',
   },
   rpcUrls: {
-    default: { http: ['https://testnet-rpc.iopn.tech'] },
+    default: { http: ['https://testnet-rpc.iopn.tech', 'https://testnet-rpc2.iopn.tech/'] },
   },
   blockExplorers: {
     default: { name: 'OPN Explorer', url: 'https://testnet.iopn.tech' },

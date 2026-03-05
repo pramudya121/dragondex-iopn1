@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTokenBalance, useRouter, useApprove, useTokenAllowance, useGetPair, usePairReserves, useApprovePair, usePairBalance, usePairAllowance, usePairTokens, usePairTotalSupply } from '@/hooks/useContract';
+import { useTransactionHistory } from '@/components/history/TransactionHistory';
 import { CONTRACTS, TOKEN_LIST, TokenInfo } from '@/config/contracts';
 import { TokenSelector } from '@/components/swap/TokenSelector';
 import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffect';
@@ -23,6 +24,7 @@ const MAX_UINT256 = 2n ** 256n - 1n;
 
 export default function Liquidity() {
   const { address, isConnected } = useAccount();
+  const { addTransaction } = useTransactionHistory();
   const [activeTab, setActiveTab] = useState('add');
   const [showWalletModal, setShowWalletModal] = useState(false);
   
@@ -204,11 +206,23 @@ export default function Liquidity() {
   // Watch router success (add/remove liquidity)
   useEffect(() => {
     if (router.isSuccess && router.hash) {
+      const txType = activeTab === 'add' ? 'add_liquidity' : 'remove_liquidity';
       toast.success(activeTab === 'add' ? 'Liquidity Added!' : 'Liquidity Removed!', {
         description: `Transaction confirmed on-chain`,
         action: {
           label: 'View TX',
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${router.hash}`, '_blank'),
+        },
+      });
+      addTransaction({
+        hash: router.hash,
+        type: txType as any,
+        status: 'success',
+        details: {
+          tokenA: tokenA?.symbol,
+          tokenB: tokenB?.symbol,
+          amountA,
+          amountB,
         },
       });
       setAmountA('');

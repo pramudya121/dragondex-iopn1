@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -7,9 +8,29 @@ import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffec
 import { NumberTicker } from '@/components/ui/magic/NumberTicker';
 import { BorderBeam } from '@/components/ui/magic/BorderBeam';
 import { useAllPairsLength } from '@/hooks/useContract';
+import { useLiquidityPools } from '@/hooks/useLiquidityPools';
+import { useTokenPrices } from '@/hooks/usePrices';
+import { formatUnits } from 'viem';
 
 export function HeroSection() {
   const { data: pairsCount } = useAllPairsLength();
+  const { pools } = useLiquidityPools();
+  const { prices } = useTokenPrices();
+
+  // Calculate real TVL from on-chain data
+  const totalTVL = useMemo(() => {
+    return pools.reduce((acc, pool) => {
+      const price0 = prices[pool.token0Symbol] || 0;
+      const price1 = prices[pool.token1Symbol] || 0;
+      const value0 = parseFloat(formatUnits(pool.reserve0, pool.token0?.decimals || 18)) * price0;
+      const value1 = parseFloat(formatUnits(pool.reserve1, pool.token1?.decimals || 18)) * price1;
+      return acc + value0 + value1;
+    }, 0);
+  }, [pools, prices]);
+
+  const activePools = useMemo(() => {
+    return pools.filter(p => p.reserve0 > 0n && p.reserve1 > 0n).length;
+  }, [pools]);
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
@@ -38,12 +59,12 @@ export function HeroSection() {
             className="text-lg md:text-xl text-muted-foreground font-normal mb-8 max-w-xl mx-auto"
           />
 
-          {/* Stats */}
+          {/* Stats - Real On-Chain Data */}
           <div className="grid grid-cols-3 gap-4 mb-8 max-w-lg mx-auto">
             {[
-              { value: 694556130, label: 'Total Value Locked', prefix: '$', color: 'text-primary' },
-              { value: Number(pairsCount || 0), label: 'Active Pools', prefix: '', color: 'text-secondary' },
-              { value: 45892, label: 'Traders', prefix: '', color: 'text-accent' },
+              { value: totalTVL, label: 'Total Value Locked', prefix: '$', color: 'text-primary' },
+              { value: Number(pairsCount || 0), label: 'Total Pools', prefix: '', color: 'text-secondary' },
+              { value: activePools, label: 'Active Pools', prefix: '', color: 'text-accent' },
             ].map((stat, idx) => (
               <motion.div
                 key={idx}
@@ -54,9 +75,10 @@ export function HeroSection() {
               >
                 <BorderBeam size={60} duration={10} delay={idx} />
                 <p className={`text-2xl md:text-3xl font-bold ${stat.color}`}>
-                  {stat.prefix}<NumberTicker value={stat.value} />
+                  {stat.prefix}<NumberTicker value={stat.value} decimalPlaces={stat.prefix === '$' ? 2 : 0} />
                 </p>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
+                <span className="absolute top-1 right-1 text-[8px] px-1 py-0.5 rounded bg-success/20 text-success">Live</span>
               </motion.div>
             ))}
           </div>

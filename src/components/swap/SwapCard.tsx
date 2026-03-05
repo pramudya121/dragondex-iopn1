@@ -13,6 +13,7 @@ import { useWallet } from '@/hooks/useWallet';
 import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';
 import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
+import { useTransactionHistory } from '@/components/history/TransactionHistory';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,7 @@ export function SwapCard() {
   const router = useRouter();
   const { prices, getPrice } = useTokenPrices();
   const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash } = useApprove();
+  const { addTransaction, updateTransaction } = useTransactionHistory();
 
   const { data: nativeBalance } = useBalance({ address });
   const { data: tokenBalance } = useTokenBalance(
@@ -101,6 +103,12 @@ export function SwapCard() {
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${approveHash}`, '_blank'),
         },
       });
+      addTransaction({
+        hash: approveHash,
+        type: 'approve',
+        status: 'success',
+        details: { fromToken: fromToken?.symbol },
+      });
       refetchAllowance();
     }
   }, [approveSuccess, approveHash, fromToken, refetchAllowance]);
@@ -116,6 +124,17 @@ export function SwapCard() {
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${router.hash}`, '_blank'),
         },
       });
+      addTransaction({
+        hash: router.hash,
+        type: 'swap',
+        status: 'success',
+        details: {
+          fromToken: fromToken?.symbol,
+          toToken: toToken?.symbol,
+          fromAmount,
+          toAmount,
+        },
+      });
       setFromAmount('');
       setToAmount('');
     }
@@ -129,6 +148,23 @@ export function SwapCard() {
       });
     }
   }, [router.error]);
+
+  // Record pending swap transaction
+  useEffect(() => {
+    if (router.isPending && router.hash) {
+      addTransaction({
+        hash: router.hash,
+        type: 'swap',
+        status: 'pending',
+        details: {
+          fromToken: fromToken?.symbol,
+          toToken: toToken?.symbol,
+          fromAmount,
+          toAmount,
+        },
+      });
+    }
+  }, [router.isPending, router.hash]);
 
   useEffect(() => {
     if (amountsOut && amountsOut.length > 1) {

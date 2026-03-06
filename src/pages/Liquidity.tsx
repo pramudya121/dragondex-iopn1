@@ -19,11 +19,13 @@ import { GlowOrb } from '@/components/ui/premium/GlowOrb';
 import { cn } from '@/lib/utils';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
 import { toast } from 'sonner';
+import { useWallet } from '@/hooks/useWallet';
 
 const MAX_UINT256 = 2n ** 256n - 1n;
 
 export default function Liquidity() {
   const { address, isConnected } = useAccount();
+  const { isCorrectNetwork, switchToOPN } = useWallet();
   const { addTransaction } = useTransactionHistory();
   const [activeTab, setActiveTab] = useState('add');
   const [showWalletModal, setShowWalletModal] = useState(false);
@@ -81,9 +83,24 @@ export default function Liquidity() {
   );
   
   // Get pair info
-  const tokenAAddr = tokenA && !tokenA.isNative ? (tokenA.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`);
-  const tokenBAddr = tokenB && !tokenB.isNative ? (tokenB.address as `0x${string}`) : (CONTRACTS.WETH as `0x${string}`);
-  const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(tokenAAddr, tokenBAddr);
+  const tokenAAddr = useMemo(
+    () => ((tokenA && !tokenA.isNative ? tokenA.address : CONTRACTS.WETH) as `0x${string}`),
+    [tokenA]
+  );
+  const tokenBAddr = useMemo(
+    () => ((tokenB && !tokenB.isNative ? tokenB.address : CONTRACTS.WETH) as `0x${string}`),
+    [tokenB]
+  );
+
+  const isSameUnderlyingPair = useMemo(
+    () => tokenAAddr.toLowerCase() === tokenBAddr.toLowerCase(),
+    [tokenAAddr, tokenBAddr]
+  );
+
+  const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(
+    isSameUnderlyingPair ? undefined : tokenAAddr,
+    isSameUnderlyingPair ? undefined : tokenBAddr
+  );
   const validPair = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
   const { data: reserves, refetch: refetchReserves, isLoading: isReservesLoading } = usePairReserves(validPair);
   const { token0: pairToken0 } = usePairTokens(validPair);
@@ -91,11 +108,13 @@ export default function Liquidity() {
   const { data: lpAllowance, refetch: refetchLpAllowance } = usePairAllowance(validPair, address);
   const { data: lpTotalSupply } = usePairTotalSupply(validPair);
   
-  const isPoolDataLoading = isPairLoading || (!!validPair && isReservesLoading);
+  const isPoolDataLoading = isSameUnderlyingPair ? false : (isPairLoading || (!!validPair && isReservesLoading));
 
   // Refetch data periodically for freshness
   useEffect(() => {
     const interval = setInterval(() => {
+      if (isSameUnderlyingPair) return;
+
       refetchPair();
       if (validPair) {
         refetchReserves();
@@ -103,8 +122,9 @@ export default function Liquidity() {
         refetchLpAllowance();
       }
     }, 10000);
+
     return () => clearInterval(interval);
-  }, [refetchPair, refetchReserves, refetchLpBalance, refetchLpAllowance, validPair]);
+  }, [refetchPair, refetchReserves, refetchLpBalance, refetchLpAllowance, validPair, isSameUnderlyingPair]);
   
   // Determine if tokenA is token0 in the pair (reserves are ordered by token0/token1)
   const isTokenAToken0 = useMemo(() => {
@@ -332,14 +352,22 @@ export default function Liquidity() {
 
   const handleAddLiquidity = () => {
     if (!address || !tokenA || !tokenB || !amountA || !amountB) return;
+
+    if (isSameUnderlyingPair) {
+      toast.error('Pair tidak valid untuk liquidity', {
+        description: 'OPN dan WOPN memiliki underlying yang sama. Gunakan menu Swap untuk Wrap/Unwrap.',
+      });
+      return;
+    }
+
     toast.loading('Adding liquidity...', { id: 'add-liq' });
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
-    
+
     if (tokenA.isNative || tokenB.isNative) {
       const token = tokenA.isNative ? tokenB : tokenA;
       const tokenAmount = tokenA.isNative ? amountBBigInt : amountABigInt;
       const ethAmount = tokenA.isNative ? amountABigInt : amountBBigInt;
-      
+
       router.addLiquidityETH(
         token.address as `0x${string}`,
         tokenAmount,
@@ -371,10 +399,16 @@ export default function Liquidity() {
 
   const handleRemoveLiquidity = () => {
     if (!address || !tokenA || !tokenB || !lpBalance || !validPair) return;
+
+    if (isSameUnderlyingPair) {
+      toast.error('Pair tidak valid untuk remove liquidity');
+      return;
+    }
+
     toast.loading('Removing liquidity...', { id: 'remove-liq' });
     const liquidityToRemove = (lpBalance * BigInt(removePercent)) / 100n;
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
-    
+
     if (tokenA.isNative || tokenB.isNative) {
       const token = tokenA.isNative ? tokenB : tokenA;
       router.removeLiquidityETH(token.address as `0x${string}`, liquidityToRemove, 0n, 0n, address, deadline);
@@ -513,6 +547,19 @@ export default function Liquidity() {
                             <p className="font-bold text-sm">{priceRatio.aPerB.toFixed(4)} {tokenA?.symbol}</p>
                           </div>
                         </div>
+                      </motion.div>
+                    )}
+
+                    {isSameUnderlyingPair && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-warning/10 border border-warning/30 rounded-xl p-4"
+                      >
+                        <p className="text-sm font-medium text-warning mb-1">Pair OPN/WOPN tidak bisa jadi liquidity pair</p>
+                        <p className="text-xs text-muted-foreground">
+                          OPN dan WOPN menggunakan underlying address yang sama. Gunakan fitur Swap untuk Wrap/Unwrap.
+                        </p>
                       </motion.div>
                     )}
                     
@@ -655,14 +702,20 @@ export default function Liquidity() {
                         <Wallet className="w-5 h-5 mr-2" />
                         Connect Wallet
                       </Button>
+                    ) : !isCorrectNetwork ? (
+                      <Button onClick={switchToOPN} className="w-full h-12 text-base" variant="destructive">
+                        Switch to OPN Network
+                      </Button>
                     ) : (
                       <Button 
                         onClick={handleAddLiquidity}
                         className="w-full h-12 text-base btn-dragon"
-                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB}
+                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB || isSameUnderlyingPair}
                       >
                         {isLoading ? (
                           <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Adding Liquidity...</>
+                        ) : isSameUnderlyingPair ? (
+                          <>Invalid Pair (Use Swap Wrap/Unwrap)</>
                         ) : (
                           <><Plus className="w-5 h-5 mr-2" /> Add Liquidity</>
                         )}
@@ -806,12 +859,16 @@ export default function Liquidity() {
                         <Wallet className="w-5 h-5 mr-2" />
                         Connect Wallet
                       </Button>
+                    ) : !isCorrectNetwork ? (
+                      <Button onClick={switchToOPN} className="w-full h-12 text-base" variant="destructive">
+                        Switch to OPN Network
+                      </Button>
                     ) : (
                       <Button 
                         onClick={handleRemoveLiquidity}
                         className="w-full h-12 text-base"
                         variant="destructive"
-                        disabled={isLoading || !lpBalance || lpBalance === 0n || removePercent === 0 || !!needsLPApproval}
+                        disabled={isLoading || !lpBalance || lpBalance === 0n || removePercent === 0 || !!needsLPApproval || isSameUnderlyingPair}
                       >
                         {isLoading ? (
                           <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Removing Liquidity...</>

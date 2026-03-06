@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { TokenSelector } from './TokenSelector';
 import { PriceImpactWarning } from './PriceImpactWarning';
 import { TOKEN_LIST, TokenInfo, CONTRACTS } from '@/config/contracts';
-import { useRouter, useGetAmountsOut, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves } from '@/hooks/useContract';
+import { useRouter, useGetAmountsOut, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, useWETH } from '@/hooks/useContract';
 import { useWallet } from '@/hooks/useWallet';
 import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';
 import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
@@ -30,9 +30,23 @@ export function SwapCard() {
   const [showWalletModal, setShowWalletModal] = useState(false);
 
   const router = useRouter();
+  const weth = useWETH();
   const { prices, getPrice } = useTokenPrices();
   const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash } = useApprove();
   const { addTransaction, updateTransaction } = useTransactionHistory();
+
+  // Detect if this is a wrap/unwrap (OPN <-> WOPN)
+  const isWrapUnwrap = useMemo(() => {
+    if (!fromToken || !toToken) return false;
+    const fromIsNative = fromToken.isNative;
+    const toIsNative = toToken.isNative;
+    const fromIsWOPN = fromToken.symbol === 'WOPN';
+    const toIsWOPN = toToken.symbol === 'WOPN';
+    return (fromIsNative && toIsWOPN) || (fromIsWOPN && toIsNative);
+  }, [fromToken, toToken]);
+
+  const isWrapping = fromToken?.isNative && toToken?.symbol === 'WOPN';
+  const isUnwrapping = fromToken?.symbol === 'WOPN' && toToken?.isNative;
 
   const { data: nativeBalance } = useBalance({ address });
   const { data: tokenBalance } = useTokenBalance(
@@ -50,19 +64,25 @@ export function SwapCard() {
     return (toToken.isNative ? CONTRACTS.WETH : toToken.address) as `0x${string}`;
   }, [toToken]);
   
-  const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(fromAddr, toAddr);
+  const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(
+    isWrapUnwrap ? undefined : fromAddr,
+    isWrapUnwrap ? undefined : toAddr
+  );
   const validPairAddress = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
   const { data: reserves, refetch: refetchReserves, isLoading: isReservesLoading } = usePairReserves(validPairAddress);
 
   const swapPath = useMemo(() => {
-    if (!fromToken || !toToken) return [];
+    if (!fromToken || !toToken || isWrapUnwrap) return [];
     const from = fromToken.isNative ? CONTRACTS.WETH : fromToken.address;
     const to = toToken.isNative ? CONTRACTS.WETH : toToken.address;
     return [from, to] as `0x${string}`[];
-  }, [fromToken, toToken]);
+  }, [fromToken, toToken, isWrapUnwrap]);
 
   const amountIn = fromAmount ? parseUnits(fromAmount, fromToken?.decimals || 18) : undefined;
-  const { data: amountsOut, isLoading: isQuoting } = useGetAmountsOut(amountIn, swapPath);
+  const { data: amountsOut, isLoading: isQuoting } = useGetAmountsOut(
+    isWrapUnwrap ? undefined : amountIn,
+    swapPath
+  );
 
   const { data: allowance, refetch: refetchAllowance } = useTokenAllowance(
     fromToken && !fromToken.isNative ? (fromToken.address as `0x${string}`) : undefined,
@@ -71,18 +91,19 @@ export function SwapCard() {
   );
 
   const needsApproval = useMemo(() => {
-    if (!fromToken || fromToken.isNative || !amountIn) return false;
+    if (!fromToken || fromToken.isNative || !amountIn || isWrapUnwrap) return false;
     return allowance !== undefined && allowance < amountIn;
-  }, [fromToken, allowance, amountIn]);
+  }, [fromToken, allowance, amountIn, isWrapUnwrap]);
 
   // Check if pool has liquidity
   const hasLiquidity = useMemo(() => {
+    if (isWrapUnwrap) return true; // Wrap/unwrap always available
     if (!validPairAddress) return false;
     if (!reserves) return false;
     return reserves[0] > 0n && reserves[1] > 0n;
-  }, [validPairAddress, reserves]);
+  }, [validPairAddress, reserves, isWrapUnwrap]);
 
-  const isPoolDataLoading = isPairLoading || (!!validPairAddress && isReservesLoading);
+  const isPoolDataLoading = isWrapUnwrap ? false : (isPairLoading || (!!validPairAddress && isReservesLoading));
 
   // Refetch pair and reserves periodically to keep data fresh
   useEffect(() => {
@@ -128,52 +149,72 @@ export function SwapCard() {
         hash: router.hash,
         type: 'swap',
         status: 'success',
-        details: {
-          fromToken: fromToken?.symbol,
-          toToken: toToken?.symbol,
-          fromAmount,
-          toAmount,
-        },
+        details: { fromToken: fromToken?.symbol, toToken: toToken?.symbol, fromAmount, toAmount },
       });
       setFromAmount('');
       setToAmount('');
     }
   }, [router.isSuccess, router.hash, fromAmount, toAmount, fromToken, toToken]);
 
+  // Watch for wrap/unwrap success
+  useEffect(() => {
+    if (weth.isSuccess && weth.hash) {
+      toast.dismiss('swap');
+      const action = isWrapping ? 'Wrapped' : 'Unwrapped';
+      toast.success(`${action} Successfully!`, {
+        description: `${action} ${fromAmount} ${fromToken?.symbol} to ${toAmount} ${toToken?.symbol}`,
+        action: {
+          label: 'View',
+          onClick: () => window.open(`https://testnet.iopn.tech/tx/${weth.hash}`, '_blank'),
+        },
+      });
+      addTransaction({
+        hash: weth.hash,
+        type: 'swap',
+        status: 'success',
+        details: { fromToken: fromToken?.symbol, toToken: toToken?.symbol, fromAmount, toAmount },
+      });
+      setFromAmount('');
+      setToAmount('');
+    }
+  }, [weth.isSuccess, weth.hash]);
+
   // Watch for errors
   useEffect(() => {
     if (router.error) {
-      toast.error('Swap Failed', {
-        description: router.error.message.slice(0, 100),
-      });
+      toast.dismiss('swap');
+      toast.error('Swap Failed', { description: router.error.message.slice(0, 100) });
     }
   }, [router.error]);
+
+  useEffect(() => {
+    if (weth.error) {
+      toast.dismiss('swap');
+      toast.error('Wrap/Unwrap Failed', { description: weth.error.message.slice(0, 100) });
+    }
+  }, [weth.error]);
 
   // Record pending swap transaction
   useEffect(() => {
     if (router.isPending && router.hash) {
       addTransaction({
-        hash: router.hash,
-        type: 'swap',
-        status: 'pending',
-        details: {
-          fromToken: fromToken?.symbol,
-          toToken: toToken?.symbol,
-          fromAmount,
-          toAmount,
-        },
+        hash: router.hash, type: 'swap', status: 'pending',
+        details: { fromToken: fromToken?.symbol, toToken: toToken?.symbol, fromAmount, toAmount },
       });
     }
   }, [router.isPending, router.hash]);
 
+  // For wrap/unwrap, output = input (1:1 ratio)
   useEffect(() => {
-    if (amountsOut && amountsOut.length > 1) {
+    if (isWrapUnwrap) {
+      setToAmount(fromAmount);
+    } else if (amountsOut && amountsOut.length > 1) {
       const outputAmount = formatUnits(amountsOut[amountsOut.length - 1], toToken?.decimals || 18);
       setToAmount(parseFloat(outputAmount).toFixed(6));
     } else if (!fromAmount) {
       setToAmount('');
     }
-  }, [amountsOut, toToken, fromAmount]);
+  }, [amountsOut, toToken, fromAmount, isWrapUnwrap]);
 
   const handleSwapTokens = () => {
     const temp = fromToken;
@@ -184,7 +225,20 @@ export function SwapCard() {
   };
 
   const handleSwap = async () => {
-    if (!address || !fromToken || !toToken || !fromAmount || !amountsOut) return;
+    if (!address || !fromToken || !toToken || !fromAmount) return;
+    
+    // Handle wrap/unwrap
+    if (isWrapUnwrap) {
+      toast.loading(isWrapping ? 'Wrapping OPN...' : 'Unwrapping WOPN...', { id: 'swap' });
+      if (isWrapping) {
+        weth.deposit(parseEther(fromAmount));
+      } else {
+        weth.withdraw(parseUnits(fromAmount, 18));
+      }
+      return;
+    }
+
+    if (!amountsOut) return;
     
     toast.loading('Confirming swap...', { id: 'swap' });
     
@@ -197,6 +251,7 @@ export function SwapCard() {
       router.swapExactTokensForETH(amountIn!, minOutput, swapPath, address, deadline);
     } else {
       router.swapExactTokensForTokens(amountIn!, minOutput, swapPath, address, deadline);
+    }
     }
   };
 
@@ -211,7 +266,7 @@ export function SwapCard() {
     return tokenBalance ? formatUnits(tokenBalance, fromToken?.decimals || 18) : '0';
   }, [fromToken, nativeBalance, tokenBalance]);
 
-  const isLoading = router.isPending || router.isConfirming;
+  const isLoading = router.isPending || router.isConfirming || weth.isPending || weth.isConfirming;
 
   // Calculate price impact using reserves
   const reservePair = reserves ? [reserves[0], reserves[1]] as [bigint, bigint] : undefined;
@@ -459,20 +514,22 @@ export function SwapCard() {
                   "w-full h-12",
                   isHighImpact ? "bg-destructive hover:bg-destructive/90" : "btn-dragon"
                 )}
-                disabled={!fromAmount || isLoading || isPoolDataLoading || parseFloat(fromAmount) > parseFloat(fromBalance) || (!hasLiquidity && !isPoolDataLoading && !!fromToken && !!toToken && fromAmount !== '') || (!amountsOut && hasLiquidity && !!fromAmount)}
+                disabled={!fromAmount || isLoading || (!isWrapUnwrap && isPoolDataLoading) || parseFloat(fromAmount) > parseFloat(fromBalance) || (!isWrapUnwrap && !hasLiquidity && !isPoolDataLoading && !!fromToken && !!toToken && fromAmount !== '') || (!isWrapUnwrap && !amountsOut && hasLiquidity && !!fromAmount)}
               >
                 {isLoading ? (
-                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Swapping...</>
+                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isWrapUnwrap ? (isWrapping ? 'Wrapping...' : 'Unwrapping...') : 'Swapping...'}</>
                 ) : !fromAmount ? (
                   <>Enter Amount</>
-                ) : isPoolDataLoading ? (
+                ) : !isWrapUnwrap && isPoolDataLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Checking Pool...</>
-                ) : !validPairAddress && fromToken && toToken ? (
+                ) : !isWrapUnwrap && !validPairAddress && fromToken && toToken ? (
                   <>No Pool Found</>
-                ) : !hasLiquidity && fromToken && toToken ? (
+                ) : !isWrapUnwrap && !hasLiquidity && fromToken && toToken ? (
                   <>No Liquidity for {fromToken?.symbol}/{toToken?.symbol}</>
                 ) : parseFloat(fromAmount) > parseFloat(fromBalance) ? (
                   <>Insufficient {fromToken?.symbol}</>
+                ) : isWrapUnwrap ? (
+                  <>{isWrapping ? 'Wrap OPN → WOPN' : 'Unwrap WOPN → OPN'}</>
                 ) : isHighImpact ? (
                   <>Swap Anyway (High Impact)</>
                 ) : (
@@ -483,13 +540,13 @@ export function SwapCard() {
           </div>
 
           {/* Transaction Link */}
-          {router.hash && (
+          {(router.hash || weth.hash) && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <a 
-                href={`https://testnet.iopn.tech/tx/${router.hash}`} 
+                href={`https://testnet.iopn.tech/tx/${router.hash || weth.hash}`} 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="flex items-center gap-2 text-sm text-success justify-center hover:underline"

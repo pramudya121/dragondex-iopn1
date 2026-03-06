@@ -252,7 +252,6 @@ export function SwapCard() {
     } else {
       router.swapExactTokensForTokens(amountIn!, minOutput, swapPath, address, deadline);
     }
-    }
   };
 
   const handleApprove = async () => {

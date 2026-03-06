@@ -1,6 +1,9 @@
-import { createConfig, http } from 'wagmi';
+import { createConfig, http, fallback } from 'wagmi';
 import { defineChain } from 'viem';
 import { injected } from 'wagmi/connectors';
+
+const PRIMARY_RPC = 'https://testnet-rpc.iopn.tech';
+const BACKUP_RPC = 'https://testnet-rpc2.iopn.tech';
 
 // Define OPN Testnet chain
 export const opnTestnet = defineChain({
@@ -12,7 +15,8 @@ export const opnTestnet = defineChain({
     symbol: 'OPN',
   },
   rpcUrls: {
-    default: { http: ['https://testnet-rpc.iopn.tech', 'https://testnet-rpc2.iopn.tech/'] },
+    default: { http: [PRIMARY_RPC, BACKUP_RPC] },
+    public: { http: [PRIMARY_RPC, BACKUP_RPC] },
   },
   blockExplorers: {
     default: { name: 'OPN Explorer', url: 'https://testnet.iopn.tech' },
@@ -50,6 +54,9 @@ export const config = createConfig({
     }),
   ],
   transports: {
-    [opnTestnet.id]: http('https://testnet-rpc.iopn.tech'),
+    [opnTestnet.id]: fallback([
+      http(PRIMARY_RPC, { retryCount: 1, retryDelay: 250 }),
+      http(BACKUP_RPC, { retryCount: 1, retryDelay: 250 }),
+    ]),
   },
 });

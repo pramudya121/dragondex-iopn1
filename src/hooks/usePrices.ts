@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useReadContracts } from 'wagmi';
-import { CONTRACTS, TOKEN_LIST, TokenInfo, getTokenByAddress } from '@/config/contracts';
+import { CONTRACTS, TOKEN_LIST, TokenInfo } from '@/config/contracts';
 import { PAIR_ABI, FACTORY_ABI } from '@/config/abis';
 import { formatUnits } from 'viem';
 
@@ -15,13 +15,15 @@ export const BASE_PRICES: Record<string, number> = {
   HYPE: 15.0,
 };
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 // Hook to get token prices based on pool reserves
 export function useTokenPrices() {
   // Get WOPN pairs to derive prices
-  const wopnPairs = TOKEN_LIST.filter(t => !t.isNative && t.symbol !== 'WOPN');
-  
+  const wopnPairs = TOKEN_LIST.filter((t) => !t.isNative && t.symbol !== 'WOPN');
+
   const pairQueries = useReadContracts({
-    contracts: wopnPairs.map(token => ({
+    contracts: wopnPairs.map((token) => ({
       address: CONTRACTS.FACTORY as `0x${string}`,
       abi: FACTORY_ABI,
       functionName: 'getPair',
@@ -29,16 +31,24 @@ export function useTokenPrices() {
     })),
   });
 
-  const pairAddresses = (pairQueries.data || [])
-    .map(r => r.result as `0x${string}` | undefined)
-    .filter(Boolean) as `0x${string}`[];
+  const pairTargets = useMemo(() => {
+    return wopnPairs
+      .map((token, index) => ({
+        token,
+        pairAddress: pairQueries.data?.[index]?.result as `0x${string}` | undefined,
+      }))
+      .filter(
+        ({ pairAddress }) =>
+          !!pairAddress && pairAddress.toLowerCase() !== ZERO_ADDRESS
+      ) as { token: (typeof wopnPairs)[number]; pairAddress: `0x${string}` }[];
+  }, [wopnPairs, pairQueries.data]);
 
   const reserveQueries = useReadContracts({
-    contracts: pairAddresses.flatMap(addr => [
-      { address: addr, abi: PAIR_ABI, functionName: 'getReserves' },
-      { address: addr, abi: PAIR_ABI, functionName: 'token0' },
+    contracts: pairTargets.flatMap(({ pairAddress }) => [
+      { address: pairAddress, abi: PAIR_ABI, functionName: 'getReserves' },
+      { address: pairAddress, abi: PAIR_ABI, functionName: 'token0' },
     ]),
-    query: { enabled: pairAddresses.length > 0 },
+    query: { enabled: pairTargets.length > 0 },
   });
 
   const prices = useMemo(() => {
@@ -46,13 +56,13 @@ export function useTokenPrices() {
 
     if (!reserveQueries.data) return priceMap;
 
-    for (let i = 0; i < pairAddresses.length; i++) {
+    for (let i = 0; i < pairTargets.length; i++) {
       const reserves = reserveQueries.data[i * 2]?.result as [bigint, bigint, number] | undefined;
       const token0Addr = reserveQueries.data[i * 2 + 1]?.result as `0x${string}` | undefined;
 
       if (!reserves || !token0Addr || reserves[0] === 0n || reserves[1] === 0n) continue;
 
-      const token = wopnPairs[i];
+      const { token } = pairTargets[i];
       const isToken0Wopn = token0Addr.toLowerCase() === CONTRACTS.WETH.toLowerCase();
 
       const wopnReserve = parseFloat(formatUnits(isToken0Wopn ? reserves[0] : reserves[1], 18));
@@ -65,7 +75,7 @@ export function useTokenPrices() {
     }
 
     return priceMap;
-  }, [reserveQueries.data, pairAddresses.length]);
+  }, [reserveQueries.data, pairTargets]);
 
   return {
     prices,
@@ -98,16 +108,16 @@ export function usePriceImpact(
     if (reserves && reserves[0] > 0n && reserves[1] > 0n) {
       const reserve0 = parseFloat(formatUnits(reserves[0], fromToken.decimals));
       const reserve1 = parseFloat(formatUnits(reserves[1], toToken.decimals));
-      
+
       // Spot price before trade
       const spotPrice = reserve1 / reserve0;
-      
+
       // Actual execution price
       const executionPrice = outputAmount / inputAmount;
-      
+
       // Price impact = (spotPrice - executionPrice) / spotPrice * 100
       const impact = Math.abs((spotPrice - executionPrice) / spotPrice * 100);
-      
+
       return {
         priceImpact: impact,
         severity: impact > 10 ? 'high' as const : impact > 3 ? 'medium' as const : 'low' as const,
@@ -117,7 +127,7 @@ export function usePriceImpact(
     // Estimate based on AMM formula (k = x * y)
     // For large trades relative to liquidity, impact increases
     const estimatedImpact = Math.min(inputAmount * 0.1, 15); // Simplified estimate
-    
+
     return {
       priceImpact: estimatedImpact,
       severity: estimatedImpact > 10 ? 'high' as const : estimatedImpact > 3 ? 'medium' as const : 'low' as const,
@@ -138,10 +148,10 @@ export function usePoolTVL(
   return useMemo(() => {
     const price0 = prices[token0Symbol] || 0;
     const price1 = prices[token1Symbol] || 0;
-    
+
     const value0 = parseFloat(formatUnits(reserve0, token0Decimals)) * price0;
     const value1 = parseFloat(formatUnits(reserve1, token1Decimals)) * price1;
-    
+
     return value0 + value1;
   }, [token0Symbol, token1Symbol, reserve0, reserve1, token0Decimals, token1Decimals, prices]);
 }

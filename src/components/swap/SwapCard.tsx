@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDownUp, Settings, Loader2, ExternalLink, Check, Info, X, Flame, Wallet } from 'lucide-react';
+import { ArrowDownUp, Settings, Loader2, ExternalLink, Check, Info, X, Flame, Wallet, RotateCw } from 'lucide-react';
 import { useAccount, useBalance } from 'wagmi';
 import { parseUnits, formatUnits, formatEther, parseEther } from 'viem';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { TOKEN_LIST, TokenInfo, CONTRACTS } from '@/config/contracts';
 import { useRouter, useGetAmountsOut, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH } from '@/hooks/useContract';
 import { useWallet } from '@/hooks/useWallet';
 import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';
+import { parseTransactionError, getErrorToastConfig } from '@/lib/transactionErrors';
 import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
 import { useTransactionHistory } from '@/components/history/TransactionHistory';

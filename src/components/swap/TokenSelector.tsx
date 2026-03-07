@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Search, X, Loader2, AlertCircle, Check, Plus, Download } from 'lucide-react';
+import { ChevronDown, Search, X, Loader2, AlertCircle, Check, Plus, Download, Shield, ShieldAlert, ShieldX, AlertTriangle, Trash2 } from 'lucide-react';
 import { TOKEN_LIST, TokenInfo } from '@/config/contracts';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAccount, useBalance } from 'wagmi';
 import { useTokenBalance } from '@/hooks/useContract';
 import { useValidateToken } from '@/hooks/useLiquidityPools';
+import { useTokenSafety, SafetyLevel } from '@/hooks/useTokenSafety';
 import { formatEther, formatUnits } from 'viem';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -18,7 +19,6 @@ interface TokenSelectorProps {
   label?: string;
 }
 
-// Storage key for imported tokens
 const IMPORTED_TOKENS_KEY = 'dragondex_imported_tokens';
 
 function getImportedTokens(): TokenInfo[] {
@@ -38,7 +38,31 @@ function saveImportedToken(token: TokenInfo) {
   }
 }
 
-// Separate component to display token balance from wallet
+function removeImportedToken(address: string) {
+  const tokens = getImportedTokens();
+  const filtered = tokens.filter(t => t.address.toLowerCase() !== address.toLowerCase());
+  localStorage.setItem(IMPORTED_TOKENS_KEY, JSON.stringify(filtered));
+}
+
+// Safety badge component
+function SafetyBadge({ level }: { level: SafetyLevel }) {
+  const config = {
+    verified: { icon: Shield, text: 'Verified', className: 'text-success bg-success/10' },
+    warning: { icon: ShieldAlert, text: 'Unverified', className: 'text-warning bg-warning/10' },
+    danger: { icon: ShieldX, text: 'Risky', className: 'text-destructive bg-destructive/10' },
+    unknown: { icon: AlertCircle, text: 'Unknown', className: 'text-muted-foreground bg-muted' },
+  };
+  const { icon: Icon, text, className } = config[level];
+  
+  return (
+    <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium', className)}>
+      <Icon className="w-2.5 h-2.5" />
+      {text}
+    </span>
+  );
+}
+
+// Token balance display component
 const TokenBalanceDisplay = ({ token, address }: { token: TokenInfo; address?: `0x${string}` }) => {
   const { data: nativeBalance } = useBalance({ address });
   const { data: tokenBalance } = useTokenBalance(
@@ -64,30 +88,129 @@ const TokenBalanceDisplay = ({ token, address }: { token: TokenInfo; address?: `
   );
 };
 
+// Import confirmation panel with safety analysis
+function ImportConfirmation({ 
+  address, 
+  symbol, 
+  name, 
+  onImport, 
+  onCancel 
+}: { 
+  address: string;
+  symbol: string;
+  name: string;
+  onImport: () => void;
+  onCancel: () => void;
+}) {
+  const safety = useTokenSafety(address as `0x${string}`);
+  const [accepted, setAccepted] = useState(false);
+
+  return (
+    <div className="px-4 pb-3">
+      <div className="bg-[#0d0d0d] rounded-xl p-4 border border-border/30 space-y-3">
+        {/* Token info */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center">
+            <AlertTriangle className="w-5 h-5 text-warning" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <p className="font-medium">{symbol}</p>
+              <SafetyBadge level={safety.level} />
+            </div>
+            <p className="text-xs text-muted-foreground">{name || symbol}</p>
+          </div>
+        </div>
+
+        {/* Safety warnings */}
+        {safety.warnings.length > 0 && (
+          <div className="space-y-1.5">
+            {safety.warnings.map((w, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs text-warning">
+                <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                <span>{w}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Metadata */}
+        {safety.metadata.totalSupply && (
+          <div className="text-xs text-muted-foreground flex justify-between">
+            <span>Total Supply</span>
+            <span className="font-mono">{parseFloat(safety.metadata.totalSupply).toLocaleString()}</span>
+          </div>
+        )}
+
+        {/* Warning disclaimer */}
+        <div className="bg-warning/5 border border-warning/20 rounded-lg p-3">
+          <p className="text-xs text-warning font-medium mb-1">⚠️ Import at your own risk</p>
+          <p className="text-[11px] text-muted-foreground">
+            This token is not part of the DragonDEX default list. Anyone can create a token, including fake versions of existing tokens. Always verify the contract address.
+          </p>
+        </div>
+
+        {/* Acceptance checkbox */}
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input 
+            type="checkbox" 
+            checked={accepted} 
+            onChange={(e) => setAccepted(e.target.checked)}
+            className="mt-1 rounded border-border"
+          />
+          <span className="text-xs text-muted-foreground">
+            I understand the risks and want to import this token
+          </span>
+        </label>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onCancel} 
+            className="flex-1 h-8 text-xs"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={onImport} 
+            size="sm" 
+            disabled={!accepted || safety.level === 'danger'}
+            className={cn(
+              "flex-1 h-8 text-xs",
+              safety.level === 'danger' ? "bg-destructive" : "btn-dragon"
+            )}
+          >
+            {safety.level === 'danger' ? 'Too Risky' : 'Import Token'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TokenSelector({ selectedToken, onSelect, disabledToken, label }: TokenSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [importedTokens, setImportedTokens] = useState<TokenInfo[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'imported'>('all');
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
   const { address } = useAccount();
 
-  // Check if search is a valid address for import
   const isAddressSearch = /^0x[a-fA-F0-9]{40}$/.test(search);
   const { isValid, isLoading: isValidating, symbol, name, decimals } = useValidateToken(
     isAddressSearch ? (search as `0x${string}`) : undefined
   );
 
-  // Load imported tokens on mount
   useEffect(() => {
     setImportedTokens(getImportedTokens());
   }, []);
 
-  // Combine default tokens with imported tokens
   const allTokens = [...TOKEN_LIST, ...importedTokens.filter(
     imported => !TOKEN_LIST.find(t => t.address.toLowerCase() === imported.address.toLowerCase())
   )];
 
-  // Filter based on active tab
   const displayTokens = activeTab === 'imported' ? importedTokens : allTokens;
 
   const filteredTokens = displayTokens.filter(
@@ -97,7 +220,6 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
       token.address.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Check if the searched address is already in the list
   const addressAlreadyExists = isAddressSearch && allTokens.find(
     t => t.address.toLowerCase() === search.toLowerCase()
   );
@@ -118,8 +240,23 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
     onSelect(newToken);
     setIsOpen(false);
     setSearch('');
-    toast.success(`Token ${symbol} imported successfully!`);
+    setShowImportConfirm(false);
+    toast.success(`Token ${symbol} imported successfully!`, {
+      description: 'Remember to verify the contract address before trading.',
+    });
   };
+
+  const handleRemoveImported = (token: TokenInfo) => {
+    removeImportedToken(token.address);
+    setImportedTokens(prev => prev.filter(t => t.address.toLowerCase() !== token.address.toLowerCase()));
+    toast.info(`${token.symbol} removed from imported tokens`);
+  };
+
+  const isImportedToken = (addr: string) => 
+    importedTokens.some(t => t.address.toLowerCase() === addr.toLowerCase());
+
+  const isWhitelistedToken = (addr: string) =>
+    TOKEN_LIST.some(t => t.address.toLowerCase() === addr.toLowerCase());
 
   return (
     <>
@@ -127,7 +264,6 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
         <span className="text-xs text-muted-foreground mb-1.5 block">{label}</span>
       )}
       
-      {/* Token Button */}
       <button
         onClick={() => setIsOpen(true)}
         className={cn(
@@ -141,9 +277,7 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
               src={selectedToken.logoURI}
               alt={selectedToken.symbol}
               className="w-6 h-6 rounded-full"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/tokens/opn.jpg';
-              }}
+              onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
             />
             <span className="font-semibold">{selectedToken.symbol}</span>
           </>
@@ -153,7 +287,6 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
         <ChevronDown className="w-4 h-4 ml-auto text-muted-foreground" />
       </button>
 
-      {/* Token Modal - Same Position as Swap Form */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -161,7 +294,7 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-            onClick={() => setIsOpen(false)}
+            onClick={() => { setIsOpen(false); setShowImportConfirm(false); }}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -175,22 +308,12 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-border/30">
                   <h2 className="text-lg font-bold">Select Token</h2>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 text-xs border-border/50 hover:bg-primary/10 hover:border-primary/50"
-                    >
-                      <Download className="w-3.5 h-3.5 mr-1.5" />
-                      Import
-                    </Button>
-                    <button
-                      onClick={() => setIsOpen(false)}
-                      className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <X className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => { setIsOpen(false); setShowImportConfirm(false); }}
+                    className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <X className="w-5 h-5 text-muted-foreground" />
+                  </button>
                 </div>
 
                 {/* Search */}
@@ -198,9 +321,9 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
                   <div className="relative">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search by name, symbol, or address"
+                      placeholder="Search by name, symbol, or paste address"
                       value={search}
-                      onChange={(e) => setSearch(e.target.value)}
+                      onChange={(e) => { setSearch(e.target.value); setShowImportConfirm(false); }}
                       className="pl-10 py-2.5 h-11 bg-[#0d0d0d] border-border/30 rounded-xl text-sm placeholder:text-muted-foreground/60"
                       autoFocus
                     />
@@ -237,36 +360,52 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
                   </div>
                 </div>
 
-                {/* Import Section */}
-                {isAddressSearch && !addressAlreadyExists && (
+                {/* Import Section with Safety Analysis */}
+                {isAddressSearch && !addressAlreadyExists && !showImportConfirm && (
                   <div className="px-4 pb-3">
                     <div className="bg-[#0d0d0d] rounded-xl p-3 border border-border/30">
                       {isValidating ? (
                         <div className="flex items-center gap-2 text-sm">
                           <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                          <span className="text-muted-foreground">Validating token...</span>
+                          <span className="text-muted-foreground">Validating token contract...</span>
                         </div>
                       ) : isValid && symbol ? (
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                            <Check className="w-5 h-5 text-primary" />
+                          <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center">
+                            <AlertTriangle className="w-5 h-5 text-warning" />
                           </div>
                           <div className="flex-1">
                             <p className="font-medium">{symbol}</p>
                             <p className="text-xs text-muted-foreground">{name || symbol}</p>
                           </div>
-                          <Button onClick={handleImportToken} size="sm" className="btn-dragon h-8">
-                            <Plus className="w-3.5 h-3.5 mr-1" /> Import
+                          <Button 
+                            onClick={() => setShowImportConfirm(true)} 
+                            size="sm" 
+                            variant="outline"
+                            className="h-8 border-warning/50 text-warning hover:bg-warning/10"
+                          >
+                            <Plus className="w-3.5 h-3.5 mr-1" /> Review & Import
                           </Button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 text-destructive text-sm">
                           <AlertCircle className="w-4 h-4" />
-                          <span>Invalid token address</span>
+                          <span>Invalid or non-standard token contract</span>
                         </div>
                       )}
                     </div>
                   </div>
+                )}
+
+                {/* Import confirmation with safety checks */}
+                {showImportConfirm && isValid && symbol && (
+                  <ImportConfirmation
+                    address={search}
+                    symbol={symbol}
+                    name={name || symbol}
+                    onImport={handleImportToken}
+                    onCancel={() => setShowImportConfirm(false)}
+                  />
                 )}
 
                 {/* Token List */}
@@ -282,50 +421,70 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
                       {filteredTokens.map((token) => {
                         const isDisabled = disabledToken?.address === token.address;
                         const isSelected = selectedToken?.address === token.address;
-                        const isImported = importedTokens.find(
-                          t => t.address.toLowerCase() === token.address.toLowerCase()
-                        );
+                        const isImported = isImportedToken(token.address);
+                        const isWhitelisted = isWhitelistedToken(token.address);
 
                         return (
-                          <button
-                            key={token.address}
-                            onClick={() => {
-                              if (!isDisabled) {
-                                onSelect(token);
-                                setIsOpen(false);
-                                setSearch('');
-                              }
-                            }}
-                            disabled={isDisabled}
-                            className={cn(
-                              "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all",
-                              isDisabled
-                                ? "opacity-40 cursor-not-allowed"
-                                : "hover:bg-muted/50 cursor-pointer",
-                              isSelected && "bg-primary/10 border border-primary/30"
-                            )}
-                          >
-                            <div className="relative">
-                              <img
-                                src={token.logoURI}
-                                alt={token.symbol}
-                                className="w-10 h-10 rounded-full"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = '/tokens/opn.jpg';
-                                }}
-                              />
-                              {isImported && (
-                                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-primary rounded-full flex items-center justify-center border-2 border-[#1a1a1a]">
-                                  <Download className="w-2 h-2 text-primary-foreground" />
-                                </div>
+                          <div key={token.address} className="flex items-center">
+                            <button
+                              onClick={() => {
+                                if (!isDisabled) {
+                                  onSelect(token);
+                                  setIsOpen(false);
+                                  setSearch('');
+                                  setShowImportConfirm(false);
+                                }
+                              }}
+                              disabled={isDisabled}
+                              className={cn(
+                                "flex-1 flex items-center gap-3 px-3 py-3 rounded-xl transition-all",
+                                isDisabled
+                                  ? "opacity-40 cursor-not-allowed"
+                                  : "hover:bg-muted/50 cursor-pointer",
+                                isSelected && "bg-primary/10 border border-primary/30"
                               )}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <div className="font-semibold">{token.symbol}</div>
-                              <div className="text-xs text-muted-foreground">{token.name}</div>
-                            </div>
-                            <TokenBalanceDisplay token={token} address={address as `0x${string}`} />
-                          </button>
+                            >
+                              <div className="relative">
+                                <img
+                                  src={token.logoURI}
+                                  alt={token.symbol}
+                                  className="w-10 h-10 rounded-full"
+                                  onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
+                                />
+                                {isImported && (
+                                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-warning rounded-full flex items-center justify-center border-2 border-[#1a1a1a]">
+                                    <AlertTriangle className="w-2 h-2 text-warning-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 text-left">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold">{token.symbol}</span>
+                                  {isWhitelisted && (
+                                    <SafetyBadge level="verified" />
+                                  )}
+                                  {isImported && (
+                                    <SafetyBadge level="warning" />
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground">{token.name}</div>
+                              </div>
+                              <TokenBalanceDisplay token={token} address={address as `0x${string}`} />
+                            </button>
+                            {/* Remove button for imported tokens */}
+                            {isImported && activeTab === 'imported' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveImported(token);
+                                }}
+                                className="p-2 ml-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                title="Remove imported token"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>

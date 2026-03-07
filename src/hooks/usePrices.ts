@@ -85,12 +85,14 @@ export function useTokenPrices() {
 }
 
 // Hook to calculate price impact for a swap
+// Uses token0 address to correctly order reserves
 export function usePriceImpact(
   fromToken: TokenInfo | null,
   toToken: TokenInfo | null,
   fromAmount: string,
   toAmount: string,
-  reserves?: [bigint, bigint]
+  reserves?: [bigint, bigint],
+  token0Address?: string
 ) {
   return useMemo(() => {
     if (!fromToken || !toToken || !fromAmount || !toAmount) {
@@ -104,13 +106,24 @@ export function usePriceImpact(
       return { priceImpact: 0, severity: 'low' as const };
     }
 
-    // If we have reserves, calculate actual price impact
-    if (reserves && reserves[0] > 0n && reserves[1] > 0n) {
-      const reserve0 = parseFloat(formatUnits(reserves[0], fromToken.decimals));
-      const reserve1 = parseFloat(formatUnits(reserves[1], toToken.decimals));
+    // If we have reserves AND token0 address, calculate actual price impact
+    if (reserves && reserves[0] > 0n && reserves[1] > 0n && token0Address) {
+      const fromAddr = (fromToken.isNative ? CONTRACTS.WETH : fromToken.address).toLowerCase();
+      const isFromToken0 = token0Address.toLowerCase() === fromAddr;
+
+      const reserveIn = parseFloat(formatUnits(
+        isFromToken0 ? reserves[0] : reserves[1], fromToken.decimals
+      ));
+      const reserveOut = parseFloat(formatUnits(
+        isFromToken0 ? reserves[1] : reserves[0], toToken.decimals
+      ));
+
+      if (reserveIn <= 0 || reserveOut <= 0) {
+        return { priceImpact: 0, severity: 'low' as const };
+      }
 
       // Spot price before trade
-      const spotPrice = reserve1 / reserve0;
+      const spotPrice = reserveOut / reserveIn;
 
       // Actual execution price
       const executionPrice = outputAmount / inputAmount;
@@ -118,21 +131,24 @@ export function usePriceImpact(
       // Price impact = (spotPrice - executionPrice) / spotPrice * 100
       const impact = Math.abs((spotPrice - executionPrice) / spotPrice * 100);
 
+      // Cap at 100% to avoid nonsensical display
+      const cappedImpact = Math.min(impact, 99.99);
+
       return {
-        priceImpact: impact,
-        severity: impact > 10 ? 'high' as const : impact > 3 ? 'medium' as const : 'low' as const,
+        priceImpact: cappedImpact,
+        severity: cappedImpact > 10 ? 'high' as const : cappedImpact > 3 ? 'medium' as const : 'low' as const,
       };
     }
 
-    // Estimate based on AMM formula (k = x * y)
-    // For large trades relative to liquidity, impact increases
-    const estimatedImpact = Math.min(inputAmount * 0.1, 15); // Simplified estimate
+    // Fallback: estimate from constant-product AMM formula
+    // price_impact ≈ inputAmount / (reserveIn + inputAmount) — but without reserves, use a small estimate
+    const estimatedImpact = Math.min(inputAmount * 0.1, 15);
 
     return {
       priceImpact: estimatedImpact,
       severity: estimatedImpact > 10 ? 'high' as const : estimatedImpact > 3 ? 'medium' as const : 'low' as const,
     };
-  }, [fromToken, toToken, fromAmount, toAmount, reserves]);
+  }, [fromToken, toToken, fromAmount, toAmount, reserves, token0Address]);
 }
 
 // Hook to calculate TVL for a pool

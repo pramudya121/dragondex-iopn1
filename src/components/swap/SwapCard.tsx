@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { TokenSelector } from './TokenSelector';
 import { PriceImpactWarning } from './PriceImpactWarning';
 import { TOKEN_LIST, TokenInfo, CONTRACTS } from '@/config/contracts';
-import { useRouter, useGetAmountsOut, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, useWETH } from '@/hooks/useContract';
+import { useRouter, useGetAmountsOut, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH } from '@/hooks/useContract';
 import { useWallet } from '@/hooks/useWallet';
 import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';
 import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
@@ -70,6 +70,7 @@ export function SwapCard() {
   );
   const validPairAddress = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
   const { data: reserves, refetch: refetchReserves, isLoading: isReservesLoading } = usePairReserves(validPairAddress);
+  const { token0: pairToken0 } = usePairTokens(validPairAddress);
 
   const swapPath = useMemo(() => {
     if (!fromToken || !toToken || isWrapUnwrap) return [];
@@ -267,14 +268,15 @@ export function SwapCard() {
 
   const isLoading = router.isPending || router.isConfirming || weth.isPending || weth.isConfirming;
 
-  // Calculate price impact using reserves
+  // Calculate price impact using reserves with correct token ordering
   const reservePair = reserves ? [reserves[0], reserves[1]] as [bigint, bigint] : undefined;
   const { priceImpact, severity } = usePriceImpact(
     fromToken, 
     toToken, 
     fromAmount, 
     toAmount,
-    reservePair
+    reservePair,
+    pairToken0
   );
 
   // Calculate minimum received

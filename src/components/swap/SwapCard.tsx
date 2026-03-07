@@ -29,6 +29,7 @@ export function SwapCard() {
   const [slippage, setSlippage] = useState(0.5);
   const [showSettings, setShowSettings] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [lastSwapParams, setLastSwapParams] = useState<{ from: string; to: string } | null>(null);
 
   const router = useRouter();
   const weth = useWETH();
@@ -181,18 +182,52 @@ export function SwapCard() {
     }
   }, [weth.isSuccess, weth.hash]);
 
-  // Watch for errors
+  // Watch for errors with decoded revert reasons
   useEffect(() => {
     if (router.error) {
       toast.dismiss('swap');
-      toast.error('Swap Failed', { description: router.error.message.slice(0, 100) });
+      const parsed = parseTransactionError(router.error);
+      const config = getErrorToastConfig(parsed);
+      
+      if (parsed.type === 'user_rejected') {
+        toast.info(parsed.title, {
+          description: parsed.description,
+          duration: config.duration,
+        });
+      } else {
+        toast.error(parsed.title, {
+          description: `${parsed.description}\n💡 ${parsed.suggestion}`,
+          duration: config.duration,
+          action: parsed.canRetry && lastSwapParams ? {
+            label: 'Retry',
+            onClick: () => handleSwap(),
+          } : undefined,
+        });
+      }
     }
   }, [router.error]);
 
   useEffect(() => {
     if (weth.error) {
       toast.dismiss('swap');
-      toast.error('Wrap/Unwrap Failed', { description: weth.error.message.slice(0, 100) });
+      const parsed = parseTransactionError(weth.error);
+      const config = getErrorToastConfig(parsed);
+      
+      if (parsed.type === 'user_rejected') {
+        toast.info(parsed.title, {
+          description: parsed.description,
+          duration: config.duration,
+        });
+      } else {
+        toast.error(parsed.title, {
+          description: `${parsed.description}\n💡 ${parsed.suggestion}`,
+          duration: config.duration,
+          action: parsed.canRetry ? {
+            label: 'Retry',
+            onClick: () => handleSwap(),
+          } : undefined,
+        });
+      }
     }
   }, [weth.error]);
 

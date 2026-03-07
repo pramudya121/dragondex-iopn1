@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDownUp, Settings, Loader2, ExternalLink, Check, Info, X, Flame, Wallet } from 'lucide-react';
+import { ArrowDownUp, Settings, Loader2, ExternalLink, Check, Info, X, Flame, Wallet, RotateCw } from 'lucide-react';
 import { useAccount, useBalance } from 'wagmi';
 import { parseUnits, formatUnits, formatEther, parseEther } from 'viem';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { TOKEN_LIST, TokenInfo, CONTRACTS } from '@/config/contracts';
 import { useRouter, useGetAmountsOut, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH } from '@/hooks/useContract';
 import { useWallet } from '@/hooks/useWallet';
 import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';
+import { parseTransactionError, getErrorToastConfig } from '@/lib/transactionErrors';
 import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
 import { useTransactionHistory } from '@/components/history/TransactionHistory';
@@ -28,6 +29,7 @@ export function SwapCard() {
   const [slippage, setSlippage] = useState(0.5);
   const [showSettings, setShowSettings] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [lastSwapParams, setLastSwapParams] = useState<{ from: string; to: string } | null>(null);
 
   const router = useRouter();
   const weth = useWETH();
@@ -180,18 +182,52 @@ export function SwapCard() {
     }
   }, [weth.isSuccess, weth.hash]);
 
-  // Watch for errors
+  // Watch for errors with decoded revert reasons
   useEffect(() => {
     if (router.error) {
       toast.dismiss('swap');
-      toast.error('Swap Failed', { description: router.error.message.slice(0, 100) });
+      const parsed = parseTransactionError(router.error);
+      const config = getErrorToastConfig(parsed);
+      
+      if (parsed.type === 'user_rejected') {
+        toast.info(parsed.title, {
+          description: parsed.description,
+          duration: config.duration,
+        });
+      } else {
+        toast.error(parsed.title, {
+          description: `${parsed.description}\n💡 ${parsed.suggestion}`,
+          duration: config.duration,
+          action: parsed.canRetry && lastSwapParams ? {
+            label: 'Retry',
+            onClick: () => handleSwap(),
+          } : undefined,
+        });
+      }
     }
   }, [router.error]);
 
   useEffect(() => {
     if (weth.error) {
       toast.dismiss('swap');
-      toast.error('Wrap/Unwrap Failed', { description: weth.error.message.slice(0, 100) });
+      const parsed = parseTransactionError(weth.error);
+      const config = getErrorToastConfig(parsed);
+      
+      if (parsed.type === 'user_rejected') {
+        toast.info(parsed.title, {
+          description: parsed.description,
+          duration: config.duration,
+        });
+      } else {
+        toast.error(parsed.title, {
+          description: `${parsed.description}\n💡 ${parsed.suggestion}`,
+          duration: config.duration,
+          action: parsed.canRetry ? {
+            label: 'Retry',
+            onClick: () => handleSwap(),
+          } : undefined,
+        });
+      }
     }
   }, [weth.error]);
 
@@ -225,8 +261,11 @@ export function SwapCard() {
     setToAmount(fromAmount);
   };
 
-  const handleSwap = async () => {
+  const handleSwap = useCallback(async () => {
     if (!address || !fromToken || !toToken || !fromAmount) return;
+    
+    // Save params for retry
+    setLastSwapParams({ from: fromAmount, to: toAmount });
     
     // Handle wrap/unwrap
     if (isWrapUnwrap) {
@@ -253,7 +292,7 @@ export function SwapCard() {
     } else {
       router.swapExactTokensForTokens(amountIn!, minOutput, swapPath, address, deadline);
     }
-  };
+  }, [address, fromToken, toToken, fromAmount, toAmount, isWrapUnwrap, isWrapping, amountsOut, slippage, swapPath, amountIn]);
 
   const handleApprove = async () => {
     if (!fromToken || fromToken.isNative) return;

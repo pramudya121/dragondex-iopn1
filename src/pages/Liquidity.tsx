@@ -433,7 +433,7 @@ export default function Liquidity() {
 
   return (
     <main 
-      className="container mx-auto px-4 py-8 relative min-h-[calc(100vh-80px)]"
+      className="container mx-auto px-4 py-8 pb-24 lg:pb-8 relative min-h-[calc(100vh-80px)]"
       role="main"
       aria-label="Liquidity Management"
     >

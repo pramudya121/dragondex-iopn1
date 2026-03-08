@@ -114,7 +114,7 @@ export default function Portfolio() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-8 relative min-h-screen">
+    <div className="container mx-auto px-4 py-6 md:py-8 pb-24 lg:pb-8 relative min-h-screen">
       <Spotlight className="hidden md:block" />
       
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">

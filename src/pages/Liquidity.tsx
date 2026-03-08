@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { useWallet } from '@/hooks/useWallet';
 
 const MAX_UINT256 = 2n ** 256n - 1n;
+const NATIVE_GAS_RESERVE = 0.01;
 
 export default function Liquidity() {
   const { address, isConnected } = useAccount();
@@ -54,6 +55,11 @@ export default function Liquidity() {
   // Native balance for OPN
   const { data: nativeOPNBalance } = useBalance({ address });
   
+  const getSpendableNativeBalance = () => {
+    const nativeBalance = nativeOPNBalance ? parseFloat(formatEther(nativeOPNBalance.value)) : 0;
+    return Math.max(nativeBalance - NATIVE_GAS_RESERVE, 0).toFixed(4);
+  };
+
   const getTokenADisplayBalance = () => {
     if (!tokenA) return '0';
     if (tokenA.isNative) {
@@ -420,6 +426,10 @@ export default function Liquidity() {
   const liquidityToRemove = lpBalance ? (lpBalance * BigInt(removePercent)) / 100n : 0n;
   const needsLPApproval = lpBalance && lpBalance > 0n && removePercent > 0 && lpAllowance !== undefined && lpAllowance < liquidityToRemove;
   const isLoading = router.isPending || router.isConfirming;
+  const tokenABalanceFloat = parseFloat(tokenA?.isNative ? getSpendableNativeBalance() : getTokenADisplayBalance());
+  const tokenBBalanceFloat = parseFloat(tokenB?.isNative ? getSpendableNativeBalance() : getTokenBDisplayBalance());
+  const insufficientTokenA = !!amountA && parseFloat(amountA) > tokenABalanceFloat;
+  const insufficientTokenB = !!amountB && parseFloat(amountB) > tokenBBalanceFloat;
 
   return (
     <main 
@@ -571,11 +581,11 @@ export default function Liquidity() {
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm text-muted-foreground">First Token</span>
                         <button 
-                          onClick={() => handleAmountAChange(getTokenADisplayBalance())}
+                          onClick={() => handleAmountAChange(tokenA?.isNative ? getSpendableNativeBalance() : getTokenADisplayBalance())}
                           className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
                         >
                           <Wallet className="w-3 h-3" />
-                          Balance: {getTokenADisplayBalance()}
+                          {tokenA?.isNative ? `Spendable: ${getSpendableNativeBalance()}` : `Balance: ${getTokenADisplayBalance()}`}
                         </button>
                       </div>
                       <div className="flex items-center gap-3">
@@ -620,11 +630,11 @@ export default function Liquidity() {
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm text-muted-foreground">Second Token</span>
                         <button 
-                          onClick={() => handleAmountBChange(getTokenBDisplayBalance())}
+                          onClick={() => handleAmountBChange(tokenB?.isNative ? getSpendableNativeBalance() : getTokenBDisplayBalance())}
                           className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
                         >
                           <Wallet className="w-3 h-3" />
-                          Balance: {getTokenBDisplayBalance()}
+                          {tokenB?.isNative ? `Spendable: ${getSpendableNativeBalance()}` : `Balance: ${getTokenBDisplayBalance()}`}
                         </button>
                       </div>
                       <div className="flex items-center gap-3">
@@ -710,12 +720,14 @@ export default function Liquidity() {
                       <Button 
                         onClick={handleAddLiquidity}
                         className="w-full h-12 text-base btn-dragon"
-                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB || isSameUnderlyingPair}
+                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB || isSameUnderlyingPair || insufficientTokenA || insufficientTokenB}
                       >
                         {isLoading ? (
                           <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Adding Liquidity...</>
                         ) : isSameUnderlyingPair ? (
                           <>Invalid Pair (Use Swap Wrap/Unwrap)</>
+                        ) : insufficientTokenA || insufficientTokenB ? (
+                          <>{tokenA?.isNative || tokenB?.isNative ? 'Insufficient balance (keep gas)' : 'Insufficient token balance'}</>
                         ) : (
                           <><Plus className="w-5 h-5 mr-2" /> Add Liquidity</>
                         )}

@@ -14,6 +14,7 @@ export async function streamChat({
   onError: (error: string) => void;
 }) {
   try {
+    console.log("[DragonBot] Sending to:", CHAT_URL);
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
@@ -23,6 +24,8 @@ export async function streamChat({
       body: JSON.stringify({ messages }),
     });
 
+    console.log("[DragonBot] Response status:", resp.status);
+
     if (resp.status === 429) {
       onError("Rate limit exceeded. Please wait a moment and try again. 🐉");
       return;
@@ -31,8 +34,14 @@ export async function streamChat({
       onError("AI credits depleted. Please try again later.");
       return;
     }
-    if (!resp.ok || !resp.body) {
+    if (!resp.ok) {
+      const errorText = await resp.text();
+      console.error("[DragonBot] Error response:", errorText);
       onError("Failed to connect to DragonBot. Please try again.");
+      return;
+    }
+    if (!resp.body) {
+      onError("No response body from DragonBot.");
       return;
     }
 

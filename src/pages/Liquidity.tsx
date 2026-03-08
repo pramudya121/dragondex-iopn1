@@ -737,12 +737,14 @@ export default function Liquidity() {
                       <Button 
                         onClick={handleAddLiquidity}
                         className="w-full h-12 text-base btn-dragon"
-                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB || isSameUnderlyingPair || insufficientTokenA || insufficientTokenB}
+                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB || isSameUnderlyingPair || insufficientTokenA || insufficientTokenB || (!validPair && !isSameUnderlyingPair)}
                       >
                         {isLoading ? (
                           <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Adding Liquidity...</>
                         ) : isSameUnderlyingPair ? (
                           <>Invalid Pair (Use Swap Wrap/Unwrap)</>
+                        ) : !validPair && tokenA && tokenB ? (
+                          <>Pool Not Found (Create Pool first)</>
                         ) : insufficientTokenA || insufficientTokenB ? (
                           <>{tokenA?.isNative || tokenB?.isNative ? 'Insufficient balance (keep gas)' : 'Insufficient token balance'}</>
                         ) : (

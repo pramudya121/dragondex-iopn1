@@ -16,8 +16,6 @@ import Analytics from "./pages/Analytics";
 import Portfolio from "./pages/Portfolio";
 import CreatePool from "./pages/CreatePool";
 import Docs from "./pages/Docs";
-import Faucet from "./pages/Faucet";
-import Staking from "./pages/Staking";
 
 import NotFound from "./pages/NotFound";
 
@@ -36,8 +34,6 @@ function AnimatedRoutes() {
         <Route path="/analytics" element={<PageTransition><Analytics /></PageTransition>} />
         <Route path="/portfolio" element={<PageTransition><Portfolio /></PageTransition>} />
         <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
-        <Route path="/faucet" element={<PageTransition><Faucet /></PageTransition>} />
-        <Route path="/staking" element={<PageTransition><Staking /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

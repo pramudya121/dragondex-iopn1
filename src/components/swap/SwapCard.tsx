@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TokenSelector } from './TokenSelector';
 import { PriceImpactWarning } from './PriceImpactWarning';
+import { SwapPriceChart } from './SwapPriceChart';
 import { TOKEN_LIST, TokenInfo, CONTRACTS } from '@/config/contracts';
 import { useRouter, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH } from '@/hooks/useContract';
 import { useBestRoute } from '@/hooks/useSwapRouter';
@@ -514,6 +515,15 @@ export function SwapCard() {
               <PriceImpactWarning priceImpact={priceImpact} severity={severity} />
             )}
           </AnimatePresence>
+
+          {/* Price Chart */}
+          {fromToken && toToken && fromAmount && toAmount && parseFloat(toAmount) > 0 && (
+            <SwapPriceChart
+              fromSymbol={fromToken.symbol}
+              toSymbol={toToken.symbol}
+              currentPrice={parseFloat(toAmount) / parseFloat(fromAmount)}
+            />
+          )}
 
           {/* Trade Details */}
           {fromAmount && toAmount && (

@@ -11,6 +11,7 @@ import { SwapPriceChart } from './SwapPriceChart';
 import { TOKEN_LIST, TokenInfo, CONTRACTS } from '@/config/contracts';
 import { useRouter, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH, useRouterWETH } from '@/hooks/useContract';
 import { useBestRoute } from '@/hooks/useSwapRouter';
+import { RouteComparison } from './RouteComparison';
 import { useWallet } from '@/hooks/useWallet';
 import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';
 import { parseTransactionError, getErrorToastConfig } from '@/lib/transactionErrors';
@@ -96,7 +97,7 @@ export function SwapCard() {
   }, [fromAmount, fromToken]);
 
   // Multi-hop routing: find best path automatically
-  const { bestRoute, allRoutes, isLoading: isRouteLoading, hasRoute } = useBestRoute(
+  const { bestRoute, allRoutes, allQuotes, isLoading: isRouteLoading, hasRoute } = useBestRoute(
     isWrapUnwrap ? undefined : fromAddr,
     isWrapUnwrap ? undefined : toAddr,
     isWrapUnwrap ? undefined : amountIn
@@ -633,6 +634,17 @@ export function SwapCard() {
                 </div>
               )}
             </motion.div>
+          )}
+
+          {/* Route Comparison Panel */}
+          {!isWrapUnwrap && fromAmount && bestRoute && allRoutes.length > 1 && (
+            <RouteComparison
+              bestRoute={bestRoute}
+              allRoutes={allRoutes}
+              allQuotes={allQuotes}
+              toDecimals={toToken?.decimals || 18}
+              toSymbol={toToken?.symbol || ''}
+            />
           )}
 
           {/* Action Button / Wallet Connect */}

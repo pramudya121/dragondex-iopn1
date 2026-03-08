@@ -61,7 +61,7 @@ export function SendTokenModal({ isOpen, onClose, tokens }: SendTokenModalProps)
           abi: ERC20_ABI,
           functionName: 'transfer',
           args: [recipient as `0x${string}`, parseEther(amount)],
-        }, {
+        } as any, {
           onSuccess: (hash) => setTxHash(hash),
         });
       }

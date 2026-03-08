@@ -636,6 +636,17 @@ export function SwapCard() {
             </motion.div>
           )}
 
+          {/* Route Comparison Panel */}
+          {!isWrapUnwrap && fromAmount && bestRoute && allRoutes.length > 1 && (
+            <RouteComparison
+              bestRoute={bestRoute}
+              allRoutes={allRoutes}
+              allQuotes={allQuotes}
+              toDecimals={toToken?.decimals || 18}
+              toSymbol={toToken?.symbol || ''}
+            />
+          )}
+
           {/* Action Button / Wallet Connect */}
           <div className="pt-2 space-y-3">
             {!isConnected ? (

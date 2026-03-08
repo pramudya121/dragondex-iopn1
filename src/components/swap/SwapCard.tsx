@@ -126,13 +126,14 @@ export function SwapCard() {
     return () => clearInterval(interval);
   }, [refetchPair, refetchReserves, validPairAddress]);
 
-  // Watch for approval success
+  // Watch for approval success → auto-proceed to swap
   useEffect(() => {
     if (approveSuccess && approveHash) {
+      toast.dismiss('approve');
       toast.success('Token Approved!', {
-        description: `${fromToken?.symbol} has been approved for trading`,
+        description: `${fromToken?.symbol} approved — you can now swap`,
         action: {
-          label: 'View',
+          label: 'View TX',
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${approveHash}`, '_blank'),
         },
       });
@@ -142,9 +143,25 @@ export function SwapCard() {
         status: 'success',
         details: { fromToken: fromToken?.symbol },
       });
-      refetchAllowance();
+      // Refetch allowance so needsApproval becomes false
+      setTimeout(() => refetchAllowance(), 1500);
     }
   }, [approveSuccess, approveHash, fromToken, refetchAllowance]);
+
+  // Watch for approval errors
+  useEffect(() => {
+    if (approve.error) {
+      toast.dismiss('approve');
+      const parsed = parseTransactionError(approve.error);
+      if (parsed.type === 'user_rejected') {
+        toast.info(parsed.title, { description: parsed.description });
+      } else {
+        toast.error('Approval Failed', {
+          description: `${parsed.description}\n💡 ${parsed.suggestion}`,
+        });
+      }
+    }
+  }, [approve.error]);
 
   // Watch for swap success
   useEffect(() => {

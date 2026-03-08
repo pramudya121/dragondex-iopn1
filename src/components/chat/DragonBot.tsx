@@ -10,10 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 const QUICK_PROMPTS = [
   { emoji: "🔄", text: "How do I swap tokens?" },
   { emoji: "💧", text: "How to add liquidity?" },
-  { emoji: "🥩", text: "How does staking work?" },
   { emoji: "📊", text: "Show me token prices" },
   { emoji: "🐉", text: "What is DRAGON token?" },
-  { emoji: "🚰", text: "How to get testnet tokens?" },
+  { emoji: "🏊", text: "How do pools work?" },
 ];
 
 type ChatAction = {

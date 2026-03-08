@@ -38,6 +38,7 @@ export function SwapCard() {
 
   const router = useRouter();
   const weth = useWETH();
+  const { data: routerWETH } = useRouterWETH(); // Read actual WETH from router contract
   const { prices, getPrice } = useTokenPrices();
   const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash, error: approveError } = useApprove();
   const { addTransaction, updateTransaction } = useTransactionHistory();

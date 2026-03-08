@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { useWallet } from '@/hooks/useWallet';
 import { sanitizeAmountInput, getSafeDeadline, getSafeApprovalAmount } from '@/lib/inputValidation';
 
-const MAX_UINT256 = 2n ** 256n - 1n;
+const MAX_UINT256 = 2n ** 256n - 1n; // Still needed for LP token approval only
 const NATIVE_GAS_RESERVE = 0.01;
 
 export default function Liquidity() {

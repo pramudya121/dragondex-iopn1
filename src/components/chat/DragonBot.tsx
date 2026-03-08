@@ -1,11 +1,15 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Sparkles, Bot, User, Flame, Loader2, ArrowRightLeft, ExternalLink, Trash2, Minimize2 } from 'lucide-react';
+import { 
+  Send, Sparkles, Bot, User, Flame, Loader2, ArrowRightLeft, ExternalLink, 
+  Trash2, Minimize2, Mic, MicOff, Volume2, VolumeX, Maximize2
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChatMessage, streamChat } from '@/lib/chatStream';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const QUICK_PROMPTS = [
   { emoji: "🔄", text: "How do I swap tokens?" },
@@ -13,6 +17,7 @@ const QUICK_PROMPTS = [
   { emoji: "📊", text: "Show me token prices" },
   { emoji: "🐉", text: "What is DRAGON token?" },
   { emoji: "🏊", text: "How do pools work?" },
+  { emoji: "💰", text: "Check my portfolio" },
 ];
 
 type ChatAction = {
@@ -58,9 +63,78 @@ function saveMessages(msgs: ChatMessage[]) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs.slice(-50))); } catch {}
 }
 
+// Voice hooks
+function useVoiceInput() {
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const recognitionRef = useRef<any>(null);
+
+  const startListening = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = ''; // Auto-detect
+
+    recognition.onresult = (event: any) => {
+      const result = event.results[event.results.length - 1];
+      setTranscript(result[0].transcript);
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }, []);
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }, []);
+
+  const clearTranscript = useCallback(() => setTranscript(''), []);
+  const hasSupport = typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+  return { isListening, transcript, startListening, stopListening, clearTranscript, hasSupport };
+}
+
+function useTextToSpeech() {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+
+  const speak = useCallback((text: string) => {
+    if (!ttsEnabled || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const cleaned = text.replace(/[*#_`\[\]{}()]/g, '').replace(/\n+/g, '. ');
+    const utterance = new SpeechSynthesisUtterance(cleaned);
+    utterance.rate = 1.0;
+    utterance.pitch = 0.95;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  }, [ttsEnabled]);
+
+  const stop = useCallback(() => {
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
+  }, []);
+
+  const toggle = useCallback(() => {
+    if (isSpeaking) stop();
+    setTtsEnabled(p => !p);
+  }, [isSpeaking, stop]);
+
+  return { isSpeaking, ttsEnabled, speak, stop, toggle };
+}
+
 export function DragonBot() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +142,8 @@ export function DragonBot() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const voice = useVoiceInput();
+  const tts = useTextToSpeech();
 
   // Persist messages
   useEffect(() => { saveMessages(messages); }, [messages]);
@@ -85,16 +161,33 @@ export function DragonBot() {
     }
   }, [isOpen]);
 
+  // Voice input sync
+  useEffect(() => {
+    if (voice.transcript) {
+      setInput(voice.transcript);
+    }
+  }, [voice.transcript]);
+
+  // Auto-send on voice stop
+  useEffect(() => {
+    if (!voice.isListening && voice.transcript.trim()) {
+      const text = voice.transcript.trim();
+      voice.clearTranscript();
+      send(text);
+    }
+  }, [voice.isListening]);
+
   const clearChat = useCallback(() => {
     setMessages([]);
     localStorage.removeItem(STORAGE_KEY);
-  }, []);
+    tts.stop();
+  }, [tts]);
 
   const send = useCallback(async (text: string, retryCount = 0) => {
     if (!text.trim() || isLoading) return;
     const userMsg: ChatMessage = { role: 'user', content: text.trim() };
     const allMessages = messages[messages.length - 1]?.content === text.trim() && messages[messages.length - 1]?.role === 'user'
-      ? messages // Don't add duplicate on retry
+      ? messages
       : [...messages, userMsg];
     setMessages(allMessages);
     setInput('');
@@ -118,9 +211,11 @@ export function DragonBot() {
       onDone: () => {
         setIsLoading(false);
         if (!isOpen) setHasNewMessage(true);
+        // TTS the final response
+        const parsed = parseContent(assistantSoFar);
+        tts.speak(parsed.text);
       },
       onError: (err) => {
-        // Auto-retry once on connection errors
         if (retryCount < 1 && err.includes('Connection lost')) {
           console.log('[DragonBot] Auto-retrying...');
           setTimeout(() => send(text, retryCount + 1), 1000);
@@ -132,17 +227,14 @@ export function DragonBot() {
           description: err,
           variant: 'destructive',
           action: (
-            <button
-              onClick={() => send(text, 0)}
-              className="text-xs font-medium underline"
-            >
+            <button onClick={() => send(text, 0)} className="text-xs font-medium underline">
               Retry
             </button>
           ),
         });
       },
     });
-  }, [messages, isLoading, toast, isOpen]);
+  }, [messages, isLoading, toast, isOpen, tts]);
 
   const lastParsed = useMemo(() => {
     if (isLoading) return { actions: [] as ChatAction[], suggestions: [] as string[] };
@@ -173,32 +265,38 @@ export function DragonBot() {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.1, rotate: 5 }}
+            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-[100] h-16 w-16 rounded-2xl bg-gradient-to-br from-primary via-primary to-secondary shadow-[0_0_40px_hsl(var(--primary)/0.5),0_0_80px_hsl(var(--primary)/0.2)] flex items-center justify-center group overflow-hidden"
+            className="fixed bottom-6 right-6 z-[100] h-16 w-16 rounded-2xl flex items-center justify-center group overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))',
+              boxShadow: '0 0 40px hsl(var(--primary) / 0.4), 0 0 80px hsl(var(--primary) / 0.15), 0 8px 32px rgba(0,0,0,0.3)',
+            }}
           >
-            {/* Animated background shimmer */}
+            {/* Animated ring */}
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+              className="absolute inset-0 rounded-2xl border-2 border-primary-foreground/30"
+              animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+            />
+            {/* Shimmer */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent"
               animate={{ x: ['-100%', '200%'] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}
             />
             <Flame className="w-7 h-7 text-primary-foreground relative z-10 drop-shadow-lg" />
-            {/* Notification badge */}
-            <motion.span
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-accent flex items-center justify-center"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              {hasNewMessage ? (
+            {/* Badge */}
+            {hasNewMessage && (
+              <motion.span
+                className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-accent flex items-center justify-center"
+                animate={{ scale: [1, 1.3, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
                 <span className="text-[10px] font-bold text-accent-foreground">!</span>
-              ) : (
-                <Sparkles className="w-2.5 h-2.5 text-accent-foreground" />
-              )}
-            </motion.span>
-            {/* Pulse ring */}
-            <span className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-primary" style={{ animationDuration: '3s' }} />
+              </motion.span>
+            )}
           </motion.button>
         )}
       </AnimatePresence>
@@ -211,46 +309,85 @@ export function DragonBot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.9 }}
             transition={{ type: 'spring', damping: 22, stiffness: 280 }}
-            className="fixed bottom-6 right-6 z-[100] w-[400px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-4rem)] rounded-3xl overflow-hidden flex flex-col border border-border/40 shadow-[0_0_80px_hsl(var(--primary)/0.15),0_25px_50px_-12px_rgba(0,0,0,0.5)]"
-            style={{ background: 'hsl(var(--background)/0.95)', backdropFilter: 'blur(20px)' }}
+            className={cn(
+              "fixed z-[100] flex flex-col overflow-hidden",
+              "border border-border/30",
+              isExpanded
+                ? "bottom-0 right-0 w-full h-full md:bottom-4 md:right-4 md:w-[600px] md:h-[85vh] md:rounded-3xl"
+                : "bottom-6 right-6 w-[400px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-4rem)] rounded-3xl"
+            )}
+            style={{
+              background: 'hsl(var(--background) / 0.92)',
+              backdropFilter: 'blur(24px) saturate(1.5)',
+              boxShadow: '0 0 80px hsl(var(--primary) / 0.1), 0 25px 60px -12px rgba(0,0,0,0.5), inset 0 1px 0 hsl(var(--primary) / 0.1)',
+            }}
           >
             {/* Header */}
-            <div className="relative px-4 py-3.5 flex items-center gap-3 border-b border-border/20">
-              {/* Header gradient background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/8 via-secondary/5 to-accent/5" />
-              <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-              
+            <div className="relative px-4 py-3 flex items-center gap-3 shrink-0">
+              {/* Header bg with animated gradient */}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/5 to-accent/5" />
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5"
+                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              />
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+              {/* Avatar with pulse */}
               <div className="relative">
                 <motion.div
-                  className="h-11 w-11 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/25"
-                  whileHover={{ rotate: 15 }}
+                  className="h-11 w-11 rounded-2xl flex items-center justify-center relative overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))' }}
+                  whileHover={{ rotate: 10 }}
                   transition={{ type: 'spring' }}
                 >
-                  <Bot className="w-5.5 h-5.5 text-primary-foreground" />
+                  <Bot className="w-5 h-5 text-primary-foreground relative z-10" />
+                  <motion.div
+                    className="absolute inset-0 bg-white/10"
+                    animate={{ opacity: [0, 0.3, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
                 </motion.div>
-                  <motion.span
-                    className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-success border-2 border-background"
+                <motion.span
+                  className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-success border-2 border-background"
                   animate={{ scale: [1, 1.3, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
               </div>
+
               <div className="flex-1 min-w-0 relative">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                   DragonBot
-                  <motion.span animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}>
-                    <Sparkles className="w-3.5 h-3.5 text-accent" />
-                  </motion.span>
+                  <Sparkles className="w-3.5 h-3.5 text-accent" />
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium ml-1">AI</span>
                 </h3>
                 <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-success" />
-                  AI Assistant • Always online
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  {isLoading ? 'Thinking...' : tts.isSpeaking ? 'Speaking...' : 'Online'}
                 </p>
               </div>
-              <div className="flex items-center gap-1 relative">
+
+              <div className="flex items-center gap-0.5 relative">
+                {/* TTS Toggle */}
+                <Button
+                  variant="ghost" size="icon"
+                  className={cn("h-8 w-8 rounded-lg", tts.ttsEnabled ? "text-primary" : "text-muted-foreground")}
+                  onClick={tts.toggle}
+                  title={tts.ttsEnabled ? "Disable voice" : "Enable voice"}
+                >
+                  {tts.ttsEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                </Button>
+                {/* Expand */}
+                <Button
+                  variant="ghost" size="icon"
+                  className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hidden md:flex"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </Button>
                 {messageCount > 0 && (
                   <Button
-                    variant="ghost"
-                    size="icon"
+                    variant="ghost" size="icon"
                     className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
                     onClick={clearChat}
                     title="Clear chat"
@@ -259,10 +396,9 @@ export function DragonBot() {
                   </Button>
                 )}
                 <Button
-                  variant="ghost"
-                  size="icon"
+                  variant="ghost" size="icon"
                   className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => { setIsOpen(false); setIsExpanded(false); }}
                 >
                   <Minimize2 className="w-4 h-4" />
                 </Button>
@@ -278,17 +414,24 @@ export function DragonBot() {
                   transition={{ delay: 0.1 }}
                   className="flex flex-col items-center text-center pt-4 gap-5"
                 >
-                  {/* Animated dragon icon */}
+                  {/* Dragon icon with glow */}
                   <motion.div
                     className="relative"
                     animate={{ y: [0, -6, 0] }}
                     transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                   >
-                    <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-primary/20 via-secondary/15 to-accent/10 flex items-center justify-center border border-primary/20 shadow-lg shadow-primary/10">
-                      <Flame className="w-10 h-10 text-primary" />
+                    <div className="h-20 w-20 rounded-3xl flex items-center justify-center border border-primary/20 relative overflow-hidden"
+                      style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--secondary) / 0.1))' }}
+                    >
+                      <Flame className="w-10 h-10 text-primary relative z-10" />
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent"
+                        animate={{ opacity: [0.3, 0.6, 0.3] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                      />
                     </div>
                     <motion.div
-                      className="absolute -inset-2 rounded-3xl bg-primary/10 blur-xl"
+                      className="absolute -inset-3 rounded-3xl bg-primary/10 blur-xl -z-10"
                       animate={{ opacity: [0.3, 0.6, 0.3] }}
                       transition={{ duration: 3, repeat: Infinity }}
                     />
@@ -297,20 +440,24 @@ export function DragonBot() {
                   <div>
                     <motion.h4
                       className="font-bold text-foreground text-base"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2 }}
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
                     >
                       Welcome, Dragon Rider! 🐉
                     </motion.h4>
                     <motion.p
-                      className="text-xs text-muted-foreground mt-1.5 max-w-[250px]"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
+                      className="text-xs text-muted-foreground mt-1.5 max-w-[260px]"
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
                     >
-                      I'm your AI guide through DragonDEX. Ask me about swaps, pools, staking, and more!
+                      I'm your AI guide with real-time on-chain data. Ask me anything about swaps, pools, prices & DeFi!
                     </motion.p>
+                    {voice.hasSupport && (
+                      <motion.p
+                        className="text-[10px] text-primary/70 mt-2 flex items-center justify-center gap-1"
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+                      >
+                        <Mic className="w-3 h-3" /> Voice input supported
+                      </motion.p>
+                    )}
                   </div>
 
                   {/* Quick prompts grid */}
@@ -322,7 +469,7 @@ export function DragonBot() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 + idx * 0.05 }}
                         onClick={() => send(q.text)}
-                        className="text-[11px] px-3 py-2.5 rounded-xl border border-border/50 bg-card/50 text-foreground hover:bg-primary/10 hover:border-primary/30 transition-all text-left flex items-center gap-2 group"
+                        className="text-[11px] px-3 py-2.5 rounded-xl border border-border/40 bg-card/50 text-foreground hover:bg-primary/10 hover:border-primary/30 transition-all text-left flex items-center gap-2 group"
                       >
                         <span className="text-sm group-hover:scale-110 transition-transform">{q.emoji}</span>
                         <span className="truncate">{q.text}</span>
@@ -343,31 +490,32 @@ export function DragonBot() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25 }}
-                    className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                    className={cn("flex gap-2.5", msg.role === 'user' ? 'flex-row-reverse' : '')}
                   >
                     <motion.div
-                      className={`h-7 w-7 shrink-0 rounded-lg flex items-center justify-center ${
+                      className={cn(
+                        "h-7 w-7 shrink-0 rounded-lg flex items-center justify-center",
                         msg.role === 'user'
                           ? 'bg-primary/20 text-primary'
-                          : 'bg-gradient-to-br from-primary to-secondary text-primary-foreground shadow-sm shadow-primary/20'
-                      }`}
+                          : 'text-primary-foreground'
+                      )}
+                      style={msg.role === 'assistant' ? { background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))' } : undefined}
                       whileHover={{ scale: 1.1 }}
                     >
                       {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
                     </motion.div>
-                    <div className="max-w-[80%] space-y-2">
-                      <div className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                    <div className="max-w-[82%] space-y-2">
+                      <div className={cn(
+                        "rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
                         msg.role === 'user'
-                          ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-tr-md shadow-sm shadow-primary/20'
-                          : 'bg-muted/80 text-foreground rounded-tl-md border border-border/30'
-                      }`}>
+                          ? 'bg-gradient-to-br from-primary to-primary/85 text-primary-foreground rounded-tr-md shadow-lg shadow-primary/15'
+                          : 'bg-card/80 text-foreground rounded-tl-md border border-border/30 shadow-sm'
+                      )}>
                         {msg.role === 'assistant' ? (
-                          <div className="prose prose-sm prose-invert max-w-none [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1 [&>h1]:text-sm [&>h2]:text-sm [&>h3]:text-xs [&_strong]:text-primary [&_code]:text-accent [&_code]:bg-accent/10 [&_code]:px-1 [&_code]:rounded">
+                          <div className="prose prose-sm prose-invert max-w-none [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1 [&>h1]:text-sm [&>h2]:text-sm [&>h3]:text-xs [&_strong]:text-primary [&_code]:text-accent [&_code]:bg-accent/10 [&_code]:px-1 [&_code]:rounded [&_a]:text-primary [&_a]:underline">
                             <ReactMarkdown>{displayContent}</ReactMarkdown>
                           </div>
-                        ) : (
-                          msg.content
-                        )}
+                        ) : msg.content}
                       </div>
 
                       {/* Action buttons */}
@@ -375,22 +523,18 @@ export function DragonBot() {
                         <motion.div
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2, duration: 0.3 }}
+                          transition={{ delay: 0.2 }}
                           className="flex flex-wrap gap-1.5 pl-1"
                         >
                           {parsed.actions.map((act, ai) => (
                             <motion.button
                               key={ai}
-                              whileHover={{ scale: 1.03 }}
+                              whileHover={{ scale: 1.03, y: -1 }}
                               whileTap={{ scale: 0.97 }}
                               onClick={() => handleAction(act)}
                               className="text-[11px] px-3 py-2 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 to-secondary/10 text-primary hover:from-primary/20 hover:to-secondary/20 hover:border-primary/50 transition-all flex items-center gap-1.5 font-medium shadow-sm"
                             >
-                              {act.action === 'swap' ? (
-                                <ArrowRightLeft className="w-3 h-3" />
-                              ) : (
-                                <ExternalLink className="w-3 h-3" />
-                              )}
+                              {act.action === 'swap' ? <ArrowRightLeft className="w-3 h-3" /> : <ExternalLink className="w-3 h-3" />}
                               {act.label}
                             </motion.button>
                           ))}
@@ -402,7 +546,7 @@ export function DragonBot() {
                         <motion.div
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.4, duration: 0.3 }}
+                          transition={{ delay: 0.4 }}
                           className="flex flex-wrap gap-1.5 pl-1"
                         >
                           {lastParsed.suggestions.map((s, si) => (
@@ -425,21 +569,19 @@ export function DragonBot() {
 
               {/* Typing indicator */}
               {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex gap-2.5"
-                >
-                  <div className="h-7 w-7 shrink-0 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm shadow-primary/20">
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2.5">
+                  <div className="h-7 w-7 shrink-0 rounded-lg flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))' }}
+                  >
                     <Bot className="w-3.5 h-3.5 text-primary-foreground" />
                   </div>
-                  <div className="bg-muted/80 rounded-2xl rounded-tl-md px-4 py-3 border border-border/30">
+                  <div className="bg-card/80 rounded-2xl rounded-tl-md px-4 py-3 border border-border/30">
                     <div className="flex gap-1.5 items-center">
                       {[0, 1, 2].map(i => (
                         <motion.div
                           key={i}
-                          className="h-2 w-2 rounded-full bg-primary/50"
-                          animate={{ y: [0, -5, 0], opacity: [0.4, 1, 0.4] }}
+                          className="h-2 w-2 rounded-full bg-primary/60"
+                          animate={{ y: [0, -6, 0], opacity: [0.4, 1, 0.4] }}
                           transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
                         />
                       ))}
@@ -450,33 +592,57 @@ export function DragonBot() {
               )}
             </div>
 
-            {/* Input */}
-            <div className="relative p-3 border-t border-border/20">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+            {/* Input area */}
+            <div className="relative p-3 shrink-0">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
               <form
                 onSubmit={(e) => { e.preventDefault(); send(input); }}
                 className="flex gap-2 items-center"
               >
+                {/* Voice button */}
+                {voice.hasSupport && (
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant={voice.isListening ? "default" : "outline"}
+                      className={cn(
+                        "h-10 w-10 rounded-xl shrink-0 transition-all",
+                        voice.isListening && "bg-destructive hover:bg-destructive/90 animate-pulse"
+                      )}
+                      onClick={voice.isListening ? voice.stopListening : voice.startListening}
+                      disabled={isLoading}
+                    >
+                      {voice.isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    </Button>
+                  </motion.div>
+                )}
+
                 <input
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask DragonBot anything..."
+                  placeholder={voice.isListening ? "Listening..." : "Ask DragonBot anything..."}
                   disabled={isLoading}
-                  className="flex-1 bg-muted/40 border border-border/40 rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 disabled:opacity-50 transition-all"
+                  className={cn(
+                    "flex-1 bg-card/60 border border-border/40 rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60",
+                    "focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 disabled:opacity-50 transition-all",
+                    voice.isListening && "border-destructive/40 focus:ring-destructive/40"
+                  )}
                 />
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button
                     type="submit"
                     size="icon"
                     disabled={!input.trim() || isLoading}
-                    className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-secondary hover:shadow-[0_0_25px_hsl(var(--primary)/0.4)] transition-all disabled:shadow-none"
+                    className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-secondary hover:shadow-[0_0_25px_hsl(var(--primary)/0.4)] transition-all disabled:shadow-none disabled:opacity-50"
                   >
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </Button>
                 </motion.div>
               </form>
-              <p className="text-[10px] text-muted-foreground/40 text-center mt-2">
+              <p className="text-[10px] text-muted-foreground/40 text-center mt-2 flex items-center justify-center gap-1">
+                <Sparkles className="w-2.5 h-2.5" />
                 Powered by DragonDEX AI • {messageCount} messages
               </p>
             </div>

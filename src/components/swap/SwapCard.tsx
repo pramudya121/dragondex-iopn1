@@ -84,7 +84,16 @@ export function SwapCard() {
     return (toToken.isNative ? wethAddress : toToken.address) as `0x${string}`;
   }, [toToken, wethAddress]);
 
-  const amountIn = fromAmount ? parseUnits(fromAmount, fromToken?.decimals || 18) : undefined;
+  const amountIn = useMemo(() => {
+    if (!fromAmount || !fromToken) return undefined;
+    try {
+      const num = parseFloat(fromAmount);
+      if (isNaN(num) || num <= 0) return undefined;
+      return parseUnits(fromAmount, fromToken.decimals || 18);
+    } catch {
+      return undefined;
+    }
+  }, [fromAmount, fromToken]);
 
   // Multi-hop routing: find best path automatically
   const { bestRoute, allRoutes, isLoading: isRouteLoading, hasRoute } = useBestRoute(

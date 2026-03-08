@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, TrendingUp, TrendingDown, Coins, ExternalLink, RefreshCw, PieChart, Activity, Zap, Crown, Shield, Droplets, ArrowUpRight, ArrowDownRight, Filter } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Coins, ExternalLink, RefreshCw, PieChart, Activity, Zap, Crown, Shield, Droplets, ArrowUpRight, ArrowDownRight, Filter, Send } from 'lucide-react';
 import { useAccount, useBalance, useReadContracts } from 'wagmi';
 import { formatEther, formatUnits } from 'viem';
 import { useTokenBalance } from '@/hooks/useContract';
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AssetCardSkeleton, StatCardSkeleton } from '@/components/ui/loading/Skeleton';
 import { TransactionHistory, useTransactionHistory, Transaction } from '@/components/history/TransactionHistory';
+import { SendTokenModal } from '@/components/portfolio/SendTokenModal';
 import { PortfolioAllocationChart } from '@/components/portfolio/AllocationChart';
 import { PAIR_ABI } from '@/config/abis';
 import { cn } from '@/lib/utils';

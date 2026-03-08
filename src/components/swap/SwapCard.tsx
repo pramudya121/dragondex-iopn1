@@ -9,7 +9,7 @@ import { TokenSelector } from './TokenSelector';
 import { PriceImpactWarning } from './PriceImpactWarning';
 import { SwapPriceChart } from './SwapPriceChart';
 import { TOKEN_LIST, TokenInfo, CONTRACTS } from '@/config/contracts';
-import { useRouter, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH } from '@/hooks/useContract';
+import { useRouter, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH, useRouterWETH } from '@/hooks/useContract';
 import { useBestRoute } from '@/hooks/useSwapRouter';
 import { useWallet } from '@/hooks/useWallet';
 import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';

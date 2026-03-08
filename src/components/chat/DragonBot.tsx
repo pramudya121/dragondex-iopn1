@@ -209,8 +209,8 @@ export function DragonBot() {
                 >
                   <Bot className="w-5.5 h-5.5 text-primary-foreground" />
                 </motion.div>
-                <motion.span
-                  className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-background"
+                  <motion.span
+                    className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-success border-2 border-background"
                   animate={{ scale: [1, 1.3, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
@@ -223,7 +223,7 @@ export function DragonBot() {
                   </motion.span>
                 </h3>
                 <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-success" />
                   AI Assistant • Always online
                 </p>
               </div>

@@ -22,6 +22,7 @@ export function useRouter() {
       functionName: 'swapExactETHForTokens',
       args: [amountOutMin, [...path], to, deadline],
       value,
+      gas: 300_000n, // Explicit gas limit - OPN Testnet gas estimation can fail for payable functions
     });
   };
 
@@ -88,6 +89,7 @@ export function useRouter() {
       functionName: 'addLiquidityETH',
       args: [token, amountTokenDesired, amountTokenMin, amountETHMin, to, deadline],
       value,
+      gas: 500_000n, // Explicit gas limit for payable function
     });
   };
 

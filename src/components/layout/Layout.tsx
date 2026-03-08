@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { WaveBackground } from '@/components/ui/WaveBackground';
+import { DragonBot } from '@/components/chat/DragonBot';
 
 interface LayoutProps {
   children: ReactNode;

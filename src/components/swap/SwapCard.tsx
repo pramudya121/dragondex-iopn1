@@ -229,11 +229,14 @@ export function SwapCard() {
 
   // Watch for wrap/unwrap success
   useEffect(() => {
-    if (weth.isSuccess && weth.hash) {
+    if (weth.isSuccess && weth.hash && weth.hash !== processedHash) {
+      setProcessedHash(weth.hash);
+      const savedFrom = fromAmount;
+      const savedTo = toAmount;
       toast.dismiss('swap');
       const action = isWrapping ? 'Wrapped' : 'Unwrapped';
       toast.success(`${action} Successfully! 🔥`, {
-        description: `${action} ${fromAmount} ${fromToken?.symbol} → ${toAmount} ${toToken?.symbol}`,
+        description: `${action} ${savedFrom} ${fromToken?.symbol} → ${savedTo} ${toToken?.symbol}`,
         action: {
           label: 'View',
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${weth.hash}`, '_blank'),
@@ -243,12 +246,12 @@ export function SwapCard() {
         hash: weth.hash,
         type: 'swap',
         status: 'success',
-        details: { fromToken: fromToken?.symbol, toToken: toToken?.symbol, fromAmount, toAmount },
+        details: { fromToken: fromToken?.symbol, toToken: toToken?.symbol, fromAmount: savedFrom, toAmount: savedTo },
       });
       setFromAmount('');
       setToAmount('');
     }
-  }, [weth.isSuccess, weth.hash]);
+  }, [weth.isSuccess, weth.hash, processedHash]);
 
   // Watch for errors with decoded revert reasons
   useEffect(() => {

@@ -607,10 +607,10 @@ export function SwapCard() {
                   <>Enter Amount</>
                 ) : !isWrapUnwrap && isPoolDataLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Checking Pool...</>
-                ) : !isWrapUnwrap && !validPairAddress && fromToken && toToken ? (
-                  <>No Pool Found (Create Pool first)</>
-                ) : !isWrapUnwrap && !hasLiquidity && fromToken && toToken ? (
-                  <>No Liquidity for {fromToken?.symbol}/{toToken?.symbol}</>
+                ) : !isWrapUnwrap && !hasLiquidity && !isPoolDataLoading && fromToken && toToken ? (
+                  <>No Route Found for {fromToken?.symbol}/{toToken?.symbol}</>
+                ) : !isWrapUnwrap && !hasRoute && !isPoolDataLoading && fromToken && toToken ? (
+                  <>No Route Found (Create Pool first)</>
                 ) : parseFloat(fromAmount) > parseFloat(maxSpendableFromBalance) ? (
                   <>{fromToken?.isNative ? 'Insufficient OPN (keep gas)' : `Insufficient ${fromToken?.symbol}`}</>
                 ) : isWrapUnwrap ? (

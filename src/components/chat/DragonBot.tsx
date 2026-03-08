@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Sparkles, Bot, User, Flame, Loader2 } from 'lucide-react';
+import { X, Send, Sparkles, Bot, User, Flame, Loader2, ArrowRightLeft, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChatMessage, streamChat } from '@/lib/chatStream';
 import { useToast } from '@/hooks/use-toast';
@@ -13,12 +14,36 @@ const QUICK_PROMPTS = [
   "How to add liquidity?",
 ];
 
-function parseSuggestions(content: string): { text: string; suggestions: string[] } {
-  const match = content.match(/\[SUGGESTIONS\]\n?([\s\S]*?)\n?\[\/SUGGESTIONS\]/);
-  if (!match) return { text: content, suggestions: [] };
-  const text = content.slice(0, match.index).trimEnd();
-  const suggestions = match[1].split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3);
-  return { text, suggestions };
+type ChatAction = {
+  label: string;
+  action: 'swap' | 'navigate';
+  from?: string;
+  to?: string;
+  path?: string;
+};
+
+function parseContent(content: string): { text: string; actions: ChatAction[]; suggestions: string[] } {
+  let remaining = content;
+  let actions: ChatAction[] = [];
+  let suggestions: string[] = [];
+
+  // Parse actions
+  const actionsMatch = remaining.match(/\[ACTIONS\]\n?([\s\S]*?)\n?\[\/ACTIONS\]/);
+  if (actionsMatch) {
+    remaining = remaining.slice(0, actionsMatch.index).trimEnd() + remaining.slice(actionsMatch.index! + actionsMatch[0].length);
+    actions = actionsMatch[1].split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+      try { return JSON.parse(line); } catch { return null; }
+    }).filter(Boolean);
+  }
+
+  // Parse suggestions
+  const sugMatch = remaining.match(/\[SUGGESTIONS\]\n?([\s\S]*?)\n?\[\/SUGGESTIONS\]/);
+  if (sugMatch) {
+    remaining = remaining.slice(0, sugMatch.index).trimEnd();
+    suggestions = sugMatch[1].split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3);
+  }
+
+  return { text: remaining, actions, suggestions };
 }
 
 export function DragonBot() {

@@ -36,6 +36,7 @@ export function SwapCard() {
   const [lastSwapParams, setLastSwapParams] = useState<{ from: string; to: string } | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [autoSlippage, setAutoSlippage] = useState(true);
+  const [processedHash, setProcessedHash] = useState<string | null>(null);
 
   const NATIVE_GAS_RESERVE = 0.01;
 

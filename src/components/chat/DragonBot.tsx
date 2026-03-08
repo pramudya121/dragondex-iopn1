@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Sparkles, Bot, User, Flame, Loader2 } from 'lucide-react';
+import { X, Send, Sparkles, Bot, User, Flame, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { ChatMessage, streamChat } from '@/lib/chatStream';
@@ -12,6 +12,14 @@ const QUICK_PROMPTS = [
   "How does staking work?",
   "How to add liquidity?",
 ];
+
+function parseSuggestions(content: string): { text: string; suggestions: string[] } {
+  const match = content.match(/\[SUGGESTIONS\]\n?([\s\S]*?)\n?\[\/SUGGESTIONS\]/);
+  if (!match) return { text: content, suggestions: [] };
+  const text = content.slice(0, match.index).trimEnd();
+  const suggestions = match[1].split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3);
+  return { text, suggestions };
+}
 
 export function DragonBot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -65,9 +73,16 @@ export function DragonBot() {
     });
   }, [messages, isLoading, toast]);
 
+  // Parse suggestions from the last assistant message
+  const lastAssistantSuggestions = useMemo(() => {
+    if (isLoading) return [];
+    const lastMsg = [...messages].reverse().find(m => m.role === 'assistant');
+    if (!lastMsg) return [];
+    return parseSuggestions(lastMsg.content).suggestions;
+  }, [messages, isLoading]);
+
   return (
     <>
-      {/* Floating Button */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
@@ -80,7 +95,6 @@ export function DragonBot() {
             className="fixed bottom-6 right-6 z-[100] h-14 w-14 rounded-full bg-gradient-to-br from-primary to-secondary shadow-[0_0_30px_hsl(var(--primary)/0.5)] flex items-center justify-center group"
           >
             <Flame className="w-6 h-6 text-primary-foreground group-hover:animate-pulse" />
-            {/* Ping animation */}
             <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-accent flex items-center justify-center">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
               <Sparkles className="w-2.5 h-2.5 text-accent-foreground relative" />
@@ -89,7 +103,6 @@ export function DragonBot() {
         )}
       </AnimatePresence>
 
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -154,36 +167,63 @@ export function DragonBot() {
                 </motion.div>
               )}
 
-              {messages.map((msg, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
-                >
-                  <div className={`h-7 w-7 shrink-0 rounded-lg flex items-center justify-center ${
-                    msg.role === 'user'
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-gradient-to-br from-primary to-secondary text-primary-foreground'
-                  }`}>
-                    {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
-                  </div>
-                  <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                    msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-tr-md'
-                      : 'bg-muted text-foreground rounded-tl-md'
-                  }`}>
-                    {msg.role === 'assistant' ? (
-                      <div className="prose prose-sm prose-invert max-w-none [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+              {messages.map((msg, i) => {
+                const isLast = i === messages.length - 1;
+                const parsed = msg.role === 'assistant' ? parseSuggestions(msg.content) : null;
+                const displayContent = parsed ? parsed.text : msg.content;
+
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                  >
+                    <div className={`h-7 w-7 shrink-0 rounded-lg flex items-center justify-center ${
+                      msg.role === 'user'
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-gradient-to-br from-primary to-secondary text-primary-foreground'
+                    }`}>
+                      {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+                    </div>
+                    <div className="max-w-[80%] space-y-2">
+                      <div className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                        msg.role === 'user'
+                          ? 'bg-primary text-primary-foreground rounded-tr-md'
+                          : 'bg-muted text-foreground rounded-tl-md'
+                      }`}>
+                        {msg.role === 'assistant' ? (
+                          <div className="prose prose-sm prose-invert max-w-none [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1">
+                            <ReactMarkdown>{displayContent}</ReactMarkdown>
+                          </div>
+                        ) : (
+                          msg.content
+                        )}
                       </div>
-                    ) : (
-                      msg.content
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+                      {/* Follow-up suggestions */}
+                      {msg.role === 'assistant' && isLast && !isLoading && lastAssistantSuggestions.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3, duration: 0.3 }}
+                          className="flex flex-wrap gap-1.5 pl-1"
+                        >
+                          {lastAssistantSuggestions.map((s, si) => (
+                            <button
+                              key={si}
+                              onClick={() => send(s)}
+                              className="text-[11px] px-2.5 py-1 rounded-full border border-accent/40 bg-accent/10 text-accent hover:bg-accent/20 transition-colors leading-tight"
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
 
               {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
                 <motion.div

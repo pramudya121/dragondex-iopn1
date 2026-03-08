@@ -27,13 +27,22 @@ function encodeFunctionCall(sig: string, args: string[]): string {
 }
 
 async function ethCall(to: string, data: string): Promise<string> {
-  const resp = await fetch(RPC_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data }, "latest"] }),
-  });
-  const json = await resp.json();
-  return json.result || "0x";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout per RPC call
+  try {
+    const resp = await fetch(RPC_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to, data }, "latest"] }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const json = await resp.json();
+    return json.result || "0x";
+  } catch {
+    clearTimeout(timeout);
+    return "0x";
+  }
 }
 
 function hexToBigInt(hex: string): bigint {

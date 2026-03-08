@@ -134,6 +134,15 @@ EXPERTISE - You are a DeFi expert who helps with:
 - Portfolio analysis and LP position tracking
 - OPN Testnet network details and wallet setup
 - Smart contract addresses and verification
+- READING USER WALLET BALANCES and providing personalized portfolio analysis
+
+WALLET ANALYSIS: When wallet context is provided:
+- Analyze the user's token balances and provide insights
+- Suggest optimal allocation strategies
+- Identify tokens with low balance that might need top-up
+- Calculate approximate USD value using current prices
+- Recommend LP opportunities based on held tokens
+- If user asks "check my portfolio" or similar, give detailed breakdown
 
 ON-CHAIN ANALYSIS: When users ask about prices, provide detailed analysis:
 - Compare token ratios across different pools
@@ -192,7 +201,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages } = await req.json();
+    const { messages, walletContext } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -205,6 +214,12 @@ serve(async (req) => {
       console.error("Price fetch error:", e);
     }
 
+    // Build wallet context
+    let walletInfo = "";
+    if (walletContext) {
+      walletInfo = `\n\n👛 USER'S WALLET (real-time on-chain balances):\n${walletContext}\n\nUse this data when user asks about their portfolio, balance, or holdings. Provide personalized analysis.`;
+    }
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -214,7 +229,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT + priceContext },
+          { role: "system", content: SYSTEM_PROMPT + priceContext + walletInfo },
           ...messages,
         ],
         stream: true,

@@ -127,10 +127,11 @@ export function useBestRoute(
     query: { enabled: routes.length > 0 && !!amountIn && amountIn > 0n },
   });
 
-  const bestRoute = useMemo(() => {
-    if (!quoteResults || routes.length === 0) return null;
+  const { bestRoute, allQuotes } = useMemo(() => {
+    if (!quoteResults || routes.length === 0) return { bestRoute: null, allQuotes: [] };
 
     let best: { route: SwapRoute; amountsOut: bigint[]; outputAmount: bigint } | null = null;
+    const quotes: { route: SwapRoute; output: bigint }[] = [];
 
     for (let i = 0; i < routes.length; i++) {
       const result = quoteResults[i];
@@ -138,18 +139,23 @@ export function useBestRoute(
 
       const amounts = result.result as unknown as bigint[];
       const output = amounts[amounts.length - 1];
+      quotes.push({ route: routes[i], output });
 
       if (!best || output > best.outputAmount) {
         best = { route: routes[i], amountsOut: amounts, outputAmount: output };
       }
     }
 
-    return best;
+    // Sort quotes by output descending
+    quotes.sort((a, b) => (b.output > a.output ? 1 : b.output < a.output ? -1 : 0));
+
+    return { bestRoute: best, allQuotes: quotes };
   }, [routes, quoteResults]);
 
   return {
     bestRoute,
     allRoutes: routes,
+    allQuotes,
     isLoading: isRoutesLoading || isQuoting,
     hasRoute: routes.length > 0,
   };

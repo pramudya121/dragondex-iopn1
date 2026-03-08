@@ -150,9 +150,9 @@ export function SwapCard() {
 
   // Watch for approval errors
   useEffect(() => {
-    if (approve.error) {
+    if (approveError) {
       toast.dismiss('approve');
-      const parsed = parseTransactionError(approve.error);
+      const parsed = parseTransactionError(approveError);
       if (parsed.type === 'user_rejected') {
         toast.info(parsed.title, { description: parsed.description });
       } else {
@@ -161,7 +161,7 @@ export function SwapCard() {
         });
       }
     }
-  }, [approve.error]);
+  }, [approveError]);
 
   // Watch for swap success
   useEffect(() => {

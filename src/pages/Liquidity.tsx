@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
 import { toast } from 'sonner';
 import { useWallet } from '@/hooks/useWallet';
+import { sanitizeAmountInput, getSafeDeadline, getSafeApprovalAmount } from '@/lib/inputValidation';
 
 const MAX_UINT256 = 2n ** 256n - 1n;
 const NATIVE_GAS_RESERVE = 0.01;

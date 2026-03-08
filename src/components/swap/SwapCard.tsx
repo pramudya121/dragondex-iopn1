@@ -13,6 +13,7 @@ import { useBestRoute } from '@/hooks/useSwapRouter';
 import { useWallet } from '@/hooks/useWallet';
 import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';
 import { parseTransactionError, getErrorToastConfig } from '@/lib/transactionErrors';
+import { sanitizeAmountInput, sanitizeSlippage, getSafeDeadline, calculateMinOutput, getSafeApprovalAmount } from '@/lib/inputValidation';
 import { MovingBorder } from '@/components/ui/aceternity/MovingBorder';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
 import { useTransactionHistory } from '@/components/history/TransactionHistory';
@@ -300,8 +301,8 @@ export function SwapCard() {
     
     toast.loading('Confirming swap...', { id: 'swap' });
     
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
-    const minOutput = (amountsOut[amountsOut.length - 1] * BigInt(Math.floor((100 - slippage) * 100))) / 10000n;
+    const deadline = getSafeDeadline(30);
+    const minOutput = calculateMinOutput(amountsOut[amountsOut.length - 1], slippage);
     
     if (fromToken.isNative) {
       router.swapExactETHForTokens(minOutput, swapPath, address, deadline, parseEther(fromAmount));
@@ -315,7 +316,8 @@ export function SwapCard() {
   const handleApprove = async () => {
     if (!fromToken || fromToken.isNative) return;
     toast.loading(`Approving ${fromToken.symbol}...`, { id: 'approve' });
-    approve(fromToken.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, parseUnits('999999999', fromToken.decimals));
+    const safeAmount = getSafeApprovalAmount(amountIn || 0n);
+    approve(fromToken.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, safeAmount);
   };
 
   const fromBalance = useMemo(() => {
@@ -416,7 +418,9 @@ export function SwapCard() {
                   <Input
                     type="number"
                     value={slippage}
-                    onChange={(e) => setSlippage(parseFloat(e.target.value) || 0.5)}
+                    onChange={(e) => setSlippage(sanitizeSlippage(parseFloat(e.target.value)))}
+                    min={0.01}
+                    max={50}
                     className="w-20 text-center"
                     placeholder="0.5"
                   />
@@ -442,7 +446,7 @@ export function SwapCard() {
                   type="number" 
                   placeholder="0.0" 
                   value={fromAmount} 
-                  onChange={(e) => setFromAmount(e.target.value)} 
+                  onChange={(e) => setFromAmount(sanitizeAmountInput(e.target.value))} 
                   className="text-2xl font-bold bg-transparent border-none p-0 h-auto focus-visible:ring-0" 
                 />
                 {fromUsdValue > 0 && (

@@ -9,7 +9,7 @@ import { TokenSelector } from './TokenSelector';
 import { PriceImpactWarning } from './PriceImpactWarning';
 import { SwapPriceChart } from './SwapPriceChart';
 import { TOKEN_LIST, TokenInfo, CONTRACTS } from '@/config/contracts';
-import { useRouter, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH } from '@/hooks/useContract';
+import { useRouter, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH, useRouterWETH } from '@/hooks/useContract';
 import { useBestRoute } from '@/hooks/useSwapRouter';
 import { useWallet } from '@/hooks/useWallet';
 import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';
@@ -38,6 +38,7 @@ export function SwapCard() {
 
   const router = useRouter();
   const weth = useWETH();
+  const { data: routerWETH } = useRouterWETH(); // Read actual WETH from router contract
   const { prices, getPrice } = useTokenPrices();
   const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash, error: approveError } = useApprove();
   const { addTransaction, updateTransaction } = useTransactionHistory();
@@ -61,15 +62,27 @@ export function SwapCard() {
     address
   );
 
+  // Use router's actual WETH address if available, fallback to configured
+  const wethAddress = useMemo(() => {
+    return (routerWETH || CONTRACTS.WETH) as `0x${string}`;
+  }, [routerWETH]);
+
+  // Log WETH mismatch for debugging
+  useEffect(() => {
+    if (routerWETH && routerWETH.toLowerCase() !== CONTRACTS.WETH.toLowerCase()) {
+      console.warn(`⚠️ WETH mismatch! Router: ${routerWETH}, Config: ${CONTRACTS.WETH}`);
+    }
+  }, [routerWETH]);
+
   // Get pair for price impact calculation
   const fromAddr = useMemo(() => {
     if (!fromToken) return undefined;
-    return (fromToken.isNative ? CONTRACTS.WETH : fromToken.address) as `0x${string}`;
-  }, [fromToken]);
+    return (fromToken.isNative ? wethAddress : fromToken.address) as `0x${string}`;
+  }, [fromToken, wethAddress]);
   const toAddr = useMemo(() => {
     if (!toToken) return undefined;
-    return (toToken.isNative ? CONTRACTS.WETH : toToken.address) as `0x${string}`;
-  }, [toToken]);
+    return (toToken.isNative ? wethAddress : toToken.address) as `0x${string}`;
+  }, [toToken, wethAddress]);
 
   const amountIn = fromAmount ? parseUnits(fromAmount, fromToken?.decimals || 18) : undefined;
 

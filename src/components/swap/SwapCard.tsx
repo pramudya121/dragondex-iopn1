@@ -33,14 +33,12 @@ export function SwapCard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [lastSwapParams, setLastSwapParams] = useState<{ from: string; to: string } | null>(null);
-  const [pendingNativeWrap, setPendingNativeWrap] = useState(false);
 
-  const wopnToken = useMemo(() => TOKEN_LIST.find((token) => token.symbol === 'WOPN') || null, []);
   const NATIVE_GAS_RESERVE = 0.01;
 
   const router = useRouter();
   const weth = useWETH();
-  const { data: routerWETH } = useRouterWETH(); // Read actual WETH from router contract
+  const { data: routerWETH } = useRouterWETH();
   const { prices, getPrice } = useTokenPrices();
   const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash, error: approveError } = useApprove();
   const { addTransaction, updateTransaction } = useTransactionHistory();
@@ -57,7 +55,6 @@ export function SwapCard() {
 
   const isWrapping = fromToken?.isNative && toToken?.symbol === 'WOPN';
   const isUnwrapping = fromToken?.symbol === 'WOPN' && toToken?.isNative;
-  const needsWrapFirst = !!fromToken?.isNative && !!toToken && !isWrapUnwrap;
 
   const { data: nativeBalance } = useBalance({ address });
   const { data: tokenBalance } = useTokenBalance(
@@ -205,29 +202,6 @@ export function SwapCard() {
   useEffect(() => {
     if (weth.isSuccess && weth.hash) {
       toast.dismiss('swap');
-
-      if (pendingNativeWrap && wopnToken) {
-        toast.success('Step 1 Complete: OPN Wrapped', {
-          description: 'Lanjutkan approve lalu swap dari WOPN ke token tujuan.',
-          action: {
-            label: 'View TX',
-            onClick: () => window.open(`https://testnet.iopn.tech/tx/${weth.hash}`, '_blank'),
-          },
-        });
-
-        addTransaction({
-          hash: weth.hash,
-          type: 'swap',
-          status: 'success',
-          details: { fromToken: 'OPN', toToken: 'WOPN', fromAmount, toAmount: fromAmount },
-        });
-
-        setFromToken(wopnToken);
-        setPendingNativeWrap(false);
-        setTimeout(() => refetchAllowance(), 1000);
-        return;
-      }
-
       const action = isWrapping ? 'Wrapped' : 'Unwrapped';
       toast.success(`${action} Successfully!`, {
         description: `${action} ${fromAmount} ${fromToken?.symbol} to ${toAmount} ${toToken?.symbol}`,
@@ -245,7 +219,7 @@ export function SwapCard() {
       setFromAmount('');
       setToAmount('');
     }
-  }, [weth.isSuccess, weth.hash, pendingNativeWrap, wopnToken, fromAmount, fromToken, toAmount, toToken, refetchAllowance]);
+  }, [weth.isSuccess, weth.hash]);
 
   // Watch for errors with decoded revert reasons
   useEffect(() => {
@@ -274,7 +248,6 @@ export function SwapCard() {
 
   useEffect(() => {
     if (weth.error) {
-      setPendingNativeWrap(false);
       toast.dismiss('swap');
       const parsed = parseTransactionError(weth.error);
       const config = getErrorToastConfig(parsed);
@@ -355,14 +328,6 @@ export function SwapCard() {
       return;
     }
 
-    // Fallback for native swaps: wrap first, then user continues with WOPN swap
-    if (needsWrapFirst) {
-      toast.loading('Step 1/2: Wrapping OPN to WOPN...', { id: 'swap' });
-      setPendingNativeWrap(true);
-      weth.deposit(parseEther(fromAmount));
-      return;
-    }
-
     if (!amountsOut) return;
     
     toast.loading('Confirming swap...', { id: 'swap' });
@@ -377,7 +342,7 @@ export function SwapCard() {
     } else {
       router.swapExactTokensForTokens(amountIn!, minOutput, swapPath, address, deadline);
     }
-  }, [address, fromToken, toToken, fromAmount, toAmount, isWrapUnwrap, isWrapping, needsWrapFirst, amountsOut, slippage, swapPath, amountIn, nativeBalance, wopnToken]);
+  }, [address, fromToken, toToken, fromAmount, toAmount, isWrapUnwrap, isWrapping, amountsOut, slippage, swapPath, amountIn, nativeBalance]);
 
   const handleApprove = async () => {
     if (!fromToken || fromToken.isNative) return;
@@ -708,7 +673,7 @@ export function SwapCard() {
                 }
               >
                 {isLoading ? (
-                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isWrapUnwrap || pendingNativeWrap ? (isWrapping || pendingNativeWrap ? 'Wrapping...' : 'Unwrapping...') : 'Swapping...'}</>
+                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isWrapUnwrap ? (isWrapping ? 'Wrapping...' : 'Unwrapping...') : 'Swapping...'}</>
                 ) : !fromAmount ? (
                   <>Enter Amount</>
                 ) : !isWrapUnwrap && isPoolDataLoading ? (
@@ -717,8 +682,6 @@ export function SwapCard() {
                   <>No Route Found</>
                 ) : parseFloat(fromAmount) > parseFloat(maxSpendableFromBalance) ? (
                   <>{fromToken?.isNative ? 'Insufficient OPN (keep gas)' : `Insufficient ${fromToken?.symbol}`}</>
-                ) : needsWrapFirst ? (
-                  <>Wrap OPN → WOPN (Step 1)</>
                 ) : isWrapUnwrap ? (
                   <>{isWrapping ? 'Wrap OPN → WOPN' : 'Unwrap WOPN → OPN'}</>
                 ) : isHighImpact ? (

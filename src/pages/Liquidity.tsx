@@ -41,7 +41,6 @@ export default function Liquidity() {
   const [amountB, setAmountB] = useState('');
   const [isAutoCalculating, setIsAutoCalculating] = useState(false);
   const [lastEditedField, setLastEditedField] = useState<'A' | 'B' | null>(null);
-  const wopnToken = useMemo(() => TOKEN_LIST.find((token) => token.symbol === 'WOPN') || TOKEN_LIST[1], []);
   
   // Remove Liquidity state
   const [removePercent, setRemovePercent] = useState(25);
@@ -434,12 +433,6 @@ export default function Liquidity() {
   const tokenBBalanceFloat = parseFloat(tokenB?.isNative ? getSpendableNativeBalance() : getTokenBDisplayBalance());
   const insufficientTokenA = !!amountA && parseFloat(amountA) > tokenABalanceFloat;
   const insufficientTokenB = !!amountB && parseFloat(amountB) > tokenBBalanceFloat;
-  const hasNativeTokenInAdd = activeTab === 'add' && (!!tokenA?.isNative || !!tokenB?.isNative);
-
-  const replaceNativeWithWopn = () => {
-    if (tokenA?.isNative) setTokenA(wopnToken);
-    if (tokenB?.isNative) setTokenB(wopnToken);
-  };
 
   return (
     <main 
@@ -584,23 +577,7 @@ export default function Liquidity() {
                     )}
 
                     {/* Pool Status Indicator */}
-                    {hasNativeTokenInAdd && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-warning/10 border border-warning/30 rounded-xl p-4"
-                      >
-                        <p className="text-sm font-medium text-warning mb-1">Native OPN belum stabil untuk Add Liquidity</p>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          Gunakan WOPN agar transaksi Add Liquidity lebih stabil dan tidak gagal.
-                        </p>
-                        <Button variant="outline" size="sm" onClick={replaceNativeWithWopn} className="w-full">
-                          Ganti OPN ke WOPN
-                        </Button>
-                      </motion.div>
-                    )}
-
-                    {!hasNativeTokenInAdd && !isSameUnderlyingPair && !isPoolDataLoading && tokenA && tokenB && !validPair && (
+                    {!isSameUnderlyingPair && !isPoolDataLoading && tokenA && tokenB && !validPair && (
                       <motion.div
                         initial={{ opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -779,14 +756,12 @@ export default function Liquidity() {
                       <Button 
                         onClick={handleAddLiquidity}
                         className="w-full h-12 text-base btn-dragon"
-                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB || isSameUnderlyingPair || hasNativeTokenInAdd || insufficientTokenA || insufficientTokenB || (!validPair && !isSameUnderlyingPair)}
+                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB || isSameUnderlyingPair || insufficientTokenA || insufficientTokenB || (!validPair && !isSameUnderlyingPair)}
                       >
                         {isLoading ? (
                           <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Adding Liquidity...</>
                         ) : isSameUnderlyingPair ? (
                           <>Invalid Pair (Use Swap Wrap/Unwrap)</>
-                        ) : hasNativeTokenInAdd ? (
-                          <>Use WOPN Instead of OPN</>
                         ) : !validPair && tokenA && tokenB ? (
                           <>Pool Not Found (Create Pool first)</>
                         ) : insufficientTokenA || insufficientTokenB ? (

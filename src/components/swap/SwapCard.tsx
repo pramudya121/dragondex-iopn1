@@ -33,14 +33,12 @@ export function SwapCard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [lastSwapParams, setLastSwapParams] = useState<{ from: string; to: string } | null>(null);
-  const [pendingNativeWrap, setPendingNativeWrap] = useState(false);
 
-  const wopnToken = useMemo(() => TOKEN_LIST.find((token) => token.symbol === 'WOPN') || null, []);
   const NATIVE_GAS_RESERVE = 0.01;
 
   const router = useRouter();
   const weth = useWETH();
-  const { data: routerWETH } = useRouterWETH(); // Read actual WETH from router contract
+  const { data: routerWETH } = useRouterWETH();
   const { prices, getPrice } = useTokenPrices();
   const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash, error: approveError } = useApprove();
   const { addTransaction, updateTransaction } = useTransactionHistory();
@@ -57,7 +55,6 @@ export function SwapCard() {
 
   const isWrapping = fromToken?.isNative && toToken?.symbol === 'WOPN';
   const isUnwrapping = fromToken?.symbol === 'WOPN' && toToken?.isNative;
-  const needsWrapFirst = !!fromToken?.isNative && !!toToken && !isWrapUnwrap;
 
   const { data: nativeBalance } = useBalance({ address });
   const { data: tokenBalance } = useTokenBalance(

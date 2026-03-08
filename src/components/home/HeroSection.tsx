@@ -48,8 +48,8 @@ export function HeroSection() {
             <span>Live on OPN Testnet</span>
           </motion.div>
 
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-black mb-6">
-            <AnimatedGradientText className="text-5xl md:text-6xl lg:text-7xl font-black">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6">
+            <AnimatedGradientText className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black">
               DRAGONDEX
             </AnimatedGradientText>
           </h1>
@@ -60,7 +60,7 @@ export function HeroSection() {
           />
 
           {/* Stats - Real On-Chain Data */}
-          <div className="grid grid-cols-3 gap-4 mb-8 max-w-lg mx-auto">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8 max-w-lg mx-auto">
             {[
               { value: totalTVL, label: 'Total Value Locked', prefix: '$', color: 'text-primary' },
               { value: Number(pairsCount || 0), label: 'Total Pools', prefix: '', color: 'text-secondary' },
@@ -74,7 +74,7 @@ export function HeroSection() {
                 className="relative bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-4 overflow-hidden"
               >
                 <BorderBeam size={60} duration={10} delay={idx} />
-                <p className={`text-2xl md:text-3xl font-bold ${stat.color}`}>
+                <p className={`text-lg sm:text-2xl md:text-3xl font-bold ${stat.color}`}>
                   {stat.prefix}<NumberTicker value={stat.value} decimalPlaces={stat.prefix === '$' ? 2 : 0} />
                 </p>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>

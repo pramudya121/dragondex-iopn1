@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ExternalLink, ArrowLeftRight, Droplets, LayoutGrid, BarChart3, Wallet, BookOpen, Home, Droplet, Flame } from 'lucide-react';
+import { Menu, X, ExternalLink, ArrowLeftRight, Droplets, LayoutGrid, BarChart3, Wallet, BookOpen, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { FloatingDock } from '@/components/ui/aceternity/FloatingDock';

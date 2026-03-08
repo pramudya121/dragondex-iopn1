@@ -140,9 +140,10 @@ export function usePriceImpact(
       };
     }
 
-    // Fallback: estimate from constant-product AMM formula
-    // price_impact ≈ inputAmount / (reserveIn + inputAmount) — but without reserves, use a small estimate
-    const estimatedImpact = Math.min(inputAmount * 0.1, 15);
+    // Fallback: estimate price impact using constant-product AMM approximation
+    // For small trades this is negligible; for larger trades relative to pool size it increases
+    // Without reserves, use a conservative small estimate based on input size
+    const estimatedImpact = Math.min(inputAmount * 0.05, 10);
 
     return {
       priceImpact: estimatedImpact,

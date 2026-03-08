@@ -68,27 +68,33 @@ export function SwapCard() {
     if (!toToken) return undefined;
     return (toToken.isNative ? CONTRACTS.WETH : toToken.address) as `0x${string}`;
   }, [toToken]);
-  
-  const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(
+
+  const amountIn = fromAmount ? parseUnits(fromAmount, fromToken?.decimals || 18) : undefined;
+
+  // Multi-hop routing: find best path automatically
+  const { bestRoute, allRoutes, isLoading: isRouteLoading, hasRoute } = useBestRoute(
     isWrapUnwrap ? undefined : fromAddr,
-    isWrapUnwrap ? undefined : toAddr
+    isWrapUnwrap ? undefined : toAddr,
+    isWrapUnwrap ? undefined : amountIn
+  );
+
+  const swapPath = useMemo(() => {
+    if (isWrapUnwrap || !bestRoute) return [];
+    return bestRoute.route.path;
+  }, [bestRoute, isWrapUnwrap]);
+
+  const amountsOut = bestRoute?.amountsOut;
+  const isQuoting = isRouteLoading;
+  const isMultiHop = bestRoute ? bestRoute.route.hops > 1 : false;
+
+  // Direct pair for price impact (use first hop pair)
+  const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(
+    isWrapUnwrap ? undefined : (swapPath.length >= 2 ? swapPath[0] : undefined),
+    isWrapUnwrap ? undefined : (swapPath.length >= 2 ? swapPath[1] : undefined)
   );
   const validPairAddress = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
   const { data: reserves, refetch: refetchReserves, isLoading: isReservesLoading } = usePairReserves(validPairAddress);
   const { token0: pairToken0 } = usePairTokens(validPairAddress);
-
-  const swapPath = useMemo(() => {
-    if (!fromToken || !toToken || isWrapUnwrap) return [];
-    const from = fromToken.isNative ? CONTRACTS.WETH : fromToken.address;
-    const to = toToken.isNative ? CONTRACTS.WETH : toToken.address;
-    return [from, to] as `0x${string}`[];
-  }, [fromToken, toToken, isWrapUnwrap]);
-
-  const amountIn = fromAmount ? parseUnits(fromAmount, fromToken?.decimals || 18) : undefined;
-  const { data: amountsOut, isLoading: isQuoting } = useGetAmountsOut(
-    isWrapUnwrap ? undefined : amountIn,
-    swapPath
-  );
 
   const { data: allowance, refetch: refetchAllowance } = useTokenAllowance(
     fromToken && !fromToken.isNative ? (fromToken.address as `0x${string}`) : undefined,
@@ -101,15 +107,13 @@ export function SwapCard() {
     return allowance !== undefined && allowance < amountIn;
   }, [fromToken, allowance, amountIn, isWrapUnwrap]);
 
-  // Check if pool has liquidity
+  // Check if route has liquidity
   const hasLiquidity = useMemo(() => {
-    if (isWrapUnwrap) return true; // Wrap/unwrap always available
-    if (!validPairAddress) return false;
-    if (!reserves) return false;
-    return reserves[0] > 0n && reserves[1] > 0n;
-  }, [validPairAddress, reserves, isWrapUnwrap]);
+    if (isWrapUnwrap) return true;
+    return hasRoute && !!bestRoute;
+  }, [hasRoute, bestRoute, isWrapUnwrap]);
 
-  const isPoolDataLoading = isWrapUnwrap ? false : (isPairLoading || (!!validPairAddress && isReservesLoading));
+  const isPoolDataLoading = isWrapUnwrap ? false : isRouteLoading;
 
   // Refetch pair and reserves periodically to keep data fresh
   useEffect(() => {

@@ -36,6 +36,7 @@ export function SwapCard() {
   const [lastSwapParams, setLastSwapParams] = useState<{ from: string; to: string } | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [autoSlippage, setAutoSlippage] = useState(true);
+  const [processedHash, setProcessedHash] = useState<string | null>(null);
 
   const NATIVE_GAS_RESERVE = 0.01;
 
@@ -203,10 +204,13 @@ export function SwapCard() {
 
   // Watch for swap success
   useEffect(() => {
-    if (router.isSuccess && router.hash) {
+    if (router.isSuccess && router.hash && router.hash !== processedHash) {
+      setProcessedHash(router.hash);
+      const savedFrom = fromAmount;
+      const savedTo = toAmount;
       toast.dismiss('swap');
       toast.success('Swap Successful! 🔥', {
-        description: `Swapped ${fromAmount} ${fromToken?.symbol} → ${toAmount} ${toToken?.symbol}`,
+        description: `Swapped ${savedFrom} ${fromToken?.symbol} → ${savedTo} ${toToken?.symbol}`,
         action: {
           label: 'View',
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${router.hash}`, '_blank'),
@@ -216,20 +220,23 @@ export function SwapCard() {
         hash: router.hash,
         type: 'swap',
         status: 'success',
-        details: { fromToken: fromToken?.symbol, toToken: toToken?.symbol, fromAmount, toAmount },
+        details: { fromToken: fromToken?.symbol, toToken: toToken?.symbol, fromAmount: savedFrom, toAmount: savedTo },
       });
       setFromAmount('');
       setToAmount('');
     }
-  }, [router.isSuccess, router.hash, fromAmount, toAmount, fromToken, toToken]);
+  }, [router.isSuccess, router.hash, processedHash]);
 
   // Watch for wrap/unwrap success
   useEffect(() => {
-    if (weth.isSuccess && weth.hash) {
+    if (weth.isSuccess && weth.hash && weth.hash !== processedHash) {
+      setProcessedHash(weth.hash);
+      const savedFrom = fromAmount;
+      const savedTo = toAmount;
       toast.dismiss('swap');
       const action = isWrapping ? 'Wrapped' : 'Unwrapped';
       toast.success(`${action} Successfully! 🔥`, {
-        description: `${action} ${fromAmount} ${fromToken?.symbol} → ${toAmount} ${toToken?.symbol}`,
+        description: `${action} ${savedFrom} ${fromToken?.symbol} → ${savedTo} ${toToken?.symbol}`,
         action: {
           label: 'View',
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${weth.hash}`, '_blank'),
@@ -239,12 +246,12 @@ export function SwapCard() {
         hash: weth.hash,
         type: 'swap',
         status: 'success',
-        details: { fromToken: fromToken?.symbol, toToken: toToken?.symbol, fromAmount, toAmount },
+        details: { fromToken: fromToken?.symbol, toToken: toToken?.symbol, fromAmount: savedFrom, toAmount: savedTo },
       });
       setFromAmount('');
       setToAmount('');
     }
-  }, [weth.isSuccess, weth.hash]);
+  }, [weth.isSuccess, weth.hash, processedHash]);
 
   // Watch for errors with decoded revert reasons
   useEffect(() => {

@@ -39,7 +39,7 @@ export function SwapCard() {
   const router = useRouter();
   const weth = useWETH();
   const { prices, getPrice } = useTokenPrices();
-  const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash } = useApprove();
+  const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash, error: approveError } = useApprove();
   const { addTransaction, updateTransaction } = useTransactionHistory();
 
   // Detect if this is a wrap/unwrap (OPN <-> WOPN)
@@ -126,13 +126,14 @@ export function SwapCard() {
     return () => clearInterval(interval);
   }, [refetchPair, refetchReserves, validPairAddress]);
 
-  // Watch for approval success
+  // Watch for approval success → auto-proceed to swap
   useEffect(() => {
     if (approveSuccess && approveHash) {
+      toast.dismiss('approve');
       toast.success('Token Approved!', {
-        description: `${fromToken?.symbol} has been approved for trading`,
+        description: `${fromToken?.symbol} approved — you can now swap`,
         action: {
-          label: 'View',
+          label: 'View TX',
           onClick: () => window.open(`https://testnet.iopn.tech/tx/${approveHash}`, '_blank'),
         },
       });
@@ -142,9 +143,25 @@ export function SwapCard() {
         status: 'success',
         details: { fromToken: fromToken?.symbol },
       });
-      refetchAllowance();
+      // Refetch allowance so needsApproval becomes false
+      setTimeout(() => refetchAllowance(), 1500);
     }
   }, [approveSuccess, approveHash, fromToken, refetchAllowance]);
+
+  // Watch for approval errors
+  useEffect(() => {
+    if (approveError) {
+      toast.dismiss('approve');
+      const parsed = parseTransactionError(approveError);
+      if (parsed.type === 'user_rejected') {
+        toast.info(parsed.title, { description: parsed.description });
+      } else {
+        toast.error('Approval Failed', {
+          description: `${parsed.description}\n💡 ${parsed.suggestion}`,
+        });
+      }
+    }
+  }, [approveError]);
 
   // Watch for swap success
   useEffect(() => {
@@ -582,9 +599,8 @@ export function SwapCard() {
           )}
 
           {/* Action Button / Wallet Connect */}
-          <div className="pt-2">
+          <div className="pt-2 space-y-3">
             {!isConnected ? (
-              /* Connect Wallet Button */
               <Button 
                 onClick={() => setShowWalletModal(true)}
                 className="w-full btn-dragon h-14 text-base font-semibold"
@@ -595,17 +611,38 @@ export function SwapCard() {
             ) : !isCorrectNetwork ? (
               <Button onClick={switchToOPN} className="w-full h-12" variant="destructive">Switch to OPN Network</Button>
             ) : needsApproval ? (
-              <Button 
-                onClick={handleApprove} 
-                className="w-full btn-dragon h-12" 
-                disabled={isApproving}
-              >
-                {isApproving ? (
-                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Approving {fromToken?.symbol}...</>
-                ) : (
-                  <>Approve {fromToken?.symbol}</>
-                )}
-              </Button>
+              <>
+                {/* Step Indicator */}
+                <div className="flex items-center gap-2 px-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className={cn(
+                      "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
+                      approveSuccess ? "bg-success text-success-foreground" : "bg-primary text-primary-foreground"
+                    )}>
+                      {approveSuccess ? <Check className="w-3.5 h-3.5" /> : '1'}
+                    </div>
+                    <span className="text-xs font-medium">Approve</span>
+                  </div>
+                  <div className="flex-1 h-px bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-muted text-muted-foreground">
+                      2
+                    </div>
+                    <span className="text-xs text-muted-foreground">Swap</span>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleApprove} 
+                  className="w-full btn-dragon h-12" 
+                  disabled={isApproving}
+                >
+                  {isApproving ? (
+                    <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Approving {fromToken?.symbol}...</>
+                  ) : (
+                    <>Approve {fromToken?.symbol}</>
+                  )}
+                </Button>
+              </>
             ) : (
               <Button 
                 onClick={handleSwap} 

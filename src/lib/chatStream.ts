@@ -13,18 +13,27 @@ export async function streamChat({
   onDone: () => void;
   onError: (error: string) => void;
 }) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
   try {
-    console.log("[DragonBot] Sending to:", CHAT_URL);
-    const resp = await fetch(CHAT_URL, {
+    const url = CHAT_URL;
+    if (!url || url.includes('undefined')) {
+      onError("Chat service not configured. Please refresh the page.");
+      return;
+    }
+
+    const resp = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
       body: JSON.stringify({ messages }),
+      signal: controller.signal,
     });
 
-    console.log("[DragonBot] Response status:", resp.status);
+    clearTimeout(timeout);
 
     if (resp.status === 429) {
       onError("Rate limit exceeded. Please wait a moment and try again. 🐉");
@@ -35,13 +44,14 @@ export async function streamChat({
       return;
     }
     if (!resp.ok) {
-      const errorText = await resp.text();
-      console.error("[DragonBot] Error response:", errorText);
-      onError("Failed to connect to DragonBot. Please try again.");
+      let errorDetail = "";
+      try { errorDetail = await resp.text(); } catch {}
+      console.error("[DragonBot] Error:", resp.status, errorDetail);
+      onError(`DragonBot error (${resp.status}). Please try again.`);
       return;
     }
     if (!resp.body) {
-      onError("No response body from DragonBot.");
+      onError("No response body. Please try again.");
       return;
     }
 
@@ -49,6 +59,7 @@ export async function streamChat({
     const decoder = new TextDecoder();
     let textBuffer = "";
     let streamDone = false;
+    let hasReceivedContent = false;
 
     while (!streamDone) {
       const { done, value } = await reader.read();
@@ -73,14 +84,19 @@ export async function streamChat({
         try {
           const parsed = JSON.parse(jsonStr);
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) onDelta(content);
+          if (content) {
+            hasReceivedContent = true;
+            onDelta(content);
+          }
         } catch {
+          // Incomplete JSON - put back and wait for more data
           textBuffer = line + "\n" + textBuffer;
           break;
         }
       }
     }
 
+    // Flush remaining buffer
     if (textBuffer.trim()) {
       for (let raw of textBuffer.split("\n")) {
         if (!raw) continue;
@@ -92,14 +108,27 @@ export async function streamChat({
         try {
           const parsed = JSON.parse(jsonStr);
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) onDelta(content);
-        } catch { /* ignore */ }
+          if (content) {
+            hasReceivedContent = true;
+            onDelta(content);
+          }
+        } catch { /* ignore partial leftovers */ }
       }
     }
 
+    if (!hasReceivedContent) {
+      onError("DragonBot returned an empty response. Please try again.");
+      return;
+    }
+
     onDone();
-  } catch (e) {
-    console.error("Stream error:", e);
-    onError("Connection lost. Please try again.");
+  } catch (e: any) {
+    clearTimeout(timeout);
+    if (e?.name === 'AbortError') {
+      onError("Request timed out. DragonBot is busy, please try again. 🐉");
+    } else {
+      console.error("[DragonBot] Stream error:", e?.message || e);
+      onError("Connection lost. Please try again.");
+    }
   }
 }

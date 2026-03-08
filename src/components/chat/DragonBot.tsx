@@ -91,10 +91,12 @@ export function DragonBot() {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  const send = useCallback(async (text: string) => {
+  const send = useCallback(async (text: string, retryCount = 0) => {
     if (!text.trim() || isLoading) return;
     const userMsg: ChatMessage = { role: 'user', content: text.trim() };
-    const allMessages = [...messages, userMsg];
+    const allMessages = messages[messages.length - 1]?.content === text.trim() && messages[messages.length - 1]?.role === 'user'
+      ? messages // Don't add duplicate on retry
+      : [...messages, userMsg];
     setMessages(allMessages);
     setInput('');
     setIsLoading(true);
@@ -119,8 +121,26 @@ export function DragonBot() {
         if (!isOpen) setHasNewMessage(true);
       },
       onError: (err) => {
+        // Auto-retry once on connection errors
+        if (retryCount < 1 && err.includes('Connection lost')) {
+          console.log('[DragonBot] Auto-retrying...');
+          setTimeout(() => send(text, retryCount + 1), 1000);
+          return;
+        }
         setIsLoading(false);
-        toast({ title: 'DragonBot Error', description: err, variant: 'destructive' });
+        toast({
+          title: 'DragonBot Error',
+          description: err,
+          variant: 'destructive',
+          action: (
+            <button
+              onClick={() => send(text, 0)}
+              className="text-xs font-medium underline"
+            >
+              Retry
+            </button>
+          ),
+        });
       },
     });
   }, [messages, isLoading, toast, isOpen]);

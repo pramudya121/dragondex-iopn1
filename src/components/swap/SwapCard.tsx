@@ -62,15 +62,27 @@ export function SwapCard() {
     address
   );
 
+  // Use router's actual WETH address if available, fallback to configured
+  const wethAddress = useMemo(() => {
+    return (routerWETH || CONTRACTS.WETH) as `0x${string}`;
+  }, [routerWETH]);
+
+  // Log WETH mismatch for debugging
+  useEffect(() => {
+    if (routerWETH && routerWETH.toLowerCase() !== CONTRACTS.WETH.toLowerCase()) {
+      console.warn(`⚠️ WETH mismatch! Router: ${routerWETH}, Config: ${CONTRACTS.WETH}`);
+    }
+  }, [routerWETH]);
+
   // Get pair for price impact calculation
   const fromAddr = useMemo(() => {
     if (!fromToken) return undefined;
-    return (fromToken.isNative ? CONTRACTS.WETH : fromToken.address) as `0x${string}`;
-  }, [fromToken]);
+    return (fromToken.isNative ? wethAddress : fromToken.address) as `0x${string}`;
+  }, [fromToken, wethAddress]);
   const toAddr = useMemo(() => {
     if (!toToken) return undefined;
-    return (toToken.isNative ? CONTRACTS.WETH : toToken.address) as `0x${string}`;
-  }, [toToken]);
+    return (toToken.isNative ? wethAddress : toToken.address) as `0x${string}`;
+  }, [toToken, wethAddress]);
 
   const amountIn = fromAmount ? parseUnits(fromAmount, fromToken?.decimals || 18) : undefined;
 

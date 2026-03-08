@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Flame, Zap, TrendingUp, Gift, Loader2, Lock, Unlock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { GlowingStarsBackgroundCard } from '@/components/ui/aceternity/GlowingStars';
 import { cn } from '@/lib/utils';
 import { FarmPool } from '@/hooks/useFarming';
 import { useAccount } from 'wagmi';

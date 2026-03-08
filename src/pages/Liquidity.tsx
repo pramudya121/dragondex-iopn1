@@ -93,12 +93,12 @@ export default function Liquidity() {
   
   // Get pair info
   const tokenAAddr = useMemo(
-    () => ((tokenA && !tokenA.isNative ? tokenA.address : CONTRACTS.WETH) as `0x${string}`),
-    [tokenA]
+    () => ((tokenA && !tokenA.isNative ? tokenA.address : wethAddress) as `0x${string}`),
+    [tokenA, wethAddress]
   );
   const tokenBAddr = useMemo(
-    () => ((tokenB && !tokenB.isNative ? tokenB.address : CONTRACTS.WETH) as `0x${string}`),
-    [tokenB]
+    () => ((tokenB && !tokenB.isNative ? tokenB.address : wethAddress) as `0x${string}`),
+    [tokenB, wethAddress]
   );
 
   const isSameUnderlyingPair = useMemo(

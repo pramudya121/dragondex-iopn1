@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ChatMessage, streamChat } from '@/lib/chatStream';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useWalletPortfolio } from '@/hooks/useWalletPortfolio';
 
 const QUICK_PROMPTS = [
   { emoji: "🔄", text: "How do I swap tokens?" },
@@ -144,6 +145,7 @@ export function DragonBot() {
   const { toast } = useToast();
   const voice = useVoiceInput();
   const tts = useTextToSpeech();
+  const portfolio = useWalletPortfolio();
 
   // Persist messages
   useEffect(() => { saveMessages(messages); }, [messages]);
@@ -205,8 +207,12 @@ export function DragonBot() {
       });
     };
 
+    // Inject wallet context
+    const walletContext = portfolio.isConnected ? portfolio.getPortfolioSummary() : undefined;
+
     await streamChat({
       messages: allMessages,
+      walletContext,
       onDelta: upsertAssistant,
       onDone: () => {
         setIsLoading(false);

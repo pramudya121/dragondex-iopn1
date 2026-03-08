@@ -344,14 +344,29 @@ export function SwapCard() {
     const deadline = getSafeDeadline(30);
     const minOutput = calculateMinOutput(amountsOut[amountsOut.length - 1], slippage);
     
+    console.log('🔥 Swap params:', { 
+      native: fromToken.isNative, 
+      path: swapPath.map(p => p.slice(0, 10)), 
+      minOutput: minOutput.toString(),
+      value: fromToken.isNative ? parseEther(fromAmount).toString() : undefined,
+    });
+
     if (fromToken.isNative) {
-      router.swapExactETHForTokens(minOutput, swapPath, address, deadline, parseEther(fromAmount));
+      // Path must start with WETH for swapExactETHForTokens
+      const ethPath = swapPath[0].toLowerCase() === wethAddress.toLowerCase() 
+        ? swapPath 
+        : [wethAddress, ...swapPath.slice(1)];
+      router.swapExactETHForTokens(minOutput, ethPath, address, deadline, parseEther(fromAmount));
     } else if (toToken.isNative) {
-      router.swapExactTokensForETH(amountIn!, minOutput, swapPath, address, deadline);
+      // Path must end with WETH for swapExactTokensForETH
+      const ethPath = swapPath[swapPath.length - 1].toLowerCase() === wethAddress.toLowerCase()
+        ? swapPath
+        : [...swapPath.slice(0, -1), wethAddress];
+      router.swapExactTokensForETH(amountIn!, minOutput, ethPath, address, deadline);
     } else {
       router.swapExactTokensForTokens(amountIn!, minOutput, swapPath, address, deadline);
     }
-  }, [address, fromToken, toToken, fromAmount, toAmount, isWrapUnwrap, isWrapping, amountsOut, slippage, swapPath, amountIn, nativeBalance]);
+  }, [address, fromToken, toToken, fromAmount, toAmount, isWrapUnwrap, isWrapping, amountsOut, slippage, swapPath, amountIn, nativeBalance, wethAddress]);
 
   const handleApprove = async () => {
     if (!fromToken || fromToken.isNative) return;

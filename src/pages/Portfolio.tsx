@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, TrendingUp, TrendingDown, Coins, ExternalLink, RefreshCw, PieChart, Activity, Zap, Crown, Shield, Droplets, ArrowUpRight, ArrowDownRight, Filter } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Coins, ExternalLink, RefreshCw, PieChart, Activity, Zap, Crown, Shield, Droplets, ArrowUpRight, ArrowDownRight, Filter, Send } from 'lucide-react';
 import { useAccount, useBalance, useReadContracts } from 'wagmi';
 import { formatEther, formatUnits } from 'viem';
 import { useTokenBalance } from '@/hooks/useContract';
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AssetCardSkeleton, StatCardSkeleton } from '@/components/ui/loading/Skeleton';
 import { TransactionHistory, useTransactionHistory, Transaction } from '@/components/history/TransactionHistory';
+import { SendTokenModal } from '@/components/portfolio/SendTokenModal';
 import { PortfolioAllocationChart } from '@/components/portfolio/AllocationChart';
 import { PAIR_ABI } from '@/config/abis';
 import { cn } from '@/lib/utils';
@@ -45,6 +46,7 @@ export default function Portfolio() {
 
   const [activeTab, setActiveTab] = useState<PortfolioTab>('overview');
   const [txFilter, setTxFilter] = useState<'all' | 'swap' | 'liquidity'>('all');
+  const [showSendModal, setShowSendModal] = useState(false);
 
   const lpBalanceResults = useReadContracts({
     contracts: pools.map(pool => ({
@@ -150,13 +152,17 @@ export default function Portfolio() {
             <span className="text-xs md:text-sm font-medium">On-Chain Portfolio</span>
           </motion.div>
           <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-2">Your Portfolio</h1>
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-3">
             <Shield className="w-3 h-3 text-primary" />
             <span>{address?.slice(0, 6)}...{address?.slice(-4)}</span>
             <a href={`https://testnet.iopn.tech/address/${address}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
+          <Button className="btn-dragon" size="sm" onClick={() => setShowSendModal(true)}>
+            <Send className="w-4 h-4 mr-2" />
+            Send Token
+          </Button>
         </div>
 
         {/* Summary Cards - Always visible */}
@@ -435,6 +441,20 @@ export default function Portfolio() {
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Send Token Modal */}
+      <SendTokenModal
+        isOpen={showSendModal}
+        onClose={() => setShowSendModal(false)}
+        tokens={tokens.map(t => ({
+          symbol: t.symbol,
+          name: t.name,
+          balance: t.balance,
+          logo: t.logo,
+          address: t.symbol === 'OPN' ? 'native' : (t.symbol === 'WOPN' ? CONTRACTS.WETH : (CONTRACTS as any)[t.symbol] || ''),
+          isNative: t.symbol === 'OPN',
+        }))}
+      />
     </div>
   );
 }

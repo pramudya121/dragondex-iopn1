@@ -31,6 +31,8 @@ export function SwapCard() {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [lastSwapParams, setLastSwapParams] = useState<{ from: string; to: string } | null>(null);
 
+  const NATIVE_GAS_RESERVE = 0.01;
+
   const router = useRouter();
   const weth = useWETH();
   const { prices, getPrice } = useTokenPrices();
@@ -263,6 +265,17 @@ export function SwapCard() {
 
   const handleSwap = useCallback(async () => {
     if (!address || !fromToken || !toToken || !fromAmount) return;
+
+    if (fromToken.isNative) {
+      const nativeBal = nativeBalance ? parseFloat(formatEther(nativeBalance.value)) : 0;
+      const spendable = Math.max(nativeBal - NATIVE_GAS_RESERVE, 0);
+      if (parseFloat(fromAmount) > spendable) {
+        toast.error('Insufficient OPN for swap + gas', {
+          description: `Sisakan minimal ${NATIVE_GAS_RESERVE} OPN untuk biaya gas.`,
+        });
+        return;
+      }
+    }
     
     // Save params for retry
     setLastSwapParams({ from: fromAmount, to: toAmount });
@@ -292,7 +305,7 @@ export function SwapCard() {
     } else {
       router.swapExactTokensForTokens(amountIn!, minOutput, swapPath, address, deadline);
     }
-  }, [address, fromToken, toToken, fromAmount, toAmount, isWrapUnwrap, isWrapping, amountsOut, slippage, swapPath, amountIn]);
+  }, [address, fromToken, toToken, fromAmount, toAmount, isWrapUnwrap, isWrapping, amountsOut, slippage, swapPath, amountIn, nativeBalance]);
 
   const handleApprove = async () => {
     if (!fromToken || fromToken.isNative) return;
@@ -304,6 +317,12 @@ export function SwapCard() {
     if (fromToken?.isNative) return nativeBalance ? formatEther(nativeBalance.value) : '0';
     return tokenBalance ? formatUnits(tokenBalance, fromToken?.decimals || 18) : '0';
   }, [fromToken, nativeBalance, tokenBalance]);
+
+  const maxSpendableFromBalance = useMemo(() => {
+    if (!fromToken?.isNative) return fromBalance;
+    const spendable = Math.max(parseFloat(fromBalance) - NATIVE_GAS_RESERVE, 0);
+    return spendable.toString();
+  }, [fromToken, fromBalance]);
 
   const isLoading = router.isPending || router.isConfirming || weth.isPending || weth.isConfirming;
 
@@ -405,11 +424,11 @@ export function SwapCard() {
           <div className="token-input">
             <div className="flex justify-between items-center mb-3">
               <span className="text-sm text-muted-foreground">You Pay</span>
-              <button 
-                onClick={() => setFromAmount(fromBalance)}
-                className="text-xs text-muted-foreground hover:text-primary transition-colors"
-              >
-                Balance: {parseFloat(fromBalance).toFixed(4)} {fromToken?.symbol}
+                <button 
+                  onClick={() => setFromAmount(maxSpendableFromBalance)}
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {fromToken?.isNative ? `Spendable: ${parseFloat(maxSpendableFromBalance).toFixed(4)}` : `Balance: ${parseFloat(fromBalance).toFixed(4)}`} {fromToken?.symbol}
               </button>
             </div>
             <div className="flex items-center gap-3">
@@ -554,7 +573,7 @@ export function SwapCard() {
                   "w-full h-12",
                   isHighImpact ? "bg-destructive hover:bg-destructive/90" : "btn-dragon"
                 )}
-                disabled={!fromAmount || isLoading || (!isWrapUnwrap && isPoolDataLoading) || parseFloat(fromAmount) > parseFloat(fromBalance) || (!isWrapUnwrap && !hasLiquidity && !isPoolDataLoading && !!fromToken && !!toToken && fromAmount !== '') || (!isWrapUnwrap && !amountsOut && hasLiquidity && !!fromAmount)}
+                disabled={!fromAmount || isLoading || (!isWrapUnwrap && isPoolDataLoading) || parseFloat(fromAmount) > parseFloat(maxSpendableFromBalance) || (!isWrapUnwrap && !hasLiquidity && !isPoolDataLoading && !!fromToken && !!toToken && fromAmount !== '') || (!isWrapUnwrap && !amountsOut && hasLiquidity && !!fromAmount)}
               >
                 {isLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isWrapUnwrap ? (isWrapping ? 'Wrapping...' : 'Unwrapping...') : 'Swapping...'}</>
@@ -563,11 +582,11 @@ export function SwapCard() {
                 ) : !isWrapUnwrap && isPoolDataLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Checking Pool...</>
                 ) : !isWrapUnwrap && !validPairAddress && fromToken && toToken ? (
-                  <>No Pool Found</>
+                  <>No Pool Found (Create Pool first)</>
                 ) : !isWrapUnwrap && !hasLiquidity && fromToken && toToken ? (
                   <>No Liquidity for {fromToken?.symbol}/{toToken?.symbol}</>
-                ) : parseFloat(fromAmount) > parseFloat(fromBalance) ? (
-                  <>Insufficient {fromToken?.symbol}</>
+                ) : parseFloat(fromAmount) > parseFloat(maxSpendableFromBalance) ? (
+                  <>{fromToken?.isNative ? 'Insufficient OPN (keep gas)' : `Insufficient ${fromToken?.symbol}`}</>
                 ) : isWrapUnwrap ? (
                   <>{isWrapping ? 'Wrap OPN → WOPN' : 'Unwrap WOPN → OPN'}</>
                 ) : isHighImpact ? (

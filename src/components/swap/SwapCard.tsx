@@ -115,10 +115,13 @@ export function SwapCard() {
   const isQuoting = isRouteLoading;
   const isMultiHop = bestRoute ? bestRoute.route.hops > 1 : false;
 
-  // Direct pair for price impact (use first hop pair)
+  // Direct pair for price impact — only fetch for direct (single-hop) swaps
+  // For multi-hop, reserves from the first hop don't represent the overall exchange rate
+  const directPairToken0 = !isMultiHop && swapPath.length >= 2 ? swapPath[0] : undefined;
+  const directPairToken1 = !isMultiHop && swapPath.length >= 2 ? swapPath[1] : undefined;
   const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(
-    isWrapUnwrap ? undefined : (swapPath.length >= 2 ? swapPath[0] : undefined),
-    isWrapUnwrap ? undefined : (swapPath.length >= 2 ? swapPath[1] : undefined)
+    isWrapUnwrap ? undefined : directPairToken0,
+    isWrapUnwrap ? undefined : directPairToken1
   );
   const validPairAddress = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
   const { data: reserves, refetch: refetchReserves, isLoading: isReservesLoading } = usePairReserves(validPairAddress);
@@ -409,14 +412,15 @@ export function SwapCard() {
   const isLoading = router.isPending || router.isConfirming || weth.isPending || weth.isConfirming;
 
   // Calculate price impact using reserves with correct token ordering
-  const reservePair = reserves ? [reserves[0], reserves[1]] as [bigint, bigint] : undefined;
+  // Only use on-chain reserves for single-hop; for multi-hop use AMM estimation
+  const reservePair = !isMultiHop && reserves ? [reserves[0], reserves[1]] as [bigint, bigint] : undefined;
   const { priceImpact, severity } = usePriceImpact(
     fromToken, 
     toToken, 
     fromAmount, 
     toAmount,
     reservePair,
-    pairToken0
+    !isMultiHop ? pairToken0 : undefined
   );
 
   // Calculate minimum received

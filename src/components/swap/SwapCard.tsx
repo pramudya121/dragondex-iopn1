@@ -39,7 +39,7 @@ export function SwapCard() {
   const router = useRouter();
   const weth = useWETH();
   const { prices, getPrice } = useTokenPrices();
-  const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash } = useApprove();
+  const { approve, isPending: isApproving, isSuccess: approveSuccess, hash: approveHash, error: approveError } = useApprove();
   const { addTransaction, updateTransaction } = useTransactionHistory();
 
   // Detect if this is a wrap/unwrap (OPN <-> WOPN)

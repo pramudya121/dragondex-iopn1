@@ -152,13 +152,17 @@ export default function Portfolio() {
             <span className="text-xs md:text-sm font-medium">On-Chain Portfolio</span>
           </motion.div>
           <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-2">Your Portfolio</h1>
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-3">
             <Shield className="w-3 h-3 text-primary" />
             <span>{address?.slice(0, 6)}...{address?.slice(-4)}</span>
             <a href={`https://testnet.iopn.tech/address/${address}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
+          <Button className="btn-dragon" size="sm" onClick={() => setShowSendModal(true)}>
+            <Send className="w-4 h-4 mr-2" />
+            Send Token
+          </Button>
         </div>
 
         {/* Summary Cards - Always visible */}

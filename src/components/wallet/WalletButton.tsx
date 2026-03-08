@@ -37,9 +37,10 @@ export function WalletButton() {
           onClick={() => setShowWalletModal(true)}
           className="btn-dragon"
           disabled={isConnecting}
+          size="sm"
         >
-          <Wallet className="w-4 h-4 mr-2" />
-          {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+          <Wallet className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
         </Button>
 
         <WalletConnectModal 
@@ -62,11 +63,11 @@ export function WalletButton() {
     <div className="relative">
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 hover:border-primary/30 transition-all"
+        className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 hover:border-primary/30 transition-all text-sm"
       >
         <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
         <span className="font-medium">{formatAddress(address!)}</span>
-        <ChevronDown className={`w-4 h-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>
@@ -77,7 +78,7 @@ export function WalletButton() {
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              className="absolute right-0 top-full mt-2 w-80 bg-[#0d0d0d] border border-border/50 rounded-xl shadow-2xl p-4 z-50"
+              className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-card border border-border/50 rounded-xl shadow-2xl p-4 z-50"
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm text-muted-foreground">Connected</span>

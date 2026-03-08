@@ -123,7 +123,7 @@ export function WalletConnectModal({ isOpen, onClose }: WalletConnectModalProps)
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-3xl mx-4"
+            className="fixed inset-4 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-50 sm:w-full sm:max-w-3xl overflow-y-auto"
           >
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-2xl">
               {/* Header with close button */}
@@ -134,7 +134,7 @@ export function WalletConnectModal({ isOpen, onClose }: WalletConnectModalProps)
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
 
-              <div className="grid md:grid-cols-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 max-h-[calc(100vh-2rem)] sm:max-h-none overflow-y-auto">
                 {/* Left Panel - Wallet List */}
                 <div className="p-6 border-r border-border">
                   <h2 className="text-xl font-bold mb-6">Hubungkan Dompet</h2>
@@ -199,7 +199,7 @@ export function WalletConnectModal({ isOpen, onClose }: WalletConnectModalProps)
                 </div>
 
                 {/* Right Panel - Info */}
-                <div className="p-6 bg-muted/20">
+                <div className="p-6 bg-muted/20 hidden md:block">
                   <h3 className="text-xl font-bold mb-6">Apa itu Dompet?</h3>
 
                   <div className="space-y-6">

@@ -38,6 +38,7 @@ export function useRouter() {
       abi: ROUTER_ABI,
       functionName: 'swapExactTokensForETH',
       args: [amountIn, amountOutMin, [...path], to, deadline],
+      gas: 300_000n,
     });
   };
 
@@ -123,6 +124,7 @@ export function useRouter() {
       abi: ROUTER_ABI,
       functionName: 'removeLiquidityETH',
       args: [token, liquidity, amountTokenMin, amountETHMin, to, deadline],
+      gas: 500_000n,
     });
   };
 

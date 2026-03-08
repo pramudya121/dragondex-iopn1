@@ -39,6 +39,20 @@ export function HeroSection() {
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
+          {/* Logo */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            className="mb-4"
+          >
+            <img 
+              src={dragonLogo} 
+              alt="DragonDEX Logo" 
+              className="w-20 h-20 sm:w-24 sm:h-24 mx-auto drop-shadow-[0_0_30px_hsl(var(--primary)/0.4)]" 
+            />
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}

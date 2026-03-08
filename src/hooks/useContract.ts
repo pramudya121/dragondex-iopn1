@@ -276,6 +276,15 @@ export function useApprovePair() {
 
 
 // ============= ROUTER READ HOOKS =============
+export function useRouterWETH() {
+  const result = useReadContract({
+    address: CONTRACTS.ROUTER as `0x${string}`,
+    abi: ROUTER_ABI as any,
+    functionName: 'WETH',
+  });
+  return { ...result, data: result.data as `0x${string}` | undefined };
+}
+
 export function useGetAmountsOut(amountIn: bigint | undefined, path: `0x${string}`[]) {
   const result = useReadContract({
     address: CONTRACTS.ROUTER as `0x${string}`,

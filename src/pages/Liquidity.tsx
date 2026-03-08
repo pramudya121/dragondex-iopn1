@@ -6,7 +6,7 @@ import { parseEther, formatEther, parseUnits, formatUnits } from 'viem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTokenBalance, useRouter, useApprove, useTokenAllowance, useGetPair, usePairReserves, useApprovePair, usePairBalance, usePairAllowance, usePairTokens, usePairTotalSupply } from '@/hooks/useContract';
+import { useTokenBalance, useRouter, useApprove, useTokenAllowance, useGetPair, usePairReserves, useApprovePair, usePairBalance, usePairAllowance, usePairTokens, usePairTotalSupply, useRouterWETH } from '@/hooks/useContract';
 import { useTransactionHistory } from '@/components/history/TransactionHistory';
 import { CONTRACTS, TOKEN_LIST, TokenInfo } from '@/config/contracts';
 import { TokenSelector } from '@/components/swap/TokenSelector';

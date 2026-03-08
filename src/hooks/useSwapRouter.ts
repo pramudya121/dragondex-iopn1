@@ -136,7 +136,7 @@ export function useBestRoute(
       const result = quoteResults[i];
       if (result.status !== 'success' || !result.result) continue;
 
-      const amounts = result.result as bigint[];
+      const amounts = result.result as unknown as bigint[];
       const output = amounts[amounts.length - 1];
 
       if (!best || output > best.outputAmount) {

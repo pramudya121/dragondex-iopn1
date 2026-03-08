@@ -20,8 +20,9 @@ import { cn } from '@/lib/utils';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
 import { toast } from 'sonner';
 import { useWallet } from '@/hooks/useWallet';
+import { sanitizeAmountInput, getSafeDeadline, getSafeApprovalAmount } from '@/lib/inputValidation';
 
-const MAX_UINT256 = 2n ** 256n - 1n;
+const MAX_UINT256 = 2n ** 256n - 1n; // Still needed for LP token approval only
 const NATIVE_GAS_RESERVE = 0.01;
 
 export default function Liquidity() {
@@ -306,7 +307,7 @@ export default function Liquidity() {
   }, [reserveA, reserveB]); // Only trigger when reserves change
 
   const handleAmountAChange = (value: string) => {
-    setAmountA(value);
+    setAmountA(sanitizeAmountInput(value));
     setLastEditedField('A');
     
     if (value && reserveA > 0n && reserveB > 0n) {
@@ -318,7 +319,7 @@ export default function Liquidity() {
   };
 
   const handleAmountBChange = (value: string) => {
-    setAmountB(value);
+    setAmountB(sanitizeAmountInput(value));
     setLastEditedField('B');
     
     if (value && reserveA > 0n && reserveB > 0n) {
@@ -347,13 +348,13 @@ export default function Liquidity() {
   const handleApproveA = () => {
     if (!tokenA || tokenA.isNative) return;
     toast.loading(`Approving ${tokenA.symbol}...`, { id: 'approve-a' });
-    approveTokenA(tokenA.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, MAX_UINT256);
+    approveTokenA(tokenA.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, getSafeApprovalAmount(amountABigInt));
   };
 
   const handleApproveB = () => {
     if (!tokenB || tokenB.isNative) return;
     toast.loading(`Approving ${tokenB.symbol}...`, { id: 'approve-b' });
-    approveTokenB(tokenB.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, MAX_UINT256);
+    approveTokenB(tokenB.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, getSafeApprovalAmount(amountBBigInt));
   };
 
   const handleAddLiquidity = () => {
@@ -367,7 +368,7 @@ export default function Liquidity() {
     }
 
     toast.loading('Adding liquidity...', { id: 'add-liq' });
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
+    const deadline = getSafeDeadline(30);
 
     if (tokenA.isNative || tokenB.isNative) {
       const token = tokenA.isNative ? tokenB : tokenA;
@@ -413,7 +414,7 @@ export default function Liquidity() {
 
     toast.loading('Removing liquidity...', { id: 'remove-liq' });
     const liquidityToRemove = (lpBalance * BigInt(removePercent)) / 100n;
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
+    const deadline = getSafeDeadline(30);
 
     if (tokenA.isNative || tokenB.isNative) {
       const token = tokenA.isNative ? tokenB : tokenA;

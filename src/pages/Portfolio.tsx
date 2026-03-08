@@ -441,6 +441,20 @@ export default function Portfolio() {
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Send Token Modal */}
+      <SendTokenModal
+        isOpen={showSendModal}
+        onClose={() => setShowSendModal(false)}
+        tokens={tokens.map(t => ({
+          symbol: t.symbol,
+          name: t.name,
+          balance: t.balance,
+          logo: t.logo,
+          address: t.symbol === 'OPN' ? 'native' : (t.symbol === 'WOPN' ? CONTRACTS.WETH : (CONTRACTS as any)[t.symbol] || ''),
+          isNative: t.symbol === 'OPN',
+        }))}
+      />
     </div>
   );
 }

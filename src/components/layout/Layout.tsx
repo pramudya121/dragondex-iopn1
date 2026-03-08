@@ -17,6 +17,7 @@ export function Layout({ children }: LayoutProps) {
         {children}
       </main>
       <Footer />
+      <DragonBot />
     </div>
   );
 }

@@ -47,6 +47,7 @@ function parseContent(content: string): { text: string; actions: ChatAction[]; s
 }
 
 export function DragonBot() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -98,13 +99,24 @@ export function DragonBot() {
     });
   }, [messages, isLoading, toast]);
 
-  // Parse suggestions from the last assistant message
-  const lastAssistantSuggestions = useMemo(() => {
-    if (isLoading) return [];
+  // Parse from last assistant message
+  const lastParsed = useMemo(() => {
+    if (isLoading) return { actions: [] as ChatAction[], suggestions: [] as string[] };
     const lastMsg = [...messages].reverse().find(m => m.role === 'assistant');
-    if (!lastMsg) return [];
-    return parseSuggestions(lastMsg.content).suggestions;
+    if (!lastMsg) return { actions: [] as ChatAction[], suggestions: [] as string[] };
+    const p = parseContent(lastMsg.content);
+    return { actions: p.actions, suggestions: p.suggestions };
   }, [messages, isLoading]);
+
+  const handleAction = useCallback((action: ChatAction) => {
+    if (action.action === 'swap' && action.from && action.to) {
+      navigate(`/swap?from=${action.from}&to=${action.to}`);
+      setIsOpen(false);
+    } else if (action.action === 'navigate' && action.path) {
+      navigate(action.path);
+      setIsOpen(false);
+    }
+  }, [navigate]);
 
   return (
     <>
@@ -194,7 +206,7 @@ export function DragonBot() {
 
               {messages.map((msg, i) => {
                 const isLast = i === messages.length - 1;
-                const parsed = msg.role === 'assistant' ? parseSuggestions(msg.content) : null;
+                const parsed = msg.role === 'assistant' ? parseContent(msg.content) : null;
                 const displayContent = parsed ? parsed.text : msg.content;
 
                 return (
@@ -226,15 +238,39 @@ export function DragonBot() {
                           msg.content
                         )}
                       </div>
-                      {/* Follow-up suggestions */}
-                      {msg.role === 'assistant' && isLast && !isLoading && lastAssistantSuggestions.length > 0 && (
+                      {/* Action buttons */}
+                      {msg.role === 'assistant' && isLast && !isLoading && parsed && parsed.actions.length > 0 && (
                         <motion.div
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.3, duration: 0.3 }}
+                          transition={{ delay: 0.2, duration: 0.3 }}
                           className="flex flex-wrap gap-1.5 pl-1"
                         >
-                          {lastAssistantSuggestions.map((s, si) => (
+                          {parsed.actions.map((act, ai) => (
+                            <button
+                              key={ai}
+                              onClick={() => handleAction(act)}
+                              className="text-[11px] px-3 py-1.5 rounded-lg border border-primary/40 bg-gradient-to-r from-primary/15 to-secondary/15 text-primary hover:from-primary/25 hover:to-secondary/25 transition-all flex items-center gap-1.5 font-medium"
+                            >
+                              {act.action === 'swap' ? (
+                                <ArrowRightLeft className="w-3 h-3" />
+                              ) : (
+                                <ExternalLink className="w-3 h-3" />
+                              )}
+                              {act.label}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                      {/* Follow-up suggestions */}
+                      {msg.role === 'assistant' && isLast && !isLoading && lastParsed.suggestions.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4, duration: 0.3 }}
+                          className="flex flex-wrap gap-1.5 pl-1"
+                        >
+                          {lastParsed.suggestions.map((s, si) => (
                             <button
                               key={si}
                               onClick={() => send(s)}

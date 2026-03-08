@@ -599,9 +599,8 @@ export function SwapCard() {
           )}
 
           {/* Action Button / Wallet Connect */}
-          <div className="pt-2">
+          <div className="pt-2 space-y-3">
             {!isConnected ? (
-              /* Connect Wallet Button */
               <Button 
                 onClick={() => setShowWalletModal(true)}
                 className="w-full btn-dragon h-14 text-base font-semibold"
@@ -612,17 +611,38 @@ export function SwapCard() {
             ) : !isCorrectNetwork ? (
               <Button onClick={switchToOPN} className="w-full h-12" variant="destructive">Switch to OPN Network</Button>
             ) : needsApproval ? (
-              <Button 
-                onClick={handleApprove} 
-                className="w-full btn-dragon h-12" 
-                disabled={isApproving}
-              >
-                {isApproving ? (
-                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Approving {fromToken?.symbol}...</>
-                ) : (
-                  <>Approve {fromToken?.symbol}</>
-                )}
-              </Button>
+              <>
+                {/* Step Indicator */}
+                <div className="flex items-center gap-2 px-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className={cn(
+                      "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
+                      approveSuccess ? "bg-success text-success-foreground" : "bg-primary text-primary-foreground"
+                    )}>
+                      {approveSuccess ? <Check className="w-3.5 h-3.5" /> : '1'}
+                    </div>
+                    <span className="text-xs font-medium">Approve</span>
+                  </div>
+                  <div className="flex-1 h-px bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-muted text-muted-foreground">
+                      2
+                    </div>
+                    <span className="text-xs text-muted-foreground">Swap</span>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleApprove} 
+                  className="w-full btn-dragon h-12" 
+                  disabled={isApproving}
+                >
+                  {isApproving ? (
+                    <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Approving {fromToken?.symbol}...</>
+                  ) : (
+                    <>Approve {fromToken?.symbol}</>
+                  )}
+                </Button>
+              </>
             ) : (
               <Button 
                 onClick={handleSwap} 

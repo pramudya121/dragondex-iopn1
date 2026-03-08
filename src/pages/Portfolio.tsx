@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, Coins, ArrowUpRight, ArrowDownRight, ExternalLink, RefreshCw, PieChart, Activity, Zap, Crown, Shield, History, Droplets } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Wallet, TrendingUp, TrendingDown, Coins, ExternalLink, RefreshCw, PieChart, Activity, Zap, Crown, Shield, Droplets, ArrowUpRight, ArrowDownRight, Filter } from 'lucide-react';
 import { useAccount, useBalance, useReadContracts } from 'wagmi';
 import { formatEther, formatUnits } from 'viem';
 import { useTokenBalance } from '@/hooks/useContract';
@@ -15,7 +15,8 @@ import { GlowingStarsCard } from '@/components/ui/aceternity/GlowingStars';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { AssetCardSkeleton, StatCardSkeleton } from '@/components/ui/loading/Skeleton';
-import { TransactionHistory, useTransactionHistory } from '@/components/history/TransactionHistory';
+import { TransactionHistory, useTransactionHistory, Transaction } from '@/components/history/TransactionHistory';
+import { PortfolioAllocationChart } from '@/components/portfolio/AllocationChart';
 import { PAIR_ABI } from '@/config/abis';
 import { cn } from '@/lib/utils';
 
@@ -32,6 +33,8 @@ export default function Portfolio() {
   const { transactions } = useTransactionHistory();
   const { pools, isLoading: poolsLoading } = useLiquidityPools();
   const { prices } = useTokenPrices();
+
+  const [txFilter, setTxFilter] = useState<'all' | 'swap' | 'liquidity'>('all');
 
   // Fetch LP balances for all pools
   const lpBalanceResults = useReadContracts({
@@ -94,6 +97,47 @@ export default function Portfolio() {
   const totalValue = totalTokenValue + totalLPValue;
   const tokensWithBalance = tokens.filter(t => parseFloat(t.balance) > 0.0001);
 
+  // Allocation data for pie chart
+  const allocationData = useMemo(() => {
+    const items = tokens.map(t => ({
+      name: t.symbol,
+      value: parseFloat(t.balance) * t.price,
+      color: '',
+      percentage: 0,
+    }));
+    
+    // Add LP positions
+    lpPositions.forEach((lp: any) => {
+      items.push({
+        name: `${lp.token0Symbol}/${lp.token1Symbol} LP`,
+        value: lp.value,
+        color: '',
+        percentage: 0,
+      });
+    });
+
+    const total = items.reduce((s, i) => s + i.value, 0);
+    return items
+      .filter(i => i.value > 0)
+      .map(i => ({ ...i, percentage: total > 0 ? (i.value / total) * 100 : 0 }));
+  }, [tokens, lpPositions]);
+
+  // Filter transactions
+  const filteredTransactions = useMemo(() => {
+    if (txFilter === 'all') return transactions;
+    if (txFilter === 'swap') return transactions.filter((t: Transaction) => t.type === 'swap');
+    return transactions.filter((t: Transaction) => t.type === 'add_liquidity' || t.type === 'remove_liquidity');
+  }, [transactions, txFilter]);
+
+  // P/L estimation (simple: compare current value vs sum of swap "from" values)
+  const swapStats = useMemo(() => {
+    const swaps = transactions.filter((t: Transaction) => t.type === 'swap' && t.status === 'success');
+    return {
+      totalSwaps: swaps.length,
+      recentSwaps: swaps.slice(0, 5),
+    };
+  }, [transactions]);
+
   if (!isConnected) {
     return (
       <div className="container mx-auto px-4 py-8 min-h-screen flex items-center justify-center">
@@ -130,7 +174,7 @@ export default function Portfolio() {
             <span className="text-xs md:text-sm font-medium">On-Chain Portfolio</span>
           </motion.div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-2">Your Portfolio</h1>
-          <p className="text-sm md:text-base text-muted-foreground">Track your assets and LP positions on OPN Testnet</p>
+          <p className="text-sm md:text-base text-muted-foreground">Track your assets, LP positions, and trading activity</p>
         </div>
 
         {/* Summary Cards */}
@@ -159,9 +203,13 @@ export default function Portfolio() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>Tokens: ${totalTokenValue.toFixed(2)}</span>
+                      <span className="flex items-center gap-1">
+                        <Coins className="w-3 h-3" /> Tokens: ${totalTokenValue.toFixed(2)}
+                      </span>
                       <span>•</span>
-                      <span>LP: ${totalLPValue.toFixed(2)}</span>
+                      <span className="flex items-center gap-1">
+                        <Droplets className="w-3 h-3" /> LP: ${totalLPValue.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </BackgroundGradient>
@@ -183,11 +231,11 @@ export default function Portfolio() {
                 <div className="stat-card h-full flex flex-col justify-center">
                   <BorderBeam size={80} duration={10} delay={4} />
                   <div className="flex items-center gap-2 mb-2">
-                    <Droplets className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                    <span className="text-[10px] md:text-sm text-muted-foreground">LP Positions</span>
+                    <Activity className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                    <span className="text-[10px] md:text-sm text-muted-foreground">Trades</span>
                   </div>
-                  <p className="text-lg md:text-2xl font-bold">{lpPositions.length}</p>
-                  <span className="text-muted-foreground text-xs md:text-sm">Active pools</span>
+                  <p className="text-lg md:text-2xl font-bold">{swapStats.totalSwaps}</p>
+                  <span className="text-muted-foreground text-xs md:text-sm">Total swaps</span>
                 </div>
               </motion.div>
             </>
@@ -212,60 +260,107 @@ export default function Portfolio() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto">
-          {/* Token List */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-3 md:mb-4">
-              <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
-                <Zap className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                Your Assets
-              </h2>
+          {/* Left Column: Token List + Allocation Chart */}
+          <div className="lg:col-span-2 space-y-4 md:space-y-6">
+            {/* Token List */}
+            <div>
+              <div className="flex items-center justify-between mb-3 md:mb-4">
+                <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
+                  <Zap className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                  Your Assets
+                </h2>
+              </div>
+
+              <div className="grid gap-2 md:gap-3">
+                {isLoading ? (
+                  [...Array(4)].map((_, i) => <AssetCardSkeleton key={i} />)
+                ) : (
+                  tokens.map((token, i) => {
+                    const balance = parseFloat(token.balance);
+                    const value = balance * token.price;
+                    const hasBalance = balance > 0.0001;
+                    const allocation = totalValue > 0 ? (value / totalValue) * 100 : 0;
+
+                    return (
+                      <motion.div
+                        key={token.symbol}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 + i * 0.05 }}
+                      >
+                        <div className={cn(
+                          "glass-card p-3 md:p-4 flex items-center gap-3 md:gap-4 hover:border-primary/50 transition-all group",
+                          !hasBalance && "opacity-50"
+                        )}>
+                          <img 
+                            src={token.logo} 
+                            alt={token.symbol} 
+                            className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-border"
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-sm md:text-base">{token.symbol}</p>
+                              {allocation > 5 && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                                  {allocation.toFixed(1)}%
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs md:text-sm text-muted-foreground truncate">{token.name}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-sm md:text-base">{balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
+                            <p className="text-xs md:text-sm text-muted-foreground">${value.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
-            <div className="grid gap-2 md:gap-3">
-              {isLoading ? (
-                [...Array(4)].map((_, i) => <AssetCardSkeleton key={i} />)
-              ) : (
-                tokens.map((token, i) => {
-                  const balance = parseFloat(token.balance);
-                  const value = balance * token.price;
-                  const hasBalance = balance > 0.0001;
-
-                  return (
-                    <motion.div
-                      key={token.symbol}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 + i * 0.05 }}
+            {/* Transaction History with Filters */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
+                  <Activity className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                  Transaction History
+                </h2>
+                <div className="flex gap-1">
+                  {(['all', 'swap', 'liquidity'] as const).map(f => (
+                    <button
+                      key={f}
+                      onClick={() => setTxFilter(f)}
+                      className={cn(
+                        "px-2.5 py-1 text-xs rounded-lg transition-colors font-medium",
+                        txFilter === f ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                      )}
                     >
-                      <div className={cn(
-                        "glass-card p-3 md:p-4 flex items-center gap-3 md:gap-4 hover:border-primary/50 transition-all",
-                        !hasBalance && "opacity-50"
-                      )}>
-                        <img 
-                          src={token.logo} 
-                          alt={token.symbol} 
-                          className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-border"
-                          onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm md:text-base">{token.symbol}</p>
-                          <p className="text-xs md:text-sm text-muted-foreground truncate">{token.name}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-sm md:text-base">{balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
-                          <p className="text-xs md:text-sm text-muted-foreground">${value.toFixed(2)}</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })
-              )}
-            </div>
+                      {f === 'all' ? 'All' : f === 'swap' ? 'Swaps' : 'Liquidity'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <TransactionHistory transactions={filteredTransactions} maxDisplay={5} />
+            </motion.div>
           </div>
 
-          {/* LP Positions & Transaction History */}
+          {/* Right Column: Allocation Chart + LP Positions */}
           <div className="space-y-4 md:space-y-6">
-            {/* LP Positions - On-Chain */}
+            {/* Allocation Chart */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+              <div className="glass-card p-4">
+                <h2 className="text-sm md:text-base font-bold mb-3 flex items-center gap-2">
+                  <PieChart className="w-4 h-4 text-secondary" />
+                  Allocation
+                </h2>
+                <PortfolioAllocationChart data={allocationData} />
+              </div>
+            </motion.div>
+
+            {/* LP Positions */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
               <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4 flex items-center gap-2">
                 <Droplets className="w-4 h-4 md:w-5 md:h-5 text-primary" />
@@ -327,11 +422,6 @@ export default function Portfolio() {
                   </div>
                 </GlowingStarsCard>
               )}
-            </motion.div>
-
-            {/* Transaction History */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-              <TransactionHistory transactions={transactions} maxDisplay={3} />
             </motion.div>
           </div>
         </div>

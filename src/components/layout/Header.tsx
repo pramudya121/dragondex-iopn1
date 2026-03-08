@@ -20,7 +20,7 @@ const navItems = [
   { name: 'Docs', path: '/docs', icon: BookOpen },
 ];
 
-const dockItems = navItems.slice(0, 6).map(item => ({
+const dockItems = navItems.filter(i => ['Home','Swap','Liquidity','Pools','Staking','Portfolio'].includes(i.name)).map(item => ({
   title: item.name,
   icon: item.icon,
   href: item.path,

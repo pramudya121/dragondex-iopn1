@@ -16,7 +16,7 @@ import Analytics from "./pages/Analytics";
 import Portfolio from "./pages/Portfolio";
 import CreatePool from "./pages/CreatePool";
 import Docs from "./pages/Docs";
-import Farming from "./pages/Farming";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,7 +34,7 @@ function AnimatedRoutes() {
         <Route path="/analytics" element={<PageTransition><Analytics /></PageTransition>} />
         <Route path="/portfolio" element={<PageTransition><Portfolio /></PageTransition>} />
         <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
-        <Route path="/farming" element={<PageTransition><Farming /></PageTransition>} />
+        
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

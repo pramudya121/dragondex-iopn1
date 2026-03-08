@@ -686,9 +686,25 @@ export default function Liquidity() {
                           <AlertCircle className="w-4 h-4 text-warning" />
                           Token Approval Required
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          You must approve tokens before adding liquidity for the first time.
-                        </p>
+                        {/* Step Indicator */}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <div className={cn(
+                              "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
+                              !needsApprovalA && !needsApprovalB ? "bg-success text-white" : "bg-primary text-primary-foreground"
+                            )}>
+                              {!needsApprovalA && !needsApprovalB ? <Check className="w-3.5 h-3.5" /> : '1'}
+                            </div>
+                            <span className="text-xs font-medium">Approve</span>
+                          </div>
+                          <div className="flex-1 h-px bg-border" />
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-muted text-muted-foreground">
+                              2
+                            </div>
+                            <span className="text-xs text-muted-foreground">Add Liquidity</span>
+                          </div>
+                        </div>
                         <div className="grid gap-2">
                           {needsApprovalA && (
                             <Button 

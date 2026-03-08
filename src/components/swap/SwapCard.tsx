@@ -543,6 +543,27 @@ export function SwapCard() {
                 <span className="text-muted-foreground">Slippage Tolerance</span>
                 <span className="font-medium">{slippage}%</span>
               </div>
+              {/* Route indicator */}
+              {bestRoute && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Route className="w-3 h-3" /> Route
+                  </span>
+                  <span className="font-medium flex items-center gap-1">
+                    {bestRoute.route.pathSymbols.map((sym, i) => (
+                      <span key={i} className="flex items-center gap-1">
+                        {i > 0 && <span className="text-muted-foreground">→</span>}
+                        <span className={isMultiHop && i > 0 && i < bestRoute.route.pathSymbols.length - 1 ? 'text-primary' : ''}>
+                          {sym}
+                        </span>
+                      </span>
+                    ))}
+                    {isMultiHop && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary ml-1">Multi-hop</span>
+                    )}
+                  </span>
+                </div>
+              )}
             </motion.div>
           )}
 

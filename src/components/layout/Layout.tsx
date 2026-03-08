@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
+import { Footer } from './Footer';
 import { WaveBackground } from '@/components/ui/WaveBackground';
 
 interface LayoutProps {
@@ -8,12 +9,13 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen wave-bg relative">
+    <div className="min-h-screen wave-bg relative flex flex-col">
       <WaveBackground />
       <Header />
-      <main className="relative z-10 pt-20 pb-12">
+      <main className="relative z-10 pt-20 pb-12 flex-1">
         {children}
       </main>
+      <Footer />
     </div>
   );
 }

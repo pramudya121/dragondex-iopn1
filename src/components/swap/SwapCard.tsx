@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDownUp, Settings, Loader2, ExternalLink, Check, Info, X, Flame, Wallet, RotateCw } from 'lucide-react';
+import { ArrowDownUp, Settings, Loader2, ExternalLink, Check, Info, X, Flame, Wallet, RotateCw, Route } from 'lucide-react';
 import { useAccount, useBalance } from 'wagmi';
 import { parseUnits, formatUnits, formatEther, parseEther } from 'viem';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { TokenSelector } from './TokenSelector';
 import { PriceImpactWarning } from './PriceImpactWarning';
 import { TOKEN_LIST, TokenInfo, CONTRACTS } from '@/config/contracts';
-import { useRouter, useGetAmountsOut, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH } from '@/hooks/useContract';
+import { useRouter, useApprove, useTokenBalance, useTokenAllowance, useGetPair, usePairReserves, usePairTokens, useWETH } from '@/hooks/useContract';
+import { useBestRoute } from '@/hooks/useSwapRouter';
 import { useWallet } from '@/hooks/useWallet';
 import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';
 import { parseTransactionError, getErrorToastConfig } from '@/lib/transactionErrors';
@@ -67,27 +68,33 @@ export function SwapCard() {
     if (!toToken) return undefined;
     return (toToken.isNative ? CONTRACTS.WETH : toToken.address) as `0x${string}`;
   }, [toToken]);
-  
-  const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(
+
+  const amountIn = fromAmount ? parseUnits(fromAmount, fromToken?.decimals || 18) : undefined;
+
+  // Multi-hop routing: find best path automatically
+  const { bestRoute, allRoutes, isLoading: isRouteLoading, hasRoute } = useBestRoute(
     isWrapUnwrap ? undefined : fromAddr,
-    isWrapUnwrap ? undefined : toAddr
+    isWrapUnwrap ? undefined : toAddr,
+    isWrapUnwrap ? undefined : amountIn
+  );
+
+  const swapPath = useMemo(() => {
+    if (isWrapUnwrap || !bestRoute) return [];
+    return bestRoute.route.path;
+  }, [bestRoute, isWrapUnwrap]);
+
+  const amountsOut = bestRoute?.amountsOut;
+  const isQuoting = isRouteLoading;
+  const isMultiHop = bestRoute ? bestRoute.route.hops > 1 : false;
+
+  // Direct pair for price impact (use first hop pair)
+  const { data: pairAddress, refetch: refetchPair, isLoading: isPairLoading } = useGetPair(
+    isWrapUnwrap ? undefined : (swapPath.length >= 2 ? swapPath[0] : undefined),
+    isWrapUnwrap ? undefined : (swapPath.length >= 2 ? swapPath[1] : undefined)
   );
   const validPairAddress = pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' ? pairAddress : undefined;
   const { data: reserves, refetch: refetchReserves, isLoading: isReservesLoading } = usePairReserves(validPairAddress);
   const { token0: pairToken0 } = usePairTokens(validPairAddress);
-
-  const swapPath = useMemo(() => {
-    if (!fromToken || !toToken || isWrapUnwrap) return [];
-    const from = fromToken.isNative ? CONTRACTS.WETH : fromToken.address;
-    const to = toToken.isNative ? CONTRACTS.WETH : toToken.address;
-    return [from, to] as `0x${string}`[];
-  }, [fromToken, toToken, isWrapUnwrap]);
-
-  const amountIn = fromAmount ? parseUnits(fromAmount, fromToken?.decimals || 18) : undefined;
-  const { data: amountsOut, isLoading: isQuoting } = useGetAmountsOut(
-    isWrapUnwrap ? undefined : amountIn,
-    swapPath
-  );
 
   const { data: allowance, refetch: refetchAllowance } = useTokenAllowance(
     fromToken && !fromToken.isNative ? (fromToken.address as `0x${string}`) : undefined,
@@ -100,15 +107,13 @@ export function SwapCard() {
     return allowance !== undefined && allowance < amountIn;
   }, [fromToken, allowance, amountIn, isWrapUnwrap]);
 
-  // Check if pool has liquidity
+  // Check if route has liquidity
   const hasLiquidity = useMemo(() => {
-    if (isWrapUnwrap) return true; // Wrap/unwrap always available
-    if (!validPairAddress) return false;
-    if (!reserves) return false;
-    return reserves[0] > 0n && reserves[1] > 0n;
-  }, [validPairAddress, reserves, isWrapUnwrap]);
+    if (isWrapUnwrap) return true;
+    return hasRoute && !!bestRoute;
+  }, [hasRoute, bestRoute, isWrapUnwrap]);
 
-  const isPoolDataLoading = isWrapUnwrap ? false : (isPairLoading || (!!validPairAddress && isReservesLoading));
+  const isPoolDataLoading = isWrapUnwrap ? false : isRouteLoading;
 
   // Refetch pair and reserves periodically to keep data fresh
   useEffect(() => {
@@ -538,6 +543,27 @@ export function SwapCard() {
                 <span className="text-muted-foreground">Slippage Tolerance</span>
                 <span className="font-medium">{slippage}%</span>
               </div>
+              {/* Route indicator */}
+              {bestRoute && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Route className="w-3 h-3" /> Route
+                  </span>
+                  <span className="font-medium flex items-center gap-1">
+                    {bestRoute.route.pathSymbols.map((sym, i) => (
+                      <span key={i} className="flex items-center gap-1">
+                        {i > 0 && <span className="text-muted-foreground">→</span>}
+                        <span className={isMultiHop && i > 0 && i < bestRoute.route.pathSymbols.length - 1 ? 'text-primary' : ''}>
+                          {sym}
+                        </span>
+                      </span>
+                    ))}
+                    {isMultiHop && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary ml-1">Multi-hop</span>
+                    )}
+                  </span>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -581,10 +607,10 @@ export function SwapCard() {
                   <>Enter Amount</>
                 ) : !isWrapUnwrap && isPoolDataLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Checking Pool...</>
-                ) : !isWrapUnwrap && !validPairAddress && fromToken && toToken ? (
-                  <>No Pool Found (Create Pool first)</>
-                ) : !isWrapUnwrap && !hasLiquidity && fromToken && toToken ? (
-                  <>No Liquidity for {fromToken?.symbol}/{toToken?.symbol}</>
+                ) : !isWrapUnwrap && !hasLiquidity && !isPoolDataLoading && fromToken && toToken ? (
+                  <>No Route Found for {fromToken?.symbol}/{toToken?.symbol}</>
+                ) : !isWrapUnwrap && !hasRoute && !isPoolDataLoading && fromToken && toToken ? (
+                  <>No Route Found (Create Pool first)</>
                 ) : parseFloat(fromAmount) > parseFloat(maxSpendableFromBalance) ? (
                   <>{fromToken?.isNative ? 'Insufficient OPN (keep gas)' : `Insufficient ${fromToken?.symbol}`}</>
                 ) : isWrapUnwrap ? (

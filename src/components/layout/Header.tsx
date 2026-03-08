@@ -5,7 +5,7 @@ import { Menu, X, ExternalLink, ArrowLeftRight, Droplets, LayoutGrid, BarChart3,
 import { Button } from '@/components/ui/button';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { FloatingDock } from '@/components/ui/aceternity/FloatingDock';
-import { ThemeToggle } from '@/components/ui/premium/ThemeToggle';
+
 import dragonLogo from '@/assets/dragon-logo.png';
 
 const navItems = [
@@ -64,7 +64,7 @@ export function Header() {
 
             {/* Right Side */}
             <div className="flex items-center gap-3">
-              <ThemeToggle className="hidden sm:block" />
+              
               <a
                 href="https://testnet.iopn.tech"
                 target="_blank"
@@ -116,9 +116,6 @@ export function Header() {
                     </Link>
                   );
                 })}
-                <div className="pt-2 mt-2 border-t border-border">
-                  <ThemeToggle />
-                </div>
               </nav>
             </motion.div>
           )}

@@ -29,6 +29,8 @@ export default function Liquidity() {
   const { address, isConnected } = useAccount();
   const { isCorrectNetwork, switchToOPN } = useWallet();
   const { addTransaction } = useTransactionHistory();
+  const { data: routerWETH } = useRouterWETH();
+  const wethAddress = useMemo(() => (routerWETH || CONTRACTS.WETH) as `0x${string}`, [routerWETH]);
   const [activeTab, setActiveTab] = useState('add');
   const [showWalletModal, setShowWalletModal] = useState(false);
   

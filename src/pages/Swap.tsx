@@ -10,7 +10,7 @@ import { Flame, Shield } from 'lucide-react';
 
 export default function Swap() {
   return (
-    <div className="relative min-h-[calc(100vh-80px)] flex flex-col items-center justify-center overflow-hidden">
+    <div className="relative min-h-[calc(100vh-80px)] pb-24 lg:pb-0 flex flex-col items-center justify-center overflow-hidden">
       {/* Background Effects */}
       <Spotlight className="hidden md:block" />
       <GlowingStarsBackground starCount={25} className="opacity-15" />

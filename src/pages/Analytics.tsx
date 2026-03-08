@@ -113,7 +113,7 @@ export default function Analytics() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-8 relative">
+    <div className="container mx-auto px-4 py-6 md:py-8 pb-24 lg:pb-8 relative">
       <Spotlight className="hidden md:block" />
       <GlowingStarsBackground starCount={30} className="opacity-50" />
       

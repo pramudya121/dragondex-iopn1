@@ -433,7 +433,7 @@ export default function Liquidity() {
 
   return (
     <main 
-      className="container mx-auto px-4 py-8 relative min-h-[calc(100vh-80px)]"
+      className="container mx-auto px-4 py-8 pb-24 lg:pb-8 relative min-h-[calc(100vh-80px)]"
       role="main"
       aria-label="Liquidity Management"
     >
@@ -569,6 +569,23 @@ export default function Liquidity() {
                         <p className="text-sm font-medium text-warning mb-1">Pair OPN/WOPN tidak bisa jadi liquidity pair</p>
                         <p className="text-xs text-muted-foreground">
                           OPN dan WOPN menggunakan underlying address yang sama. Gunakan fitur Swap untuk Wrap/Unwrap.
+                        </p>
+                      </motion.div>
+                    )}
+
+                    {/* Pool Status Indicator */}
+                    {!isSameUnderlyingPair && !isPoolDataLoading && tokenA && tokenB && !validPair && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-destructive/10 border border-destructive/30 rounded-xl p-4"
+                      >
+                        <p className="text-sm font-medium text-destructive mb-1 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Pool tidak ditemukan
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Pool {tokenA.symbol}/{tokenB.symbol} belum ada. <a href="/create-pool" className="text-primary hover:underline">Buat Pool</a> terlebih dahulu.
                         </p>
                       </motion.div>
                     )}
@@ -720,12 +737,14 @@ export default function Liquidity() {
                       <Button 
                         onClick={handleAddLiquidity}
                         className="w-full h-12 text-base btn-dragon"
-                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB || isSameUnderlyingPair || insufficientTokenA || insufficientTokenB}
+                        disabled={isLoading || !amountA || !amountB || !!needsApprovalA || !!needsApprovalB || isSameUnderlyingPair || insufficientTokenA || insufficientTokenB || (!validPair && !isSameUnderlyingPair)}
                       >
                         {isLoading ? (
                           <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Adding Liquidity...</>
                         ) : isSameUnderlyingPair ? (
                           <>Invalid Pair (Use Swap Wrap/Unwrap)</>
+                        ) : !validPair && tokenA && tokenB ? (
+                          <>Pool Not Found (Create Pool first)</>
                         ) : insufficientTokenA || insufficientTokenB ? (
                           <>{tokenA?.isNative || tokenB?.isNative ? 'Insufficient balance (keep gas)' : 'Insufficient token balance'}</>
                         ) : (

@@ -599,26 +599,31 @@ export function SwapCard() {
                   "w-full h-12",
                   isHighImpact ? "bg-destructive hover:bg-destructive/90" : "btn-dragon"
                 )}
-                disabled={!fromAmount || isLoading || (!isWrapUnwrap && isPoolDataLoading) || parseFloat(fromAmount) > parseFloat(maxSpendableFromBalance) || (!isWrapUnwrap && !hasLiquidity && !isPoolDataLoading && !!fromToken && !!toToken && fromAmount !== '') || (!isWrapUnwrap && !amountsOut && hasLiquidity && !!fromAmount)}
+                disabled={
+                  !fromAmount || 
+                  isLoading || 
+                  (!isWrapUnwrap && isPoolDataLoading) || 
+                  parseFloat(fromAmount) > parseFloat(maxSpendableFromBalance) || 
+                  (!isWrapUnwrap && !hasLiquidity && !isPoolDataLoading) || 
+                  (!isWrapUnwrap && !amountsOut && hasLiquidity && !!fromAmount)
+                }
               >
                 {isLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isWrapUnwrap ? (isWrapping ? 'Wrapping...' : 'Unwrapping...') : 'Swapping...'}</>
                 ) : !fromAmount ? (
                   <>Enter Amount</>
                 ) : !isWrapUnwrap && isPoolDataLoading ? (
-                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Checking Pool...</>
+                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Finding Best Route...</>
                 ) : !isWrapUnwrap && !hasLiquidity && !isPoolDataLoading && fromToken && toToken ? (
-                  <>No Route Found for {fromToken?.symbol}/{toToken?.symbol}</>
-                ) : !isWrapUnwrap && !hasRoute && !isPoolDataLoading && fromToken && toToken ? (
-                  <>No Route Found (Create Pool first)</>
+                  <>No Route Found</>
                 ) : parseFloat(fromAmount) > parseFloat(maxSpendableFromBalance) ? (
                   <>{fromToken?.isNative ? 'Insufficient OPN (keep gas)' : `Insufficient ${fromToken?.symbol}`}</>
                 ) : isWrapUnwrap ? (
                   <>{isWrapping ? 'Wrap OPN → WOPN' : 'Unwrap WOPN → OPN'}</>
                 ) : isHighImpact ? (
-                  <>Swap Anyway (High Impact)</>
+                  <>⚠️ Swap Anyway (High Impact)</>
                 ) : (
-                  <>Swap</>
+                  <>Swap {isMultiHop ? '(Multi-hop)' : ''}</>
                 )}
               </Button>
             )}

@@ -27,9 +27,12 @@ export default function CreatePool() {
   const { approve: approveB, isPending: approvingB, isSuccess: approvedB } = useApprove();
 
   // Check if pair exists
+  const tokenAForPair = tokenA ? (tokenA.isNative ? CONTRACTS.WETH : tokenA.address) : undefined;
+  const tokenBForPair = tokenB ? (tokenB.isNative ? CONTRACTS.WETH : tokenB.address) : undefined;
+
   const { data: pairAddress } = useGetPair(
-    tokenA && !tokenA.isNative ? (tokenA.address as `0x${string}`) : undefined,
-    tokenB && !tokenB.isNative ? (tokenB.address as `0x${string}`) : undefined
+    tokenAForPair as `0x${string}` | undefined,
+    tokenBForPair as `0x${string}` | undefined
   );
 
   // Get balances
@@ -84,7 +87,8 @@ export default function CreatePool() {
     approveB(tokenB.address as `0x${string}`, CONTRACTS.ROUTER as `0x${string}`, parseUnits('999999999', tokenB.decimals));
   };
 
-  const canProceed = tokenA && tokenB && tokenA.address !== tokenB.address;
+  const isSameUnderlyingPair = !!tokenAForPair && !!tokenBForPair && tokenAForPair.toLowerCase() === tokenBForPair.toLowerCase();
+  const canProceed = tokenA && tokenB && !isSameUnderlyingPair;
   const isLoading = factory.isPending || factory.isConfirming;
 
   return (
@@ -157,9 +161,11 @@ export default function CreatePool() {
                 animate={{ opacity: 1, height: 'auto' }}
                 className={cn(
                   "p-4 rounded-xl border",
-                  pairExists 
-                    ? "bg-success/10 border-success/30" 
-                    : "bg-primary/10 border-primary/30"
+                  isSameUnderlyingPair
+                    ? "bg-warning/10 border-warning/30"
+                    : pairExists 
+                      ? "bg-success/10 border-success/30" 
+                      : "bg-primary/10 border-primary/30"
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -169,7 +175,11 @@ export default function CreatePool() {
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold">{tokenA.symbol}/{tokenB.symbol}</p>
-                    {pairExists ? (
+                    {isSameUnderlyingPair ? (
+                      <p className="text-sm text-warning flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> OPN/WOPN adalah underlying yang sama. Gunakan fitur Swap untuk Wrap/Unwrap.
+                      </p>
+                    ) : pairExists ? (
                       <p className="text-sm text-success flex items-center gap-1">
                         <Check className="w-3 h-3" /> Pool exists - add liquidity instead
                       </p>
@@ -182,7 +192,7 @@ export default function CreatePool() {
             )}
 
             {/* Initial Amounts (for new pools) */}
-            {canProceed && !pairExists && (
+            {canProceed && !pairExists && !isSameUnderlyingPair && (
               <div className="space-y-4">
                 <h3 className="font-semibold">Set Initial Liquidity</h3>
                 <p className="text-sm text-muted-foreground">
@@ -224,7 +234,7 @@ export default function CreatePool() {
             )}
 
             {/* Approval Buttons */}
-            {canProceed && !pairExists && (needsApprovalA || needsApprovalB) && (
+            {canProceed && !pairExists && !isSameUnderlyingPair && (needsApprovalA || needsApprovalB) && (
               <div className="space-y-3">
                 <h3 className="font-semibold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-warning" />
@@ -275,6 +285,8 @@ export default function CreatePool() {
             >
               {isLoading ? (
                 <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Creating Pool...</>
+              ) : isSameUnderlyingPair ? (
+                <>Invalid Pair (Use Swap Wrap/Unwrap)</>
               ) : pairExists ? (
                 <>Pool Already Exists</>
               ) : !canProceed ? (

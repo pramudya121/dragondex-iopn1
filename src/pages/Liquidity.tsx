@@ -572,6 +572,23 @@ export default function Liquidity() {
                         </p>
                       </motion.div>
                     )}
+
+                    {/* Pool Status Indicator */}
+                    {!isSameUnderlyingPair && !isPoolDataLoading && tokenA && tokenB && !validPair && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-destructive/10 border border-destructive/30 rounded-xl p-4"
+                      >
+                        <p className="text-sm font-medium text-destructive mb-1 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Pool tidak ditemukan
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Pool {tokenA.symbol}/{tokenB.symbol} belum ada. <a href="/create-pool" className="text-primary hover:underline">Buat Pool</a> terlebih dahulu.
+                        </p>
+                      </motion.div>
+                    )}
                     
                     {/* Token A Input */}
                     <div className={cn(

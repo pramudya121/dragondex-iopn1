@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { History, ArrowRightLeft, Plus, Minus, ExternalLink, ChevronDown, Clock, CheckCircle, XCircle, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -203,36 +203,82 @@ export function TransactionHistory({
   );
 }
 
-// Hook untuk menyimpan transaksi di localStorage
-export function useTransactionHistory() {
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+// Helper to read transactions from localStorage
+function readStoredTransactions(): Transaction[] {
+  try {
     const stored = localStorage.getItem('dragondex_transactions');
-    return stored ? JSON.parse(stored) : [];
-  });
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    // Restore Date objects from JSON strings
+    return parsed.map((tx: any) => ({
+      ...tx,
+      timestamp: new Date(tx.timestamp),
+    }));
+  } catch {
+    return [];
+  }
+}
 
-  const addTransaction = (tx: Omit<Transaction, 'timestamp'>) => {
+// Hook untuk menyimpan transaksi di localStorage
+// Uses functional updater to avoid stale closure issues
+export function useTransactionHistory() {
+  const [transactions, setTransactions] = useState<Transaction[]>(readStoredTransactions);
+
+  // Re-sync from localStorage when component mounts or tab becomes visible
+  // This ensures data is fresh when navigating between pages
+  const syncFromStorage = useCallback(() => {
+    setTransactions(readStoredTransactions());
+  }, []);
+
+  useEffect(() => {
+    // Listen for storage events (cross-tab) and visibility changes (same-tab navigation)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') syncFromStorage();
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'dragondex_transactions') syncFromStorage();
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [syncFromStorage]);
+
+  // Re-read on every mount (handles same-tab navigation)
+  useEffect(() => {
+    syncFromStorage();
+  }, [syncFromStorage]);
+
+  const addTransaction = useCallback((tx: Omit<Transaction, 'timestamp'>) => {
     const newTx: Transaction = {
       ...tx,
       timestamp: new Date(),
     };
-    const updated = [newTx, ...transactions].slice(0, 50); // Keep last 50
-    setTransactions(updated);
-    localStorage.setItem('dragondex_transactions', JSON.stringify(updated));
+    setTransactions(prev => {
+      const updated = [newTx, ...prev].slice(0, 50);
+      localStorage.setItem('dragondex_transactions', JSON.stringify(updated));
+      return updated;
+    });
     return newTx;
-  };
+  }, []);
 
-  const updateTransaction = (hash: string, updates: Partial<Transaction>) => {
-    const updated = transactions.map(tx => 
-      tx.hash === hash ? { ...tx, ...updates } : tx
-    );
-    setTransactions(updated);
-    localStorage.setItem('dragondex_transactions', JSON.stringify(updated));
-  };
+  const updateTransaction = useCallback((hash: string, updates: Partial<Transaction>) => {
+    setTransactions(prev => {
+      const updated = prev.map(tx =>
+        tx.hash === hash ? { ...tx, ...updates } : tx
+      );
+      localStorage.setItem('dragondex_transactions', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
-  const clearHistory = () => {
+  const clearHistory = useCallback(() => {
     setTransactions([]);
     localStorage.removeItem('dragondex_transactions');
-  };
+  }, []);
 
   return {
     transactions,

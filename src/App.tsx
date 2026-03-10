@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,7 +8,7 @@ import { WagmiProvider } from 'wagmi';
 
 import { config } from '@/config/wagmi';
 import { Layout } from '@/components/layout/Layout';
-import { PageTransition } from '@/components/layout/PageTransition';
+import { ErrorBoundary, RouteErrorBoundary } from '@/components/ErrorBoundary';
 import Index from "./pages/Index";
 import Swap from "./pages/Swap";
 import Liquidity from "./pages/Liquidity";
@@ -16,41 +17,57 @@ import Analytics from "./pages/Analytics";
 import Portfolio from "./pages/Portfolio";
 import CreatePool from "./pages/CreatePool";
 import Docs from "./pages/Docs";
-
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-function AnimatedRoutes() {
+function PageWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <RouteErrorBoundary>
+      {children}
+    </RouteErrorBoundary>
+  );
+}
+
+function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<PageTransition><Index /></PageTransition>} />
-      <Route path="/swap" element={<PageTransition><Swap /></PageTransition>} />
-      <Route path="/liquidity" element={<PageTransition><Liquidity /></PageTransition>} />
-      <Route path="/pools" element={<PageTransition><Pools /></PageTransition>} />
-      <Route path="/create-pool" element={<PageTransition><CreatePool /></PageTransition>} />
-      <Route path="/analytics" element={<PageTransition><Analytics /></PageTransition>} />
-      <Route path="/portfolio" element={<PageTransition><Portfolio /></PageTransition>} />
-      <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
-      <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+      <Route path="/" element={<PageWrapper><Index /></PageWrapper>} />
+      <Route path="/swap" element={<PageWrapper><Swap /></PageWrapper>} />
+      <Route path="/liquidity" element={<PageWrapper><Liquidity /></PageWrapper>} />
+      <Route path="/pools" element={<PageWrapper><Pools /></PageWrapper>} />
+      <Route path="/create-pool" element={<PageWrapper><CreatePool /></PageWrapper>} />
+      <Route path="/analytics" element={<PageWrapper><Analytics /></PageWrapper>} />
+      <Route path="/portfolio" element={<PageWrapper><Portfolio /></PageWrapper>} />
+      <Route path="/docs" element={<PageWrapper><Docs /></PageWrapper>} />
+      <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
     </Routes>
   );
 }
 
 const App = () => (
-  <WagmiProvider config={config}>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Layout>
-            <AnimatedRoutes />
-          </Layout>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </WagmiProvider>
+  <ErrorBoundary>
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Layout>
+              <AppRoutes />
+            </Layout>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
+  </ErrorBoundary>
 );
 
 export default App;

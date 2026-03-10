@@ -22,21 +22,18 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function AnimatedRoutes() {
-  const location = useLocation();
   return (
-    <AnimatePresence mode="sync" initial={false}>
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><Index /></PageTransition>} />
-        <Route path="/swap" element={<PageTransition><Swap /></PageTransition>} />
-        <Route path="/liquidity" element={<PageTransition><Liquidity /></PageTransition>} />
-        <Route path="/pools" element={<PageTransition><Pools /></PageTransition>} />
-        <Route path="/create-pool" element={<PageTransition><CreatePool /></PageTransition>} />
-        <Route path="/analytics" element={<PageTransition><Analytics /></PageTransition>} />
-        <Route path="/portfolio" element={<PageTransition><Portfolio /></PageTransition>} />
-        <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
-        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-      </Routes>
-    </AnimatePresence>
+    <Routes>
+      <Route path="/" element={<PageTransition><Index /></PageTransition>} />
+      <Route path="/swap" element={<PageTransition><Swap /></PageTransition>} />
+      <Route path="/liquidity" element={<PageTransition><Liquidity /></PageTransition>} />
+      <Route path="/pools" element={<PageTransition><Pools /></PageTransition>} />
+      <Route path="/create-pool" element={<PageTransition><CreatePool /></PageTransition>} />
+      <Route path="/analytics" element={<PageTransition><Analytics /></PageTransition>} />
+      <Route path="/portfolio" element={<PageTransition><Portfolio /></PageTransition>} />
+      <Route path="/docs" element={<PageTransition><Docs /></PageTransition>} />
+      <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+    </Routes>
   );
 }
 

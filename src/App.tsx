@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { WagmiProvider } from 'wagmi';
-import { AnimatePresence } from 'framer-motion';
+
 import { config } from '@/config/wagmi';
 import { Layout } from '@/components/layout/Layout';
 import { PageTransition } from '@/components/layout/PageTransition';

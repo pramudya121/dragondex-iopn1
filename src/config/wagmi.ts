@@ -1,6 +1,11 @@
 import { createConfig, http, fallback } from 'wagmi';
 import { defineChain } from 'viem';
-import { injected } from 'wagmi/connectors';
+import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
+
+// WalletConnect Cloud Project ID — ganti dengan ID Anda dari https://cloud.reown.com
+// ID publik (aman di-bundle ke frontend).
+export const WALLETCONNECT_PROJECT_ID =
+  import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'a8e1e5e4f0a3a4b6c7d8e9f0a1b2c3d4';
 
 const PRIMARY_RPC = 'https://testnet-rpc.iopn.tech';
 const BACKUP_RPC = 'https://testnet-rpc2.iopn.tech';
@@ -28,9 +33,7 @@ export const opnTestnet = defineChain({
 export const config = createConfig({
   chains: [opnTestnet],
   connectors: [
-    injected({
-      target: 'metaMask',
-    }),
+    injected({ target: 'metaMask' }),
     injected({
       target: {
         id: 'okxWallet',
@@ -51,6 +54,28 @@ export const config = createConfig({
         name: 'Bitget Wallet',
         provider: (window: any) => window.bitkeep?.ethereum,
       },
+    }),
+    walletConnect({
+      projectId: WALLETCONNECT_PROJECT_ID,
+      showQrModal: true,
+      metadata: {
+        name: 'DragonDEX',
+        description: 'The premier DEX on OPN Testnet',
+        url: typeof window !== 'undefined' ? window.location.origin : 'https://dragondex.lovable.app',
+        icons: ['https://dragondex.lovable.app/favicon.ico'],
+      },
+      qrModalOptions: {
+        themeMode: 'dark',
+        themeVariables: {
+          '--wcm-z-index': '1000',
+          '--wcm-accent-color': '#ef4444',
+          '--wcm-background-color': '#0a0a0a',
+        },
+      },
+    }),
+    coinbaseWallet({
+      appName: 'DragonDEX',
+      appLogoUrl: 'https://dragondex.lovable.app/favicon.ico',
     }),
   ],
   transports: {

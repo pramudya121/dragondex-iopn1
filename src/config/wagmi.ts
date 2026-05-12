@@ -33,9 +33,7 @@ export const opnTestnet = defineChain({
 export const config = createConfig({
   chains: [opnTestnet],
   connectors: [
-    injected({
-      target: 'metaMask',
-    }),
+    injected({ target: 'metaMask' }),
     injected({
       target: {
         id: 'okxWallet',
@@ -56,6 +54,28 @@ export const config = createConfig({
         name: 'Bitget Wallet',
         provider: (window: any) => window.bitkeep?.ethereum,
       },
+    }),
+    walletConnect({
+      projectId: WALLETCONNECT_PROJECT_ID,
+      showQrModal: true,
+      metadata: {
+        name: 'DragonDEX',
+        description: 'The premier DEX on OPN Testnet',
+        url: typeof window !== 'undefined' ? window.location.origin : 'https://dragondex.lovable.app',
+        icons: ['https://dragondex.lovable.app/favicon.ico'],
+      },
+      qrModalOptions: {
+        themeMode: 'dark',
+        themeVariables: {
+          '--wcm-z-index': '1000',
+          '--wcm-accent-color': '#ef4444',
+          '--wcm-background-color': '#0a0a0a',
+        },
+      },
+    }),
+    coinbaseWallet({
+      appName: 'DragonDEX',
+      appLogoUrl: 'https://dragondex.lovable.app/favicon.ico',
     }),
   ],
   transports: {

@@ -1,6 +1,11 @@
 import { createConfig, http, fallback } from 'wagmi';
 import { defineChain } from 'viem';
-import { injected } from 'wagmi/connectors';
+import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
+
+// WalletConnect Cloud Project ID — ganti dengan ID Anda dari https://cloud.reown.com
+// ID publik (aman di-bundle ke frontend).
+export const WALLETCONNECT_PROJECT_ID =
+  import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'a8e1e5e4f0a3a4b6c7d8e9f0a1b2c3d4';
 
 const PRIMARY_RPC = 'https://testnet-rpc.iopn.tech';
 const BACKUP_RPC = 'https://testnet-rpc2.iopn.tech';

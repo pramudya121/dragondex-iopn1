@@ -30,22 +30,29 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-background/70 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/50">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/60 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/40">
+        {/* top accent line */}
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3 group">
               <motion.div
-                whileHover={{ scale: 1.05, rotate: 5 }}
+                whileHover={{ scale: 1.08, rotate: -6 }}
                 transition={{ type: 'spring', stiffness: 400 }}
+                className="relative"
               >
-                <img src={dragonLogo} alt="DragonDEX" className="h-10 w-10 rounded-xl" />
+                <div className="absolute inset-0 rounded-xl bg-primary/40 blur-lg opacity-60 group-hover:opacity-100 transition-opacity" />
+                <img src={dragonLogo} alt="DragonDEX" className="relative h-10 w-10 rounded-xl ring-1 ring-primary/30" />
               </motion.div>
-              <span className="text-xl font-bold gradient-text hidden sm:block">DRAGONDEX</span>
+              <div className="hidden sm:flex flex-col leading-none">
+                <span className="brand-wordmark text-xl">DRAGONDEX</span>
+                <span className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground/70 mt-0.5">Forge of Liquidity</span>
+              </div>
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1 p-1 rounded-2xl bg-card/40 border border-border/40 backdrop-blur-xl">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -62,19 +69,22 @@ export function Header() {
             </nav>
 
             {/* Right Side */}
-            <div className="flex items-center gap-3">
-              
+            <div className="flex items-center gap-2 sm:gap-3">
               <a
                 href="https://testnet.iopn.tech"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors bg-muted/50 rounded-lg"
+                className="hidden md:inline-flex ember-pill hover:scale-[1.03] transition-transform"
               >
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+                </span>
                 OPN Testnet
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="w-3 h-3 opacity-70" />
               </a>
               <WalletButton />
-              
+
               <Button
                 variant="ghost"
                 size="icon"

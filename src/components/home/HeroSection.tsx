@@ -63,8 +63,8 @@ export function HeroSection() {
             <span>Live on OPN Testnet</span>
           </motion.div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6">
-            <AnimatedGradientText className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 tracking-tight">
+            <AnimatedGradientText className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black">
               DRAGONDEX
             </AnimatedGradientText>
           </h1>

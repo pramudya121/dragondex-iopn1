@@ -10,7 +10,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen wave-bg relative flex flex-col">
+    <div className="min-h-screen wave-bg noise-overlay relative flex flex-col">
       <WaveBackground />
       <Header />
       <main className="relative z-10 pt-20 pb-12 flex-1">

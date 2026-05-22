@@ -69,6 +69,7 @@ export default function Swap() {
           transition={{ delay: 0.2, duration: 0.5, type: 'spring', stiffness: 100 }}
         >
           <SwapCard />
+          <RecentSwapsPanel />
         </motion.div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, Loader2, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSendTransaction } from 'wagmi';
@@ -21,11 +21,22 @@ interface SendTokenModalProps {
   isOpen: boolean;
   onClose: () => void;
   tokens: TokenOption[];
+  initialSymbol?: string;
 }
 
-export function SendTokenModal({ isOpen, onClose, tokens }: SendTokenModalProps) {
+export function SendTokenModal({ isOpen, onClose, tokens, initialSymbol }: SendTokenModalProps) {
   const { address } = useAccount();
   const [selectedToken, setSelectedToken] = useState<TokenOption | null>(tokens[0] || null);
+
+  // Sync selection with initialSymbol whenever modal opens / token list changes
+  useEffect(() => {
+    if (!isOpen) return;
+    if (initialSymbol) {
+      const found = tokens.find(t => t.symbol === initialSymbol);
+      if (found) { setSelectedToken(found); return; }
+    }
+    if (!selectedToken && tokens[0]) setSelectedToken(tokens[0]);
+  }, [isOpen, initialSymbol, tokens]);
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [showTokenList, setShowTokenList] = useState(false);

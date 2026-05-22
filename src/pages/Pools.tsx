@@ -53,14 +53,18 @@ export default function Pools() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">
         {/* Header */}
         <div className="text-center mb-6 md:mb-8">
-          <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm mb-3">
-            ✨ Liquidity Pools
+          <span className="ember-pill inline-flex items-center gap-2 text-xs mb-4">
+            <Droplets className="w-3.5 h-3.5" />
+            <span className="uppercase tracking-[0.18em]">Liquidity Pools</span>
           </span>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-2">Liquidity Pools</h1>
+          <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-bold gradient-text mb-3 tracking-tight">
+            Forge of Liquidity
+          </h1>
           <p className="text-sm md:text-base text-muted-foreground max-w-lg mx-auto">
-            Explore and provide liquidity to earn trading fees
+            Explore live pools and provide liquidity to earn <span className="text-primary font-medium">0.3% fees</span> on every trade.
           </p>
         </div>
+
 
         {/* Stats */}
         <PoolStats

@@ -11,6 +11,8 @@ import { ChatMessage, streamChat } from '@/lib/chatStream';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useWalletPortfolio } from '@/hooks/useWalletPortfolio';
+import { extractAgentActions, type AgentAction } from './agentTools';
+import { AgentActionCard } from './AgentActionCard';
 
 const QUICK_PROMPTS = [
   { emoji: "🔄", text: "How do I swap tokens?" },
@@ -29,8 +31,10 @@ type ChatAction = {
   path?: string;
 };
 
-function parseContent(content: string): { text: string; actions: ChatAction[]; suggestions: string[] } {
-  let remaining = content;
+function parseContent(content: string): { text: string; actions: ChatAction[]; suggestions: string[]; agentActions: AgentAction[] } {
+  // First strip [AGENT_ACTION] blocks
+  const { cleaned, actions: agentActions } = extractAgentActions(content);
+  let remaining = cleaned;
   let actions: ChatAction[] = [];
   let suggestions: string[] = [];
 
@@ -48,7 +52,7 @@ function parseContent(content: string): { text: string; actions: ChatAction[]; s
     suggestions = sugMatch[1].split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3);
   }
 
-  return { text: remaining, actions, suggestions };
+  return { text: remaining, actions, suggestions, agentActions };
 }
 
 const STORAGE_KEY = 'dragonbot-messages';
@@ -523,6 +527,23 @@ export function DragonBot() {
                           </div>
                         ) : msg.content}
                       </div>
+
+                      {/* Agent on-chain action cards */}
+                      {msg.role === 'assistant' && parsed && parsed.agentActions.length > 0 && (
+                        <div className="space-y-2">
+                          {parsed.agentActions.map((act, ai) => (
+                            <AgentActionCard
+                              key={`${i}-${ai}`}
+                              action={act}
+                              onResult={(r) => {
+                                if (r.status === 'success' && r.txHash) {
+                                  toast({ title: 'Transaction confirmed', description: `${act.type} executed` });
+                                }
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
 
                       {/* Action buttons */}
                       {msg.role === 'assistant' && isLast && !isLoading && parsed && parsed.actions.length > 0 && (

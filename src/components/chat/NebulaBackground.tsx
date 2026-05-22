@@ -87,45 +87,6 @@ export function NebulaBackground({ starCount = 140, cometCount = 8, className = 
         }}
       />
 
-      {/* ── Nebula cloud layer 1 — magenta + indigo bloom (drifts slowly) */}
-      <motion.div
-        className="absolute -inset-[10%] mix-blend-screen"
-        style={{
-          background:
-            'radial-gradient(40% 35% at 25% 30%, hsl(290 90% 55% / 0.55) 0%, transparent 70%), ' +
-            'radial-gradient(35% 40% at 75% 25%, hsl(230 95% 60% / 0.50) 0%, transparent 70%), ' +
-            'radial-gradient(45% 35% at 60% 75%, hsl(320 90% 60% / 0.45) 0%, transparent 70%)',
-          filter: 'blur(40px)',
-        }}
-        animate={{ x: [0, 20, 0], y: [0, -15, 0] }}
-        transition={{ duration: 40, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* ── Nebula cloud layer 2 — teal & cyan veil */}
-      <motion.div
-        className="absolute -inset-[10%] mix-blend-screen"
-        style={{
-          background:
-            'radial-gradient(35% 30% at 15% 75%, hsl(180 95% 55% / 0.35) 0%, transparent 70%), ' +
-            'radial-gradient(30% 25% at 85% 60%, hsl(195 90% 60% / 0.40) 0%, transparent 70%), ' +
-            'radial-gradient(50% 40% at 50% 10%, hsl(265 90% 60% / 0.30) 0%, transparent 75%)',
-          filter: 'blur(60px)',
-        }}
-        animate={{ x: [0, -25, 0], y: [0, 18, 0] }}
-        transition={{ duration: 55, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* ── Nebula cloud layer 3 — warm pink/amber accent (very subtle) */}
-      <div
-        className="absolute inset-0 mix-blend-screen opacity-70"
-        style={{
-          background:
-            'radial-gradient(25% 25% at 70% 40%, hsl(340 95% 65% / 0.30) 0%, transparent 70%), ' +
-            'radial-gradient(20% 20% at 30% 60%, hsl(20 100% 60% / 0.18) 0%, transparent 70%)',
-          filter: 'blur(50px)',
-        }}
-      />
-
       {/* ── Star dust (tiny, far) */}
       {starDust.map((s) => (
         <motion.span

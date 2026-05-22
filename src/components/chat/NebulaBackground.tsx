@@ -222,7 +222,7 @@ export function NebulaBackground({ starCount = 140, cometCount = 8, className = 
               left: `${c.left}%`,
               width: c.length,
               height: 2,
-              transform: `rotate(${angle}deg)`,
+              transform: `rotate(${angleDeg}deg)`,
               transformOrigin: 'left center',
               background: `linear-gradient(90deg, hsl(0 0% 100% / 0.95), hsl(${c.hue} 90% 70% / 0.7) 35%, transparent 100%)`,
               borderRadius: 9999,

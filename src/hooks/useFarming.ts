@@ -154,7 +154,8 @@ export function useUserFarmInfo(pid: number | null) {
 }
 
 export function useFarmingActions() {
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync: writeRaw } = useWriteContract();
+  const writeContractAsync = writeRaw as any;
   const { address } = useAccount();
   const client = usePublicClient() as any;
 

@@ -200,25 +200,17 @@ function GlobeScene() {
 
 export function TokenGlobe3D({ className = '' }: { className?: string }) {
   return (
-    <div className={`relative w-full ${className}`}>
+    <div className={`relative w-full h-full ${className}`} style={{ background: 'transparent' }}>
       <Canvas
         camera={{ position: [0, 1.5, 8.5], fov: 50 }}
         dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
-        style={{ background: 'transparent' }}
+        gl={{ antialias: true, alpha: true, premultipliedAlpha: false }}
+        style={{ background: 'transparent', display: 'block' }}
       >
         <Suspense fallback={null}>
           <GlobeScene />
         </Suspense>
       </Canvas>
-      {/* Radial vignette to blend with page */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse at center, transparent 50%, hsl(var(--background) / 0.85) 100%)',
-        }}
-      />
     </div>
   );
 }

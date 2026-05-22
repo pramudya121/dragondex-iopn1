@@ -1,3 +1,4 @@
+import { SEO } from '@/components/seo/SEO';
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, TrendingUp, DollarSign, Activity, Users, Layers, Droplets, ExternalLink, RefreshCw, Coins, ArrowUpRight, Percent } from 'lucide-react';
@@ -149,6 +150,8 @@ export default function Analytics() {
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-8 pb-24 lg:pb-8 relative">
+
+    <SEO title="Analytics — DRAGONDEX" description="On-chain analytics for DRAGONDEX: total value locked, trading volume, top pools and tokens on OPN Testnet." path="/analytics" />
       <Spotlight className="hidden md:block" />
       
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 max-w-6xl mx-auto">

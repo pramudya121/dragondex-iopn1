@@ -1,3 +1,4 @@
+import { SEO } from '@/components/seo/SEO';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Loader2, Check, ExternalLink, Droplets, Info, Calculator, TrendingUp, Wallet, Shield, AlertCircle } from 'lucide-react';
@@ -440,6 +441,8 @@ export default function Liquidity() {
       role="main"
       aria-label="Liquidity Management"
     >
+
+    <SEO title="Provide Liquidity — DRAGONDEX" description="Add or remove liquidity on DRAGONDEX pools and earn 0.3% trading fees from every swap." path="/liquidity" />
       <Spotlight className="hidden md:block" />
       <GlowingStarsBackground starCount={30} className="opacity-20" />
       <ParticleField particleCount={30} colorScheme="dragon" className="opacity-30" />

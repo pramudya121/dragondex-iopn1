@@ -1,3 +1,4 @@
+import { SEO } from '@/components/seo/SEO';
 import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -43,6 +44,7 @@ export default function PairDetail() {
   if (isLoading) {
     return (
       <div className="container mx-auto py-20 flex justify-center">
+      <SEO title="Pool Details — DRAGONDEX" description="Detailed view of a DRAGONDEX liquidity pool with reserves, price chart, and recent swaps." path="/pools" />
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );

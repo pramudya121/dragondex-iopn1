@@ -1,3 +1,4 @@
+import { SEO } from '@/components/seo/SEO';
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Droplets, Plus, RefreshCw, Search, Grid, List, ArrowUpDown, Clock } from 'lucide-react';
@@ -48,6 +49,8 @@ export default function Pools() {
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-8 pb-24 lg:pb-8 relative min-h-screen">
+
+    <SEO title="Liquidity Pools — DRAGONDEX" description="Browse all DRAGONDEX liquidity pools with real-time TVL, volume, and APR on OPN Testnet." path="/pools" />
       <Spotlight className="hidden md:block" />
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">

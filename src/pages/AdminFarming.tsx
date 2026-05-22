@@ -1,3 +1,4 @@
+import { SEO } from '@/components/seo/SEO';
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseUnits, type Address, isAddress } from 'viem';
@@ -95,6 +96,7 @@ export default function AdminFarming() {
   if (!isConnected) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
+      <SEO title="Farming Admin — DRAGONDEX" description="Administer DRAGONDEX yield farming pools — create farms, adjust allocations, manage rewards." path="/admin/farming" />
         <Shield className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
         <h1 className="text-2xl font-bold mb-2">Connect Wallet</h1>
         <p className="text-muted-foreground">Connect your wallet to access the admin panel.</p>

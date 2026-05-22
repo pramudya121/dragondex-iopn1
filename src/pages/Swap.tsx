@@ -1,3 +1,4 @@
+import { SEO } from '@/components/seo/SEO';
 import { motion } from 'framer-motion';
 import { SwapCard } from '@/components/swap/SwapCard';
 import { Spotlight } from '@/components/ui/magic/Spotlight';
@@ -10,6 +11,7 @@ import { Flame, Shield, Zap, TrendingUp } from 'lucide-react';
 export default function Swap() {
   return (
     <div className="relative min-h-[calc(100vh-80px)] pb-24 lg:pb-0 flex flex-col items-center justify-center overflow-hidden">
+    <SEO title="Swap Tokens — DRAGONDEX on OPN Testnet" description="Instantly swap tokens on OPN Testnet with AMM pricing, multi-hop routing, and real-time price impact." path="/swap" />
       {/* Background Effects */}
       <Spotlight className="hidden md:block" />
       <GlowingStarsBackground starCount={20} className="opacity-10" />

@@ -1,3 +1,4 @@
+import { SEO } from '@/components/seo/SEO';
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -593,8 +594,24 @@ export default function Docs() {
 
   const ActiveComponent = sectionComponents[activeSection] || SectionIntroduction;
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+
   return (
     <div className="flex min-h-screen relative">
+      <SEO
+        title="Documentation — DRAGONDEX"
+        description="DRAGONDEX docs: getting started, swap and liquidity guides, AMM concepts, smart contracts, and FAQ for OPN Testnet."
+        path="/docs"
+        jsonLd={faqJsonLd}
+      />
       {/* Mobile sidebar toggle */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}

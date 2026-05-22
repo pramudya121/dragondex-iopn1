@@ -1,3 +1,4 @@
+import { SEO } from '@/components/seo/SEO';
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Loader2, ExternalLink, AlertCircle, Check, ArrowRight } from 'lucide-react';
@@ -222,6 +223,8 @@ export default function CreatePool() {
 
   return (
     <div className="container mx-auto px-4 py-8 pb-24 lg:pb-8 max-w-2xl relative">
+
+    <SEO title="Create Pool — DRAGONDEX" description="Launch a new liquidity pool on DRAGONDEX. Set the initial price and bootstrap trading on OPN Testnet." path="/create-pool" />
       <Spotlight className="hidden md:block" />
       
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>

@@ -124,7 +124,7 @@ export function useUserFarmInfo(pid: number | null) {
       return;
     }
     let cancelled = false;
-    (async () => {
+    const fetchInfo = async () => {
       try {
         const [u, pending] = await Promise.all([
           client.readContract({
@@ -144,9 +144,13 @@ export function useUserFarmInfo(pid: number | null) {
       } catch {
         if (!cancelled) setInfo({ amount: 0n, rewardDebt: 0n, pending: 0n });
       }
-    })();
+    };
+    fetchInfo();
+    // Auto-refresh every 8s for live pending rewards
+    const interval = setInterval(fetchInfo, 8000);
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [client, pid, address, refreshKey]);
 
@@ -389,4 +393,30 @@ export function formatTokenAmount(amount: bigint, decimals: number, precision = 
   return dec ? `${int}.${dec.slice(0, precision)}` : int;
 }
 
+// OPN Testnet block time (approx). Used to estimate APR.
+const BLOCKS_PER_YEAR = (365 * 24 * 60 * 60) / 2; // assuming ~2s blocks
+
+/**
+ * Calculate annual APR % for a farm pool.
+ * stakedUsd & rewardUsd are unit prices (per 1 token) of staking and reward tokens.
+ */
+export function calculateAPR(
+  pool: FarmPool,
+  stakingTokenPriceUsd: number,
+  rewardTokenPriceUsd: number,
+  blocksPerYear: number = BLOCKS_PER_YEAR
+): number | null {
+  if (pool.totalStaked === 0n || stakingTokenPriceUsd <= 0) return null;
+  const rewardPerYear =
+    Number(formatUnits(pool.rewardPerBlock, pool.rewardDecimals)) * blocksPerYear;
+  const totalStaked = Number(formatUnits(pool.totalStaked, pool.stakingDecimals));
+  const rewardUsd = rewardPerYear * rewardTokenPriceUsd;
+  const stakedUsd = totalStaked * stakingTokenPriceUsd;
+  if (stakedUsd <= 0) return null;
+  return (rewardUsd / stakedUsd) * 100;
+}
+
+export { BLOCKS_PER_YEAR };
+
 export { parseUnits };
+

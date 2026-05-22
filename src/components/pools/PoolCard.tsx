@@ -120,16 +120,12 @@ export function PoolCard({ pool, index, prices }: PoolCardProps) {
 
         {/* Actions */}
         <div className="flex gap-2">
-          <a
-            href={`https://testnet.iopn.tech/address/${pool.pairAddress}`}
-            target="_blank" rel="noopener noreferrer"
-            className="flex-1"
-          >
+          <Link to={`/pool/${pool.pairAddress}`} className="flex-1">
             <Button variant="outline" size="sm" className="w-full text-xs h-9">
               <ExternalLink className="w-3 h-3 mr-1" />
               Details
             </Button>
-          </a>
+          </Link>
           <Link to="/liquidity" className="flex-1">
             <Button size="sm" className="w-full btn-dragon text-xs h-9">
               <Plus className="w-3 h-3 mr-1" />

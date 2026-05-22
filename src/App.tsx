@@ -19,6 +19,7 @@ import CreatePool from "./pages/CreatePool";
 import Docs from "./pages/Docs";
 import Farming from "./pages/Farming";
 import AdminFarming from "./pages/AdminFarming";
+import PairDetail from "./pages/PairDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -51,6 +52,7 @@ function AppRoutes() {
       <Route path="/docs" element={<PageWrapper><Docs /></PageWrapper>} />
       <Route path="/farming" element={<PageWrapper><Farming /></PageWrapper>} />
       <Route path="/admin/farming" element={<PageWrapper><AdminFarming /></PageWrapper>} />
+      <Route path="/pool/:address" element={<PageWrapper><PairDetail /></PageWrapper>} />
       <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
     </Routes>
   );

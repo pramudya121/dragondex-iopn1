@@ -161,7 +161,7 @@ export default function Portfolio() {
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
-          <Button className="btn-dragon" size="sm" onClick={() => setShowSendModal(true)}>
+          <Button className="btn-dragon" size="sm" onClick={() => openSendFor()}>
             <Send className="w-4 h-4 mr-2" />
             Send Token
           </Button>

@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { parseUnits, type Address, isAddress } from 'viem';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
-  Shield, ArrowLeft, Plus, RefreshCw, Loader2, Crown, Sprout, Zap, Edit3, Users
+  Shield, ArrowLeft, Plus, RefreshCw, Loader2, Crown, Sprout, Zap, Edit3, Users, Settings,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { GlowOrb } from '@/components/ui/premium/GlowOrb';
 import { toast } from 'sonner';
 
 import { FARMING_CONTRACT } from '@/config/farming';
+import { TOKEN_LIST, type TokenInfo } from '@/config/contracts';
 import {
   formatTokenAmount,
   useFarmingActions,
@@ -22,6 +23,44 @@ import {
   useFarmingPools,
 } from '@/hooks/useFarming';
 import { useWallet } from '@/hooks/useWallet';
+import { cn } from '@/lib/utils';
+
+type Tab = 'add' | 'edit' | 'mass';
+
+// ERC20 tokens available as staking/reward (exclude native OPN)
+const FARM_TOKENS: TokenInfo[] = TOKEN_LIST.filter((t) => !t.isNative);
+
+function TokenChips({
+  value,
+  onPick,
+}: {
+  value: string;
+  onPick: (addr: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {FARM_TOKENS.map((t) => {
+        const active = value.toLowerCase() === t.address.toLowerCase();
+        return (
+          <button
+            key={t.address}
+            type="button"
+            onClick={() => onPick(t.address)}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-semibold transition-all',
+              active
+                ? 'bg-primary/20 border-primary text-primary shadow-[0_0_12px_hsl(var(--primary)/0.4)]'
+                : 'bg-card/60 border-border/50 text-foreground/80 hover:border-primary/40 hover:text-primary'
+            )}
+          >
+            <img src={t.logoURI} alt="" className="w-4 h-4 rounded-full" />
+            {t.symbol}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function AdminFarming() {
   const { isAdmin, owner } = useFarmingOwner();
@@ -29,18 +68,29 @@ export default function AdminFarming() {
   const { pools, loading, refresh } = useFarmingPools();
   const { addPool, updateRewardPerBlock, updatePool, massUpdatePools, transferOwnership } = useFarmingActions();
 
+  const [tab, setTab] = useState<Tab>('add');
   const [busy, setBusy] = useState(false);
 
   // Add pool form
   const [stakingToken, setStakingToken] = useState('');
   const [rewardToken, setRewardToken] = useState('');
-  const [rewardPerBlock, setRewardPerBlock] = useState('');
+  const [rewardPerBlock, setRewardPerBlock] = useState('0.01');
 
-  // Update reward form (per pool)
-  const [editing, setEditing] = useState<{ pid: number; value: string } | null>(null);
+  // Edit pool form
+  const [editPid, setEditPid] = useState<number | null>(null);
+  const [editRpb, setEditRpb] = useState('');
 
   // Transfer ownership
   const [newOwner, setNewOwner] = useState('');
+
+  const stakingSymbol = useMemo(
+    () => FARM_TOKENS.find((t) => t.address.toLowerCase() === stakingToken.toLowerCase())?.symbol,
+    [stakingToken]
+  );
+  const rewardSymbol = useMemo(
+    () => FARM_TOKENS.find((t) => t.address.toLowerCase() === rewardToken.toLowerCase())?.symbol,
+    [rewardToken]
+  );
 
   if (!isConnected) {
     return (
@@ -83,11 +133,11 @@ export default function AdminFarming() {
 
   const handleAddPool = () => {
     if (!isAddress(stakingToken) || !isAddress(rewardToken)) {
-      toast.error('Invalid token address');
+      toast.error('Pilih staking & reward token');
       return;
     }
     if (!rewardPerBlock || Number(rewardPerBlock) <= 0) {
-      toast.error('Invalid reward per block');
+      toast.error('Reward per block tidak valid');
       return;
     }
     const rpb = parseUnits(rewardPerBlock, 18);
@@ -96,28 +146,37 @@ export default function AdminFarming() {
       () => {
         setStakingToken('');
         setRewardToken('');
-        setRewardPerBlock('');
+        setRewardPerBlock('0.01');
       }
     );
   };
 
-  const handleUpdateReward = () => {
-    if (!editing) return;
-    if (!editing.value || Number(editing.value) < 0) {
-      toast.error('Invalid amount');
+  const handleEditPool = () => {
+    if (editPid === null) {
+      toast.error('Pilih pool dulu');
       return;
     }
-    const rpb = parseUnits(editing.value, 18);
-    handle(() => updateRewardPerBlock(editing.pid, rpb), () => setEditing(null));
+    if (!editRpb || Number(editRpb) < 0) {
+      toast.error('Reward tidak valid');
+      return;
+    }
+    const rpb = parseUnits(editRpb, 18);
+    handle(() => updateRewardPerBlock(editPid, rpb), () => setEditRpb(''));
   };
 
   const handleTransfer = () => {
     if (!isAddress(newOwner)) {
-      toast.error('Invalid address');
+      toast.error('Address tidak valid');
       return;
     }
     handle(() => transferOwnership(newOwner as Address), () => setNewOwner(''));
   };
+
+  const tabs: { id: Tab; label: string; icon: typeof Plus }[] = [
+    { id: 'add', label: 'Add Pool', icon: Plus },
+    { id: 'edit', label: 'Edit Pool', icon: Edit3 },
+    { id: 'mass', label: 'Mass Update', icon: Zap },
+  ];
 
   return (
     <div className="relative min-h-[calc(100vh-80px)] pb-24 lg:pb-12 overflow-hidden">
@@ -130,116 +189,245 @@ export default function AdminFarming() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6"
         >
           <Link to="/farming" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-4">
             <ArrowLeft className="w-4 h-4 mr-1" /> Back to Farms
           </Link>
           <div className="flex flex-wrap items-center gap-3">
             <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/30 to-accent/30 border border-primary/40 shadow-[0_0_30px_hsl(var(--primary)/0.3)]">
-              <Crown className="w-6 h-6 text-primary" />
+              <Settings className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-3xl sm:text-4xl font-extrabold gradient-text">
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold gradient-text">
                 Farming Admin
               </h1>
-              <p className="text-xs text-muted-foreground font-mono mt-1 break-all">
-                Contract: {FARMING_CONTRACT}
-              </p>
+              <p className="text-xs text-muted-foreground">Owner-only controls</p>
             </div>
           </div>
         </motion.div>
 
-        {/* Quick actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Add Pool */}
-          <Card className="p-6 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-primary/20">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
-                <Plus className="w-4 h-4 text-primary" />
-              </div>
-              <h2 className="font-display text-lg font-bold">Add New Pool</h2>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs">Staking Token Address</Label>
-                <Input
-                  placeholder="0x..."
-                  value={stakingToken}
-                  onChange={(e) => setStakingToken(e.target.value)}
-                  className="font-mono text-xs"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Reward Token Address</Label>
-                <Input
-                  placeholder="0x..."
-                  value={rewardToken}
-                  onChange={(e) => setRewardToken(e.target.value)}
-                  className="font-mono text-xs"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Reward Per Block (in token units)</Label>
-                <Input
-                  type="number"
-                  placeholder="0.1"
-                  value={rewardPerBlock}
-                  onChange={(e) => setRewardPerBlock(e.target.value)}
-                  className="font-mono"
-                />
-                <p className="text-[10px] text-muted-foreground mt-1">Assumed 18 decimals.</p>
-              </div>
-              <Button
-                className="w-full bg-gradient-to-r from-primary to-accent"
-                disabled={busy}
-                onClick={handleAddPool}
-              >
-                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><Plus className="w-4 h-4 mr-2" /> Create Pool</>)}
-              </Button>
-            </div>
-          </Card>
-
-          {/* Maintenance */}
-          <Card className="p-6 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-accent/20">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 rounded-lg bg-accent/20 border border-accent/30">
-                <Zap className="w-4 h-4 text-accent" />
-              </div>
-              <h2 className="font-display text-lg font-bold">Maintenance</h2>
-            </div>
-            <div className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full"
-                disabled={busy}
-                onClick={() => handle(() => massUpdatePools())}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" /> Mass Update All Pools
-              </Button>
-
-              <div className="pt-4 border-t border-border/40">
-                <Label className="text-xs flex items-center gap-1">
-                  <Users className="w-3 h-3" /> Transfer Ownership
-                </Label>
-                <Input
-                  placeholder="0x... new owner"
-                  value={newOwner}
-                  onChange={(e) => setNewOwner(e.target.value)}
-                  className="font-mono text-xs mt-1"
-                />
-                <Button
-                  variant="destructive"
-                  className="w-full mt-2"
-                  disabled={busy}
-                  onClick={handleTransfer}
+        {/* Tabbed panel */}
+        <Card className="p-5 sm:p-6 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-primary/20 mb-8">
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    'relative flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all',
+                    active
+                      ? 'bg-gradient-to-r from-primary/30 to-accent/30 border border-primary/50 text-primary shadow-[0_0_20px_hsl(var(--primary)/0.25)]'
+                      : 'bg-card/40 border border-border/40 text-muted-foreground hover:text-foreground'
+                  )}
                 >
-                  Transfer Ownership
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <AnimatePresence mode="wait">
+            {tab === 'add' && (
+              <motion.div
+                key="add"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className="space-y-4"
+              >
+                <div>
+                  <Label className="text-[11px] tracking-wider text-muted-foreground uppercase">
+                    Staking Token Address
+                  </Label>
+                  <Input
+                    placeholder="0x..."
+                    value={stakingToken}
+                    onChange={(e) => setStakingToken(e.target.value)}
+                    className="font-mono text-xs mt-1"
+                  />
+                  <TokenChips value={stakingToken} onPick={setStakingToken} />
+                </div>
+
+                <div>
+                  <Label className="text-[11px] tracking-wider text-muted-foreground uppercase">
+                    Reward Token Address
+                  </Label>
+                  <Input
+                    placeholder="0x..."
+                    value={rewardToken}
+                    onChange={(e) => setRewardToken(e.target.value)}
+                    className="font-mono text-xs mt-1"
+                  />
+                  <TokenChips value={rewardToken} onPick={setRewardToken} />
+                </div>
+
+                <div>
+                  <Label className="text-[11px] tracking-wider text-muted-foreground uppercase">
+                    Reward Per Block (in Reward-Token Units)
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="0.01"
+                    value={rewardPerBlock}
+                    onChange={(e) => setRewardPerBlock(e.target.value)}
+                    className="font-mono mt-1"
+                  />
+                  {stakingSymbol && rewardSymbol && (
+                    <p className="text-[11px] text-muted-foreground mt-2">
+                      Pool: <span className="text-primary font-semibold">Stake {stakingSymbol}</span> →{' '}
+                      <span className="text-accent font-semibold">Earn {rewardSymbol}</span>
+                    </p>
+                  )}
+                </div>
+
+                <Button
+                  className="w-full h-12 bg-gradient-to-r from-primary to-accent text-base font-bold"
+                  disabled={busy}
+                  onClick={handleAddPool}
+                >
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><Plus className="w-4 h-4 mr-2" /> Add Pool</>)}
                 </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
+              </motion.div>
+            )}
+
+            {tab === 'edit' && (
+              <motion.div
+                key="edit"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className="space-y-4"
+              >
+                <div>
+                  <Label className="text-[11px] tracking-wider text-muted-foreground uppercase">
+                    Select Pool
+                  </Label>
+                  {pools.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">No pools yet. Create one in Add Pool tab.</p>
+                  ) : (
+                    <div className="grid gap-2 mt-2 max-h-64 overflow-y-auto pr-1">
+                      {pools.map((p) => (
+                        <button
+                          key={p.pid}
+                          onClick={() => {
+                            setEditPid(p.pid);
+                            setEditRpb(formatTokenAmount(p.rewardPerBlock, p.rewardDecimals, 6));
+                          }}
+                          className={cn(
+                            'flex items-center justify-between p-3 rounded-lg border text-left transition-all',
+                            editPid === p.pid
+                              ? 'bg-primary/10 border-primary/60'
+                              : 'bg-card/40 border-border/40 hover:border-primary/30'
+                          )}
+                        >
+                          <div>
+                            <div className="flex items-center gap-2 text-sm font-semibold">
+                              <span className="px-1.5 py-0.5 rounded text-[10px] bg-primary/20 text-primary font-mono">
+                                #{p.pid}
+                              </span>
+                              Stake {p.stakingSymbol} → Earn {p.rewardSymbol}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">
+                              RPB: {formatTokenAmount(p.rewardPerBlock, p.rewardDecimals, 6)} ·
+                              Total: {formatTokenAmount(p.totalStaked, p.stakingDecimals, 2)}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-[11px] tracking-wider text-muted-foreground uppercase">
+                    New Reward Per Block
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="0.01"
+                    value={editRpb}
+                    onChange={(e) => setEditRpb(e.target.value)}
+                    className="font-mono mt-1"
+                    disabled={editPid === null}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={busy || editPid === null}
+                    onClick={() => handle(() => updatePool(editPid!))}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" /> Refresh Pool
+                  </Button>
+                  <Button
+                    className="bg-gradient-to-r from-primary to-accent font-bold"
+                    disabled={busy || editPid === null}
+                    onClick={handleEditPool}
+                  >
+                    {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><Edit3 className="w-4 h-4 mr-2" /> Save</>)}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {tab === 'mass' && (
+              <motion.div
+                key="mass"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className="space-y-5"
+              >
+                <div className="p-4 rounded-lg bg-card/40 border border-border/40">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Zap className="w-4 h-4 text-accent" />
+                    <h3 className="font-bold text-sm">Mass Update All Pools</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Recalculate accRewardPerShare for every pool in one transaction.
+                  </p>
+                  <Button
+                    className="w-full bg-gradient-to-r from-primary to-accent font-bold"
+                    disabled={busy}
+                    onClick={() => handle(() => massUpdatePools())}
+                  >
+                    {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><RefreshCw className="w-4 h-4 mr-2" /> Run Mass Update</>)}
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-lg bg-card/40 border border-destructive/30">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="w-4 h-4 text-destructive" />
+                    <h3 className="font-bold text-sm">Transfer Ownership</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Hand over admin rights to another address. This action is irreversible.
+                  </p>
+                  <Input
+                    placeholder="0x... new owner address"
+                    value={newOwner}
+                    onChange={(e) => setNewOwner(e.target.value)}
+                    className="font-mono text-xs mb-2"
+                  />
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={handleTransfer}
+                  >
+                    Transfer Ownership
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Card>
 
         {/* Pool list */}
         <div className="flex items-center justify-between mb-4">
@@ -289,48 +477,37 @@ export default function AdminFarming() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {editing?.pid === p.pid ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          placeholder="New RPB"
-                          value={editing.value}
-                          onChange={(e) => setEditing({ pid: p.pid, value: e.target.value })}
-                          className="w-32 font-mono text-xs"
-                        />
-                        <Button size="sm" onClick={handleUpdateReward} disabled={busy}>
-                          Save
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
-                          ✕
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditing({ pid: p.pid, value: '' })}
-                        >
-                          <Edit3 className="w-3 h-3 mr-1" /> Set Reward
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={busy}
-                          onClick={() => handle(() => updatePool(p.pid))}
-                        >
-                          <RefreshCw className="w-3 h-3 mr-1" /> Update
-                        </Button>
-                      </>
-                    )}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setTab('edit');
+                        setEditPid(p.pid);
+                        setEditRpb(formatTokenAmount(p.rewardPerBlock, p.rewardDecimals, 6));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      <Edit3 className="w-3 h-3 mr-1" /> Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() => handle(() => updatePool(p.pid))}
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1" /> Update
+                    </Button>
                   </div>
                 </div>
               </Card>
             ))}
           </div>
         )}
+
+        <p className="text-[10px] text-muted-foreground font-mono mt-6 text-center break-all">
+          Contract: {FARMING_CONTRACT}
+        </p>
       </div>
     </div>
   );

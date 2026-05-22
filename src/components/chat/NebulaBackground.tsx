@@ -205,9 +205,14 @@ export function NebulaBackground({ starCount = 140, cometCount = 8, className = 
 
       {/* ── Comets — crossing diagonals with glowing trails */}
       {comets.map((c) => {
-        const angle = c.dirRight ? 32 : -32;
-        const travelX = c.dirRight ? 160 : -160;
-        const travelY = 160;
+        // Steeper diagonal "falling" angle (55° down). Motion vector matches the rotation
+        // so the comet actually travels along its own trail instead of sliding sideways.
+        const angleDeg = c.dirRight ? 55 : 125; // 55° down-right OR 125° down-left
+        const rad = (angleDeg * Math.PI) / 180;
+        const dist = 180; // viewport-percent distance
+        const travelX = Math.cos(rad) * dist;
+        const travelY = Math.sin(rad) * dist;
+
         return (
           <motion.div
             key={`c-${c.id}`}

@@ -8,6 +8,7 @@ import { AnimatedGradientText } from '@/components/ui/magic/AnimatedGradientText
 import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffect';
 import { NumberTicker } from '@/components/ui/magic/NumberTicker';
 import { BorderBeam } from '@/components/ui/magic/BorderBeam';
+import { TokenGlobe3D } from '@/components/home/TokenGlobe3D';
 import { useAllPairsLength } from '@/hooks/useContract';
 import { useLiquidityPools } from '@/hooks/useLiquidityPools';
 import { useTokenPrices } from '@/hooks/usePrices';

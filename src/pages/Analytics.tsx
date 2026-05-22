@@ -51,8 +51,8 @@ function StatCard({ icon: Icon, label, value, prefix = '', suffix = '', delay = 
             </span>
           )}
         </div>
-        <p className="text-[10px] md:text-xs text-muted-foreground mb-1">{label}</p>
-        <p className="text-lg md:text-2xl font-bold">
+        <p className="text-[10px] md:text-xs text-muted-foreground mb-1 tracking-[0.14em] uppercase">{label}</p>
+        <p className="font-mono-display text-lg md:text-2xl font-bold">
           <NumberTicker value={value} prefix={prefix} suffix={suffix} delay={delay} decimalPlaces={value < 100 ? 2 : 0} />
         </p>
       </div>

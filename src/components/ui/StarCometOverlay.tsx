@@ -155,7 +155,7 @@ export function StarCometOverlay({ starCount = 100, cometCount = 8 }: Props) {
 
       {/* ── Comets — crossing diagonals with glowing trails */}
       {comets.map((c) => {
-        const angleDeg = c.dirRight ? 55 : 125;
+        const angleDeg = c.dirRight ? 72 : 108;
         const rad = (angleDeg * Math.PI) / 180;
         const dist = 180;
         const travelX = Math.cos(rad) * dist;

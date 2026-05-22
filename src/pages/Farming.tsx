@@ -154,20 +154,26 @@ function FarmCard({
         <div className="relative p-5 space-y-4">
           {/* Header */}
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-primary/20 border border-primary/30">
-                  <Sprout className="w-4 h-4 text-primary" />
-                </div>
-                <h3 className="font-display text-lg font-bold">
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Dual token logos */}
+              <div className="flex -space-x-2 shrink-0">
+                <TokenLogo address={pool.stakingToken} symbol={pool.stakingSymbol} size={40} />
+                <TokenLogo address={pool.rewardToken} symbol={pool.rewardSymbol} size={40} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-display text-base font-bold truncate flex items-center gap-1.5">
+                  <Sprout className="w-3.5 h-3.5 text-primary shrink-0" />
                   Stake {pool.stakingSymbol}
                 </h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                  Earn <span className="text-accent font-semibold">{pool.rewardSymbol}</span>
+                  {pool.rewardPerBlock === 0n && (
+                    <span className="ml-1 px-1 py-0.5 rounded text-[8px] bg-destructive/15 text-destructive">PAUSED</span>
+                  )}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Earn <span className="text-accent font-semibold">{pool.rewardSymbol}</span>
-              </p>
             </div>
-            <div className="flex flex-col items-end gap-1">
+            <div className="flex flex-col items-end gap-1 shrink-0">
               <span className="px-2 py-1 rounded-md text-[10px] uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
                 PID #{pool.pid}
               </span>

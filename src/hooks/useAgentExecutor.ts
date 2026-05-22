@@ -1,0 +1,237 @@
+import { useCallback } from 'react';
+import { useAccount, usePublicClient, useWriteContract } from 'wagmi';
+import { erc20Abi, parseUnits, type Address } from 'viem';
+import { ROUTER_ABI, WETH_ABI } from '@/config/abis';
+import { CONTRACTS, TOKEN_LIST, getTokenBySymbol } from '@/config/contracts';
+import { FARMING_ABI, FARMING_CONTRACT } from '@/config/farming';
+import type { AgentAction } from '@/components/chat/agentTools';
+
+const DEADLINE_SECS = 60 * 20;
+
+function resolveToken(symbol: string) {
+  const t = getTokenBySymbol(symbol);
+  if (!t) throw new Error(`Unknown token: ${symbol}`);
+  return t;
+}
+
+/** Executes an agent action on-chain and returns the tx hash. */
+export function useAgentExecutor() {
+  const { address } = useAccount();
+  const publicClient = usePublicClient() as any;
+  const { writeContractAsync } = useWriteContract();
+
+  const ensureAllowance = useCallback(
+    async (token: Address, spender: Address, amount: bigint) => {
+      if (!address) throw new Error('Wallet not connected');
+      const allowance = (await publicClient.readContract({
+        address: token, abi: erc20Abi, functionName: 'allowance', args: [address, spender],
+      })) as bigint;
+      if (allowance < amount) {
+        const hash = await (writeContractAsync as any)({
+          address: token, abi: erc20Abi, functionName: 'approve', args: [spender, amount],
+        });
+        await publicClient.waitForTransactionReceipt({ hash });
+      }
+    },
+    [address, publicClient, writeContractAsync],
+  );
+
+  const execute = useCallback(
+    async (action: AgentAction): Promise<string> => {
+      if (!address) throw new Error('Wallet not connected');
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + DEADLINE_SECS);
+
+      switch (action.type) {
+        case 'wrap': {
+          const value = parseUnits(action.amount, 18);
+          const hash = await (writeContractAsync as any)({
+            address: CONTRACTS.WETH as Address, abi: WETH_ABI,
+            functionName: 'deposit', value,
+          });
+          return hash;
+        }
+        case 'unwrap': {
+          const amount = parseUnits(action.amount, 18);
+          const hash = await (writeContractAsync as any)({
+            address: CONTRACTS.WETH as Address, abi: WETH_ABI,
+            functionName: 'withdraw', args: [amount],
+          });
+          return hash;
+        }
+        case 'swap': {
+          const from = resolveToken(action.fromSymbol);
+          const to = resolveToken(action.toSymbol);
+          const amountIn = parseUnits(action.amount, from.decimals);
+          const slippage = action.slippage ?? 0.5;
+
+          // OPN <-> WOPN: route to wrap/unwrap
+          if (from.isNative && to.symbol === 'WOPN') return execute({ type: 'wrap', amount: action.amount });
+          if (from.symbol === 'WOPN' && to.isNative) return execute({ type: 'unwrap', amount: action.amount });
+
+          const fromAddr = (from.isNative ? CONTRACTS.WETH : from.address) as Address;
+          const toAddr = (to.isNative ? CONTRACTS.WETH : to.address) as Address;
+          const path: Address[] = [fromAddr, toAddr];
+
+          // Quote
+          const amounts = (await publicClient.readContract({
+            address: CONTRACTS.ROUTER as Address, abi: ROUTER_ABI,
+            functionName: 'getAmountsOut', args: [amountIn, path],
+          })) as bigint[];
+          const expectedOut = amounts[amounts.length - 1];
+          const minOut = (expectedOut * BigInt(Math.floor((100 - slippage) * 100))) / 10000n;
+
+          if (from.isNative) {
+            const hash = await (writeContractAsync as any)({
+              address: CONTRACTS.ROUTER as Address, abi: ROUTER_ABI,
+              functionName: 'swapExactETHForTokens',
+              args: [minOut, path, address, deadline],
+              value: amountIn, gas: 300000n,
+            });
+            return hash;
+          }
+          if (to.isNative) {
+            await ensureAllowance(fromAddr, CONTRACTS.ROUTER as Address, amountIn);
+            const hash = await (writeContractAsync as any)({
+              address: CONTRACTS.ROUTER as Address, abi: ROUTER_ABI,
+              functionName: 'swapExactTokensForETH',
+              args: [amountIn, minOut, path, address, deadline],
+              gas: 300000n,
+            });
+            return hash;
+          }
+          await ensureAllowance(fromAddr, CONTRACTS.ROUTER as Address, amountIn);
+          const hash = await (writeContractAsync as any)({
+            address: CONTRACTS.ROUTER as Address, abi: ROUTER_ABI,
+            functionName: 'swapExactTokensForTokens',
+            args: [amountIn, minOut, path, address, deadline],
+            gas: 300000n,
+          });
+          return hash;
+        }
+        case 'add_liquidity': {
+          const a = resolveToken(action.tokenA);
+          const b = resolveToken(action.tokenB);
+          const amtA = parseUnits(action.amountA, a.decimals);
+          const amtB = parseUnits(action.amountB, b.decimals);
+          const minA = (amtA * 95n) / 100n;
+          const minB = (amtB * 95n) / 100n;
+
+          if (a.isNative || b.isNative) {
+            const tokenSide = a.isNative ? b : a;
+            const ethAmt = a.isNative ? amtA : amtB;
+            const tokenAmt = a.isNative ? amtB : amtA;
+            const tokenMin = a.isNative ? minB : minA;
+            const ethMin = a.isNative ? minA : minB;
+            await ensureAllowance(tokenSide.address as Address, CONTRACTS.ROUTER as Address, tokenAmt);
+            const hash = await (writeContractAsync as any)({
+              address: CONTRACTS.ROUTER as Address, abi: ROUTER_ABI,
+              functionName: 'addLiquidityETH',
+              args: [tokenSide.address as Address, tokenAmt, tokenMin, ethMin, address, deadline],
+              value: ethAmt, gas: 500000n,
+            });
+            return hash;
+          }
+          await ensureAllowance(a.address as Address, CONTRACTS.ROUTER as Address, amtA);
+          await ensureAllowance(b.address as Address, CONTRACTS.ROUTER as Address, amtB);
+          const hash = await (writeContractAsync as any)({
+            address: CONTRACTS.ROUTER as Address, abi: ROUTER_ABI,
+            functionName: 'addLiquidity',
+            args: [a.address as Address, b.address as Address, amtA, amtB, minA, minB, address, deadline],
+            gas: 500000n,
+          });
+          return hash;
+        }
+        case 'remove_liquidity': {
+          const a = resolveToken(action.tokenA);
+          const b = resolveToken(action.tokenB);
+          const lpAmount = parseUnits(action.lpAmount, 18);
+          // Resolve pair address
+          const pair = (await publicClient.readContract({
+            address: CONTRACTS.FACTORY as Address,
+            abi: [{ inputs: [{type: 'address'},{type: 'address'}], name: 'getPair', outputs: [{type:'address'}], stateMutability:'view', type:'function' }],
+            functionName: 'getPair',
+            args: [(a.isNative ? CONTRACTS.WETH : a.address) as Address, (b.isNative ? CONTRACTS.WETH : b.address) as Address],
+          })) as Address;
+          if (!pair || pair === '0x0000000000000000000000000000000000000000') throw new Error('Pair not found');
+          await ensureAllowance(pair, CONTRACTS.ROUTER as Address, lpAmount);
+
+          if (a.isNative || b.isNative) {
+            const tokenSide = a.isNative ? b : a;
+            const hash = await (writeContractAsync as any)({
+              address: CONTRACTS.ROUTER as Address, abi: ROUTER_ABI,
+              functionName: 'removeLiquidityETH',
+              args: [tokenSide.address as Address, lpAmount, 0n, 0n, address, deadline],
+              gas: 500000n,
+            });
+            return hash;
+          }
+          const hash = await (writeContractAsync as any)({
+            address: CONTRACTS.ROUTER as Address, abi: ROUTER_ABI,
+            functionName: 'removeLiquidity',
+            args: [a.address as Address, b.address as Address, lpAmount, 0n, 0n, address, deadline],
+            gas: 500000n,
+          });
+          return hash;
+        }
+        case 'farm_stake': {
+          // Look up staking token from pool
+          const info = (await publicClient.readContract({
+            address: FARMING_CONTRACT, abi: FARMING_ABI,
+            functionName: 'poolInfo', args: [BigInt(action.pid)],
+          })) as any;
+          const stakingToken = info[0] as Address;
+          // Detect decimals
+          let decimals = 18;
+          try {
+            decimals = Number(await publicClient.readContract({
+              address: stakingToken, abi: erc20Abi, functionName: 'decimals',
+            }));
+          } catch {}
+          const amount = parseUnits(action.amount, decimals);
+          await ensureAllowance(stakingToken, FARMING_CONTRACT, amount);
+          const hash = await (writeContractAsync as any)({
+            address: FARMING_CONTRACT, abi: FARMING_ABI,
+            functionName: 'deposit', args: [BigInt(action.pid), amount],
+          });
+          return hash;
+        }
+        case 'farm_unstake': {
+          const info = (await publicClient.readContract({
+            address: FARMING_CONTRACT, abi: FARMING_ABI,
+            functionName: 'poolInfo', args: [BigInt(action.pid)],
+          })) as any;
+          const stakingToken = info[0] as Address;
+          let decimals = 18;
+          try {
+            decimals = Number(await publicClient.readContract({
+              address: stakingToken, abi: erc20Abi, functionName: 'decimals',
+            }));
+          } catch {}
+          const amount = parseUnits(action.amount, decimals);
+          const hash = await (writeContractAsync as any)({
+            address: FARMING_CONTRACT, abi: FARMING_ABI,
+            functionName: 'withdraw', args: [BigInt(action.pid), amount],
+          });
+          return hash;
+        }
+        case 'farm_harvest': {
+          const hash = await (writeContractAsync as any)({
+            address: FARMING_CONTRACT, abi: FARMING_ABI,
+            functionName: 'deposit', args: [BigInt(action.pid), 0n],
+          });
+          return hash;
+        }
+        case 'farm_emergency': {
+          const hash = await (writeContractAsync as any)({
+            address: FARMING_CONTRACT, abi: FARMING_ABI,
+            functionName: 'emergencyWithdraw', args: [BigInt(action.pid)],
+          });
+          return hash;
+        }
+      }
+    },
+    [address, ensureAllowance, publicClient, writeContractAsync],
+  );
+
+  return { execute, isConnected: !!address };
+}

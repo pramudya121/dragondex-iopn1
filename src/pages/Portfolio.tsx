@@ -47,6 +47,8 @@ export default function Portfolio() {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('overview');
   const [txFilter, setTxFilter] = useState<'all' | 'swap' | 'liquidity'>('all');
   const [showSendModal, setShowSendModal] = useState(false);
+  const [sendInitialSymbol, setSendInitialSymbol] = useState<string | undefined>();
+  const openSendFor = (symbol?: string) => { setSendInitialSymbol(symbol); setShowSendModal(true); };
 
   const lpBalanceResults = useReadContracts({
     contracts: pools.map(pool => ({
@@ -159,7 +161,7 @@ export default function Portfolio() {
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
-          <Button className="btn-dragon" size="sm" onClick={() => setShowSendModal(true)}>
+          <Button className="btn-dragon" size="sm" onClick={() => openSendFor()}>
             <Send className="w-4 h-4 mr-2" />
             Send Token
           </Button>
@@ -361,6 +363,20 @@ export default function Portfolio() {
                             <p className="font-bold text-sm md:text-base">{balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
                             <p className="text-xs md:text-sm text-muted-foreground">${value.toFixed(2)}</p>
                           </div>
+                          <button
+                            onClick={() => openSendFor(token.symbol)}
+                            disabled={!hasBalance}
+                            title={`Send ${token.symbol}`}
+                            className={cn(
+                              "shrink-0 ml-1 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all border",
+                              hasBalance
+                                ? "bg-gradient-to-r from-primary/15 to-accent/15 border-primary/30 text-primary hover:from-primary/25 hover:to-accent/25 hover:border-primary/50 hover:scale-105"
+                                : "bg-muted/30 border-border/40 text-muted-foreground cursor-not-allowed"
+                            )}
+                          >
+                            <Send className="w-3 h-3" />
+                            <span className="hidden sm:inline">Send</span>
+                          </button>
                         </div>
                       </motion.div>
                     );
@@ -446,6 +462,7 @@ export default function Portfolio() {
       <SendTokenModal
         isOpen={showSendModal}
         onClose={() => setShowSendModal(false)}
+        initialSymbol={sendInitialSymbol}
         tokens={tokens.map(t => ({
           symbol: t.symbol,
           name: t.name,

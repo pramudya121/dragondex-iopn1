@@ -124,7 +124,7 @@ export function useUserFarmInfo(pid: number | null) {
       return;
     }
     let cancelled = false;
-    (async () => {
+    const fetchInfo = async () => {
       try {
         const [u, pending] = await Promise.all([
           client.readContract({
@@ -144,9 +144,13 @@ export function useUserFarmInfo(pid: number | null) {
       } catch {
         if (!cancelled) setInfo({ amount: 0n, rewardDebt: 0n, pending: 0n });
       }
-    })();
+    };
+    fetchInfo();
+    // Auto-refresh every 8s for live pending rewards
+    const interval = setInterval(fetchInfo, 8000);
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [client, pid, address, refreshKey]);
 

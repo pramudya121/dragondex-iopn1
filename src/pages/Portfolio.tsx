@@ -184,8 +184,8 @@ export default function Portfolio() {
                         <Coins className="w-5 h-5 text-primary-foreground" />
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Total Balance</p>
-                        <p className="text-2xl md:text-3xl font-bold">
+                        <p className="text-xs text-muted-foreground tracking-[0.18em] uppercase">Total Balance</p>
+                        <p className="font-mono-display text-2xl md:text-3xl font-bold">
                           $<NumberTicker value={totalValue} decimalPlaces={2} />
                         </p>
                       </div>

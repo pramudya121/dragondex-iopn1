@@ -31,8 +31,10 @@ type ChatAction = {
   path?: string;
 };
 
-function parseContent(content: string): { text: string; actions: ChatAction[]; suggestions: string[] } {
-  let remaining = content;
+function parseContent(content: string): { text: string; actions: ChatAction[]; suggestions: string[]; agentActions: AgentAction[] } {
+  // First strip [AGENT_ACTION] blocks
+  const { cleaned, actions: agentActions } = extractAgentActions(content);
+  let remaining = cleaned;
   let actions: ChatAction[] = [];
   let suggestions: string[] = [];
 
@@ -50,7 +52,7 @@ function parseContent(content: string): { text: string; actions: ChatAction[]; s
     suggestions = sugMatch[1].split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3);
   }
 
-  return { text: remaining, actions, suggestions };
+  return { text: remaining, actions, suggestions, agentActions };
 }
 
 const STORAGE_KEY = 'dragonbot-messages';

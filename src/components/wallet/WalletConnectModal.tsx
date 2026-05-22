@@ -1,186 +1,131 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Wallet, QrCode, ExternalLink, Smartphone, Shield, Loader2, ChevronRight } from 'lucide-react';
+import { X, Search, QrCode, Loader2 } from 'lucide-react';
 import { useConnect, Connector } from 'wagmi';
 import { cn } from '@/lib/utils';
 
-// Official wallet logos.
-// Primary source: WalletConnect Explorer CDN (https://explorer.walletconnect.com)
-// Fallback source: vendor brand assets — used automatically if the primary 404s.
+// Official wallet logos from WalletConnect Explorer CDN
 const WC_PROJECT_ID = '2f05ae7f1116030fde2d36508f472bfb';
 const wcLogo = (id: string) =>
   `https://explorer-api.walletconnect.com/v3/logo/lg/${id}?projectId=${WC_PROJECT_ID}`;
 
 interface WalletMeta {
-  icons: string[];        // ordered list of icon URLs (try in order on error)
-  color: string;          // brand color for letter-fallback
+  icons: string[];
+  color: string;
   installUrl?: string;
-  aliases?: string[];     // alternative connector names that map to this entry
+  aliases?: string[];
+  detector?: () => boolean; // checks window.ethereum.* flags
 }
 
-const WALLET_ICONS: Record<string, WalletMeta> = {
-  'MetaMask': {
-    icons: [
-      wcLogo('5195e9db-94d8-4579-6f11-ef553be95100'),
-      'https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/SVG_MetaMask_Icon_Color.svg',
-    ],
-    color: '#F6851B',
-    installUrl: 'https://metamask.io/download/',
-  },
-  'WalletConnect': {
-    icons: [
-      wcLogo('ef333840-475d-4798-7869-cf4e6e573500'),
-      'https://avatars.githubusercontent.com/u/37784886?s=200&v=4',
-    ],
-    color: '#3B99FC',
-  },
-  'Coinbase Wallet': {
-    icons: [
-      wcLogo('a5ebc364-8f91-4200-fcc6-be81310a0000'),
-      'https://avatars.githubusercontent.com/u/1885080?s=200&v=4',
-    ],
-    color: '#0052FF',
-    installUrl: 'https://www.coinbase.com/wallet',
-    aliases: ['Coinbase'],
-  },
+const isBrowser = typeof window !== 'undefined';
+const hasProvider = (key: string) => {
+  if (!isBrowser) return false;
+  const eth: any = (window as any).ethereum;
+  if (!eth) return (window as any)[key.replace(/^is/, '').toLowerCase()] !== undefined;
+  if (eth[key]) return true;
+  if (Array.isArray(eth.providers) && eth.providers.some((p: any) => p?.[key])) return true;
+  return false;
+};
+
+const WALLETS: Record<string, WalletMeta> = {
   'Rabby Wallet': {
-    icons: [
-      wcLogo('7897a18d-fa44-4be6-c441-89f23e4ade00'),
-      'https://rabby.io/assets/images/logo-128.png',
-    ],
+    icons: [wcLogo('7897a18d-fa44-4be6-c441-89f23e4ade00'), 'https://rabby.io/assets/images/logo-128.png'],
     color: '#7C8FEC',
     installUrl: 'https://rabby.io/',
     aliases: ['Rabby'],
-  },
-  'OKX Wallet': {
-    icons: [
-      wcLogo('45f2f08e-fc0c-4d62-3e63-404e72170500'),
-      'https://www.okx.com/cdn/assets/imgs/239/2C5526F9F19601B7.png',
-    ],
-    color: '#000000',
-    installUrl: 'https://www.okx.com/web3',
-    aliases: ['OKX', 'OKXWallet'],
-  },
-  'Phantom': {
-    icons: [
-      wcLogo('1ae92b26-df6c-4f24-b294-c30b6dab2700'),
-      'https://187760183-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MVOiF6Zqit57q_hxJYp%2Fuploads%2FHEjleywo9QOnfYebBPCZ%2FBest%20of%20Web3%20Apps_Phantom-04.png',
-    ],
-    color: '#AB9FF2',
-    installUrl: 'https://phantom.app/',
-  },
-  'Trust Wallet': {
-    icons: [
-      wcLogo('0528ee7e-16d1-4089-21e3-bbfb41933100'),
-      'https://trustwallet.com/assets/images/media/assets/TWT.png',
-    ],
-    color: '#3375BB',
-    installUrl: 'https://trustwallet.com/',
-    aliases: ['Trust'],
-  },
-  'Rainbow': {
-    icons: [
-      wcLogo('7a33d7f1-3d12-4b5c-f3ee-5cd83cb1b500'),
-      'https://avatars.githubusercontent.com/u/48327834?s=200&v=4',
-    ],
-    color: '#FF4B4B',
-    installUrl: 'https://rainbow.me/',
-  },
-  'Bitget Wallet': {
-    icons: [
-      wcLogo('1bf2b56b-1cab-431d-d2e7-eb47cb053500'),
-      'https://web3.bitget.com/favicon.ico',
-    ],
-    color: '#00D0AA',
-    installUrl: 'https://web3.bitget.com/',
-    aliases: ['Bitget', 'BitKeep'],
-  },
-  'Zerion': {
-    icons: [wcLogo('73f6f52f-7862-49e7-bb85-ba93ab72cc00')],
-    color: '#2461ED',
-    installUrl: 'https://zerion.io/',
-  },
-  'Ledger Live': {
-    icons: [wcLogo('19177a98-2671-4377-3ca2-9d0c39e45200')],
-    color: '#000000',
-    installUrl: 'https://www.ledger.com/ledger-live',
-    aliases: ['Ledger'],
-  },
-  'Safe': {
-    icons: [wcLogo('28cc8b35-f49b-43d7-1f4e-3a4757fa8c00')],
-    color: '#12FF80',
-    installUrl: 'https://app.safe.global/',
-    aliases: ['Safe Wallet', 'Gnosis Safe'],
-  },
-  '1inch Wallet': {
-    icons: [wcLogo('52c30c1f-9d24-4f06-5d4a-fdaa64a8df00')],
-    color: '#1B314F',
-    installUrl: 'https://1inch.io/wallet/',
-    aliases: ['1inch'],
+    detector: () => hasProvider('isRabby'),
   },
   'Keplr': {
     icons: [wcLogo('6f10d860-c10e-4912-b3bf-3a4e8d2cc500')],
     color: '#7B68EE',
     installUrl: 'https://www.keplr.app/',
+    detector: () => isBrowser && !!(window as any).keplr,
   },
-  'Uniswap Wallet': {
-    icons: [wcLogo('bff9cf1f-df19-42ce-f62a-87f04df13c00')],
-    color: '#FF007A',
-    installUrl: 'https://wallet.uniswap.org/',
-    aliases: ['Uniswap'],
+  'SubWallet': {
+    icons: [wcLogo('40bd1bd2-3954-4fb1-bafa-cc0c08a3da00'), 'https://www.subwallet.app/icon.png'],
+    color: '#004BFF',
+    installUrl: 'https://www.subwallet.app/',
+    detector: () => isBrowser && (!!(window as any).SubWallet || hasProvider('isSubWallet')),
   },
-  'Frame': {
-    icons: [wcLogo('d6e6f0c0-1378-4f47-8e9e-9b4f7a2a4f00')],
-    color: '#00DC82',
-    installUrl: 'https://frame.sh/',
+  'MetaMask': {
+    icons: [wcLogo('5195e9db-94d8-4579-6f11-ef553be95100')],
+    color: '#F6851B',
+    installUrl: 'https://metamask.io/download/',
+    detector: () => hasProvider('isMetaMask') && !hasProvider('isRabby') && !hasProvider('isOkxWallet'),
+  },
+  'OKX Wallet': {
+    icons: [wcLogo('45f2f08e-fc0c-4d62-3e63-404e72170500')],
+    color: '#000000',
+    installUrl: 'https://www.okx.com/web3',
+    aliases: ['OKX'],
+    detector: () => isBrowser && (!!(window as any).okxwallet || hasProvider('isOkxWallet')),
+  },
+  'Bitget Wallet': {
+    icons: [wcLogo('1bf2b56b-1cab-431d-d2e7-eb47cb053500')],
+    color: '#00D0AA',
+    installUrl: 'https://web3.bitget.com/',
+    aliases: ['Bitget', 'BitKeep'],
+    detector: () => isBrowser && (!!(window as any).bitkeep || hasProvider('isBitKeep')),
+  },
+  'Coinbase Wallet': {
+    icons: [wcLogo('a5ebc364-8f91-4200-fcc6-be81310a0000')],
+    color: '#0052FF',
+    installUrl: 'https://www.coinbase.com/wallet',
+    aliases: ['Coinbase'],
+    detector: () => hasProvider('isCoinbaseWallet'),
+  },
+  'Trust Wallet': {
+    icons: [wcLogo('0528ee7e-16d1-4089-21e3-bbfb41933100')],
+    color: '#3375BB',
+    installUrl: 'https://trustwallet.com/',
+    aliases: ['Trust'],
+    detector: () => hasProvider('isTrust'),
+  },
+  'Phantom': {
+    icons: [wcLogo('1ae92b26-df6c-4f24-b294-c30b6dab2700')],
+    color: '#AB9FF2',
+    installUrl: 'https://phantom.app/',
+    detector: () => isBrowser && !!(window as any).phantom,
+  },
+  'WalletConnect': {
+    icons: [wcLogo('ef333840-475d-4798-7869-cf4e6e573500')],
+    color: '#3B99FC',
   },
 };
 
-// Lookup that also resolves aliases
-function resolveWallet(name: string): WalletMeta | undefined {
-  if (WALLET_ICONS[name]) return WALLET_ICONS[name];
+function resolveWallet(name: string): { key: string; meta: WalletMeta } | undefined {
+  if (WALLETS[name]) return { key: name, meta: WALLETS[name] };
   const lower = name.toLowerCase();
-  for (const key of Object.keys(WALLET_ICONS)) {
-    const meta = WALLET_ICONS[key];
-    if (key.toLowerCase() === lower) return meta;
-    if (meta.aliases?.some(a => a.toLowerCase() === lower)) return meta;
+  for (const k of Object.keys(WALLETS)) {
+    if (k.toLowerCase() === lower) return { key: k, meta: WALLETS[k] };
+    if (WALLETS[k].aliases?.some(a => a.toLowerCase() === lower)) return { key: k, meta: WALLETS[k] };
   }
-  // Partial match (e.g. "MetaMask Mobile")
-  for (const key of Object.keys(WALLET_ICONS)) {
-    if (lower.includes(key.toLowerCase())) return WALLET_ICONS[key];
+  for (const k of Object.keys(WALLETS)) {
+    if (lower.includes(k.toLowerCase())) return { key: k, meta: WALLETS[k] };
   }
   return undefined;
 }
 
-const WalletIcon = ({ name, size = 36 }: { name: string; size?: number }) => {
-  const meta = resolveWallet(name);
+const WalletIcon = ({ name, size = 32 }: { name: string; size?: number }) => {
+  const resolved = resolveWallet(name);
   const [iconIdx, setIconIdx] = useState(0);
-
-  // Letter fallback when all icons fail or no meta is registered
-  if (!meta || iconIdx >= meta.icons.length) {
-    const initial = name.replace(/wallet/i, '').trim().charAt(0).toUpperCase() || '?';
-    const bg = meta?.color || 'hsl(var(--muted))';
+  if (!resolved || iconIdx >= resolved.meta.icons.length) {
+    const initial = name.charAt(0).toUpperCase();
     return (
       <div
-        className="rounded-xl flex items-center justify-center font-bold text-white shadow-inner"
-        style={{ width: size, height: size, background: bg, fontSize: size * 0.45 }}
-      >
-        {initial}
-      </div>
+        className="rounded-xl flex items-center justify-center font-bold text-white"
+        style={{ width: size, height: size, background: resolved?.meta.color || '#444', fontSize: size * 0.45 }}
+      >{initial}</div>
     );
   }
-
   return (
-    <div
-      className="rounded-xl overflow-hidden flex items-center justify-center bg-background/50"
-      style={{ width: size, height: size }}
-    >
+    <div className="rounded-xl overflow-hidden flex items-center justify-center bg-card/40" style={{ width: size, height: size }}>
       <img
-        key={meta.icons[iconIdx]}
-        src={meta.icons[iconIdx]}
+        key={resolved.meta.icons[iconIdx]}
+        src={resolved.meta.icons[iconIdx]}
         alt={name}
         className="object-contain"
-        style={{ width: size - 4, height: size - 4 }}
+        style={{ width: size - 2, height: size - 2 }}
         onError={() => setIconIdx(i => i + 1)}
       />
     </div>
@@ -192,29 +137,90 @@ interface WalletConnectModalProps {
   onClose: () => void;
 }
 
+interface WalletRow {
+  key: string;            // canonical wallet name
+  displayName: string;
+  connector?: Connector;  // wagmi connector if available
+  detected: boolean;
+  installUrl?: string;
+  popular?: boolean;
+}
+
 export function WalletConnectModal({ isOpen, onClose }: WalletConnectModalProps) {
   const { connectors, connect, isPending } = useConnect();
-  const [connectingWallet, setConnectingWallet] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
-  const displayWallets = connectors.filter(c => c.name !== 'Injected');
-  
-  const installedWallets = displayWallets.filter(c => 
-    c.name === 'MetaMask' || c.name === 'Rabby Wallet'
-  );
-  
-  const popularWallets = displayWallets.filter(c => 
-    c.name !== 'MetaMask' && c.name !== 'Rabby Wallet'
-  );
+  // Build the canonical wallet list. Use detectors + known wallets.
+  // Map each canonical wallet to a wagmi connector when possible.
+  const wallets: WalletRow[] = useMemo(() => {
+    const rows: WalletRow[] = [];
 
-  const handleConnect = async (connector: Connector) => {
-    setConnectingWallet(connector.name);
+    const findConnector = (key: string, meta: WalletMeta): Connector | undefined => {
+      const lower = key.toLowerCase();
+      const aliases = (meta.aliases || []).map(a => a.toLowerCase());
+      return connectors.find(c => {
+        const cn = c.name.toLowerCase();
+        if (cn === lower) return true;
+        if (aliases.includes(cn)) return true;
+        if (cn.includes(lower) || lower.includes(cn)) return true;
+        return false;
+      });
+    };
+
+    for (const [key, meta] of Object.entries(WALLETS)) {
+      const conn = findConnector(key, meta);
+      const detected = !!meta.detector?.();
+      rows.push({
+        key,
+        displayName: key,
+        connector: conn,
+        detected,
+        installUrl: meta.installUrl,
+        popular: key === 'MetaMask',
+      });
+    }
+
+    // Append any connector not represented above (e.g. injected with unknown name)
+    for (const c of connectors) {
+      if (c.name === 'Injected') continue;
+      if (rows.some(r => r.connector?.uid === c.uid)) continue;
+      if (resolveWallet(c.name)) continue; // already in map
+      rows.push({ key: c.name, displayName: c.name, connector: c, detected: true });
+    }
+
+    return rows;
+  }, [connectors]);
+
+  // Pick the topmost detected wallet for the "DETECTED" hero card
+  const heroDetected = useMemo(() => wallets.find(w => w.detected && !!w.connector), [wallets]);
+
+  const otherWallets = useMemo(() => {
+    return wallets.filter(w => w.key !== heroDetected?.key);
+  }, [wallets, heroDetected]);
+
+  const filteredOthers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return otherWallets;
+    return otherWallets.filter(w => w.displayName.toLowerCase().includes(q));
+  }, [otherWallets, search]);
+
+  useEffect(() => { if (!isOpen) { setSearch(''); setConnecting(null); } }, [isOpen]);
+
+  const handleConnect = async (row: WalletRow) => {
+    if (!row.connector) {
+      // Not installed -> open install page
+      if (row.installUrl) window.open(row.installUrl, '_blank', 'noopener');
+      return;
+    }
+    setConnecting(row.key);
     try {
-      await connect({ connector });
+      await connect({ connector: row.connector });
       onClose();
-    } catch (error) {
-      console.error('Connection failed:', error);
+    } catch (e) {
+      console.error('Connect failed:', e);
     } finally {
-      setConnectingWallet(null);
+      setConnecting(null);
     }
   };
 
@@ -222,195 +228,139 @@ export function WalletConnectModal({ isOpen, onClose }: WalletConnectModalProps)
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50"
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md"
           />
-
-          {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 30 }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 30 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-            className="fixed inset-4 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-50 sm:w-full sm:max-w-[680px] overflow-y-auto"
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100vw-2rem)] max-w-[400px] max-h-[88vh] overflow-hidden"
           >
-            <div className="relative rounded-2xl overflow-hidden border border-border/50"
+            <div
+              className="relative rounded-3xl border border-white/10 overflow-hidden flex flex-col max-h-[88vh]"
               style={{
-                background: 'linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%)',
-                boxShadow: '0 0 80px hsl(var(--primary) / 0.08), 0 25px 50px -12px rgba(0,0,0,0.5)',
+                background: 'linear-gradient(180deg, hsl(0 0% 6%) 0%, hsl(0 0% 4%) 100%)',
+                boxShadow: '0 25px 60px -12px rgba(0,0,0,0.7)',
               }}
             >
-              {/* Top glow line */}
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-              
-              {/* Close button */}
-              <motion.button
-                onClick={onClose}
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
-                className="absolute right-4 top-4 p-2 rounded-full bg-muted/40 hover:bg-muted/70 transition-colors z-10 border border-border/30"
-              >
-                <X className="w-4 h-4 text-muted-foreground" />
-              </motion.button>
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+                <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  Connect a wallet
+                </h2>
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-[1fr,1.1fr] max-h-[calc(100vh-2rem)] sm:max-h-[560px]">
-                {/* Left Panel - Wallet List */}
-                <div className="p-6 md:border-r border-border/30 overflow-y-auto">
-                  <h2 className="text-xl font-bold text-foreground mb-1">Hubungkan Dompet</h2>
-                  
-                  {/* Installed */}
-                  {installedWallets.length > 0 && (
-                    <div className="mt-5">
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-primary mb-3">Terinstal</p>
-                      <div className="space-y-1.5">
-                        {installedWallets.map((connector, idx) => (
-                          <motion.button
-                            key={connector.uid}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            onClick={() => handleConnect(connector)}
-                            disabled={isPending}
-                            className={cn(
-                              "w-full flex items-center gap-3 p-3 rounded-xl transition-all group",
-                              "hover:bg-primary/5 border border-transparent hover:border-primary/20",
-                              connectingWallet === connector.name && "border-primary/40 bg-primary/10"
-                            )}
-                          >
-                            <WalletIcon name={connector.name} size={38} />
-                            <div className="flex-1 text-left">
-                              <span className="font-semibold text-sm text-foreground">{connector.name}</span>
-                              <p className="text-[10px] font-medium text-primary">Terkini</p>
-                            </div>
-                            {connectingWallet === connector.name ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
-                            )}
-                          </motion.button>
-                        ))}
-                      </div>
+              <div className="px-4 pb-5 space-y-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+                {/* Hero detected wallet */}
+                {heroDetected && (
+                  <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => handleConnect(heroDetected)}
+                    disabled={isPending}
+                    className="relative w-full flex items-center gap-3 p-3.5 rounded-2xl text-left overflow-hidden border border-white/10 group"
+                    style={{
+                      background: 'linear-gradient(135deg, hsl(280 90% 55% / 0.35) 0%, hsl(320 90% 55% / 0.35) 100%)',
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/10 via-transparent to-pink-500/10 opacity-80" />
+                    <WalletIcon name={heroDetected.key} size={44} />
+                    <div className="flex-1 min-w-0 relative">
+                      <p className="text-sm font-bold text-white truncate">Continue with {heroDetected.displayName.split(' ')[0]} ...</p>
+                      <p className="text-[11px] text-white/70 truncate">Wallet detected in your browser</p>
                     </div>
-                  )}
+                    <span className="relative shrink-0 text-[9px] tracking-wider font-bold px-2 py-1 rounded-md bg-white/15 text-white border border-white/20">
+                      DETECTED
+                    </span>
+                    {connecting === heroDetected.key && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-white" />
+                    )}
+                  </motion.button>
+                )}
 
-                  {/* Popular */}
-                  <div className="mt-5">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Populer</p>
-                    <div className="space-y-1.5 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-border/40">
-                      {popularWallets.map((connector, idx) => (
-                        <motion.button
-                          key={connector.uid}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.1 + idx * 0.04 }}
-                          onClick={() => handleConnect(connector)}
-                          disabled={isPending}
-                          className={cn(
-                            "w-full flex items-center gap-3 p-3 rounded-xl transition-all group",
-                            "hover:bg-muted/40 border border-transparent hover:border-border/50",
-                            connectingWallet === connector.name && "border-primary/40 bg-primary/10"
-                          )}
-                        >
-                          <WalletIcon name={connector.name} size={38} />
-                          <span className="font-medium text-sm flex-1 text-left text-foreground">{connector.name}</span>
-                          {connector.name === 'WalletConnect' && (
-                            <QrCode className="w-4 h-4 text-muted-foreground/50" />
-                          )}
-                          {connectingWallet === connector.name && (
-                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                          )}
-                        </motion.button>
-                      ))}
-                    </div>
+                {/* Mobile QR option (Coming soon) */}
+                <button
+                  disabled
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-left bg-white/[0.03] border border-white/10 opacity-70 cursor-not-allowed"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/40 to-accent/40 flex items-center justify-center border border-white/10">
+                    <QrCode className="w-5 h-5 text-white" />
                   </div>
-                </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-foreground truncate">DragonDEX Mobile</p>
+                    <p className="text-[11px] text-muted-foreground truncate">Scan a QR code to connect</p>
+                  </div>
+                  <span className="shrink-0 text-[9px] tracking-wider font-bold px-2 py-1 rounded-md bg-white/5 text-muted-foreground border border-white/10">
+                    SOON
+                  </span>
+                </button>
 
-                {/* Right Panel - Info */}
-                <div className="p-6 hidden md:flex flex-col justify-between bg-muted/10">
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground mb-6">Apa itu Dompet?</h3>
-
-                    <div className="space-y-5">
-                      <div className="flex gap-4">
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-primary/20"
-                          style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--secondary) / 0.1))' }}
-                        >
-                          <Smartphone className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-sm text-foreground mb-0.5">Sebuah Rumah untuk Aset Digital Anda</h4>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            Dompet digunakan untuk mengirim, menerima, menyimpan, dan menampilkan aset digital seperti Ethereum dan NFTs.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4">
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-primary/20"
-                          style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--secondary) / 0.1))' }}
-                        >
-                          <Shield className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-sm text-foreground mb-0.5">Cara Baru untuk Masuk</h4>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            Alih-alih membuat akun dan kata sandi baru di setiap situs web, cukup hubungkan dompet Anda.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                {/* OTHER WALLETS */}
+                <div className="pt-1">
+                  <p className="text-center text-[10px] tracking-[0.18em] font-semibold text-muted-foreground/70 uppercase mb-2">
+                    Other Wallets
+                  </p>
+                  <div className="relative mb-2">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search wallets..."
+                      className="w-full pl-8 pr-3 py-2 bg-white/[0.04] border border-white/10 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/40 focus:bg-white/[0.06] transition-all"
+                    />
                   </div>
 
-                  {/* Dragon logo */}
-                  <div className="mt-6">
-                    <div className="flex justify-center mb-5">
-                      <motion.div
-                        className="w-28 h-28 rounded-2xl overflow-hidden border border-primary/20 relative"
-                        style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--background)))' }}
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ type: 'spring', stiffness: 300 }}
+                  <div className="space-y-1 max-h-[240px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
+                    {filteredOthers.length === 0 && (
+                      <p className="text-center text-xs text-muted-foreground py-4">No wallets found</p>
+                    )}
+                    {filteredOthers.map((w) => (
+                      <button
+                        key={w.key}
+                        onClick={() => handleConnect(w)}
+                        disabled={isPending}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left border border-transparent",
+                          "hover:bg-white/[0.05] hover:border-white/10",
+                          connecting === w.key && "bg-primary/10 border-primary/30"
+                        )}
                       >
-                        <img
-                          src="/tokens/dragon.png"
-                          alt="Dragon"
-                          className="w-full h-full object-contain p-2"
-                        />
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent"
-                          animate={{ opacity: [0.3, 0.6, 0.3] }}
-                          transition={{ duration: 3, repeat: Infinity }}
-                        />
-                      </motion.div>
-                    </div>
-
-                    <a
-                      href="https://ethereum.org/en/wallets/find-wallet/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm transition-all text-primary-foreground"
-                      style={{
-                        background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))',
-                        boxShadow: '0 4px 20px hsl(var(--primary) / 0.3)',
-                      }}
-                    >
-                      Dapatkan Dompet
-                    </a>
-                    <a
-                      href="https://ethereum.org/en/wallets/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-1.5 py-2.5 text-sm text-primary hover:underline mt-2"
-                    >
-                      Pelajari lebih lanjut
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                        <WalletIcon name={w.key} size={32} />
+                        <span className="flex-1 text-sm font-semibold text-foreground truncate">{w.displayName}</span>
+                        {connecting === w.key ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        ) : w.detected ? (
+                          <span className="text-[10px] font-semibold text-success">Detected</span>
+                        ) : w.popular ? (
+                          <span className="text-[10px] font-medium text-muted-foreground">Popular</span>
+                        ) : !w.connector ? (
+                          <span className="text-[10px] font-medium text-muted-foreground/60">Install</span>
+                        ) : null}
+                      </button>
+                    ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-5 py-3 border-t border-white/5 text-center shrink-0">
+                <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                  By connecting a wallet, you agree to DragonDEX{' '}
+                  <a href="#" className="text-foreground hover:text-primary transition-colors">Terms of Service</a>
+                  {' '}and acknowledge the{' '}
+                  <a href="#" className="text-foreground hover:text-primary transition-colors">Privacy Policy</a>.
+                </p>
               </div>
             </div>
           </motion.div>

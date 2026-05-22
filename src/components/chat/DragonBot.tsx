@@ -528,6 +528,23 @@ export function DragonBot() {
                         ) : msg.content}
                       </div>
 
+                      {/* Agent on-chain action cards */}
+                      {msg.role === 'assistant' && parsed && parsed.agentActions.length > 0 && (
+                        <div className="space-y-2">
+                          {parsed.agentActions.map((act, ai) => (
+                            <AgentActionCard
+                              key={`${i}-${ai}`}
+                              action={act}
+                              onResult={(r) => {
+                                if (r.status === 'success' && r.txHash) {
+                                  toast({ title: 'Transaction confirmed', description: `${act.type} executed` });
+                                }
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+
                       {/* Action buttons */}
                       {msg.role === 'assistant' && isLast && !isLoading && parsed && parsed.actions.length > 0 && (
                         <motion.div

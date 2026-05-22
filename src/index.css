@@ -116,7 +116,18 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground;
+    background: linear-gradient(180deg, hsl(var(--primary) / 0.7), hsl(var(--accent) / 0.7));
+  }
+
+  /* Premium text selection */
+  ::selection {
+    background: hsl(var(--primary) / 0.4);
+    color: hsl(var(--foreground));
+    text-shadow: 0 0 12px hsl(var(--primary) / 0.6);
+  }
+  ::-moz-selection {
+    background: hsl(var(--primary) / 0.4);
+    color: hsl(var(--foreground));
   }
 
   /* === Global Black + Red Neon for all form controls === */
@@ -310,6 +321,56 @@
 
   .gradient-border:hover::before {
     @apply opacity-100;
+  }
+
+  /* Unified premium page header block */
+  .page-header {
+    @apply relative text-center mb-8 md:mb-10;
+  }
+  .page-header h1 {
+    @apply font-display text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-3;
+  }
+  .page-header p {
+    @apply text-sm md:text-base text-muted-foreground max-w-xl mx-auto;
+  }
+  .page-header::after {
+    content: '';
+    @apply absolute left-1/2 -translate-x-1/2 -bottom-2 w-24 h-px;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.8), transparent);
+  }
+
+  /* Premium reusable card hover ring */
+  .premium-ring {
+    @apply transition-all duration-300 hover:-translate-y-1;
+    box-shadow: 0 0 0 1px hsl(var(--border)), 0 8px 30px -12px hsl(var(--primary) / 0.25);
+  }
+  .premium-ring:hover {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.5),
+      0 12px 50px -15px hsl(var(--primary) / 0.55),
+      0 0 60px -20px hsl(var(--accent) / 0.35);
+  }
+
+  /* Premium primary button glow */
+  .btn-glow {
+    @apply relative isolate;
+  }
+  .btn-glow::after {
+    content: '';
+    @apply absolute -inset-[2px] -z-10 rounded-[inherit] opacity-0 transition-opacity duration-300 blur-md;
+    background: var(--gradient-dragon);
+  }
+  .btn-glow:hover::after {
+    @apply opacity-80;
+  }
+
+  /* Enhanced focus ring (dragon themed) */
+  .focus-dragon:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px hsl(var(--background)),
+      0 0 0 4px hsl(var(--primary) / 0.7),
+      0 0 24px hsl(var(--primary) / 0.4);
   }
 }
 

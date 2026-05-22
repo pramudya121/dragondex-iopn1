@@ -4,56 +4,82 @@ import { X, Wallet, QrCode, ExternalLink, Smartphone, Shield, Loader2, ChevronRi
 import { useConnect, Connector } from 'wagmi';
 import { cn } from '@/lib/utils';
 
-// Official wallet logo URLs
+// Official wallet logos served by WalletConnect Explorer CDN.
+// Format: https://explorer-api.walletconnect.com/v3/logo/lg/<image_id>?projectId=<id>
+// Image IDs come from https://explorer.walletconnect.com (Reown Explorer).
+const WC_PROJECT_ID = '2f05ae7f1116030fde2d36508f472bfb';
+const wcLogo = (id: string) =>
+  `https://explorer-api.walletconnect.com/v3/logo/lg/${id}?projectId=${WC_PROJECT_ID}`;
+
 const WALLET_ICONS: Record<string, { icon: string; color: string; installUrl?: string }> = {
   'MetaMask': {
-    icon: 'https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg',
+    icon: wcLogo('5195e9db-94d8-4579-6f11-ef553be95100'),
     color: '#F6851B',
     installUrl: 'https://metamask.io/download/',
   },
   'WalletConnect': {
-    icon: 'https://raw.githubusercontent.com/nicepicks/wallet-icons/main/walletconnect.svg',
+    icon: wcLogo('ef333840-475d-4798-7869-cf4e6e573500'),
     color: '#3B99FC',
   },
   'Coinbase Wallet': {
-    icon: 'https://altcoinsbox.com/wp-content/uploads/2022/12/coinbase-logo-300x300.webp',
+    icon: wcLogo('a5ebc364-8f91-4200-fcc6-be81310a0000'),
     color: '#0052FF',
     installUrl: 'https://www.coinbase.com/wallet',
   },
   'Rabby Wallet': {
-    icon: 'https://raw.githubusercontent.com/nicepicks/wallet-icons/main/rabby.svg',
+    icon: wcLogo('7897a18d-fa44-4be6-c441-89f23e4ade00'),
     color: '#7C8FEC',
     installUrl: 'https://rabby.io/',
   },
   'OKX Wallet': {
-    icon: 'https://static.okx.com/cdn/assets/imgs/2312/34A08B57B05F6D8F.png',
+    icon: wcLogo('45f2f08e-fc0c-4d62-3e63-404e72170500'),
     color: '#000000',
     installUrl: 'https://www.okx.com/web3',
   },
   'Phantom': {
-    icon: 'https://raw.githubusercontent.com/nicepicks/wallet-icons/main/phantom.svg',
+    icon: wcLogo('1ae92b26-df6c-4f24-b294-c30b6dab2700'),
     color: '#AB9FF2',
     installUrl: 'https://phantom.app/',
   },
   'Keplr': {
-    icon: 'https://raw.githubusercontent.com/nicepicks/wallet-icons/main/keplr.svg',
+    icon: wcLogo('6f10d860-c10e-4912-b3bf-3a4e8d2cc500'),
     color: '#7B68EE',
     installUrl: 'https://www.keplr.app/',
   },
   'Bitget Wallet': {
-    icon: 'https://raw.githubusercontent.com/nicepicks/wallet-icons/main/bitget.svg',
+    icon: wcLogo('1bf2b56b-1cab-431d-d2e7-eb47cb053500'),
     color: '#00D0AA',
     installUrl: 'https://web3.bitget.com/',
   },
   'Trust Wallet': {
-    icon: 'https://altcoinsbox.com/wp-content/uploads/2023/04/trust-wallet-logo-300x300.webp',
+    icon: wcLogo('0528ee7e-16d1-4089-21e3-bbfb41933100'),
     color: '#3375BB',
     installUrl: 'https://trustwallet.com/',
   },
   'Rainbow': {
-    icon: 'https://avatars.githubusercontent.com/u/48327834?s=200&v=4',
+    icon: wcLogo('7a33d7f1-3d12-4b5c-f3ee-5cd83cb1b500'),
     color: '#FF4B4B',
     installUrl: 'https://rainbow.me/',
+  },
+  'Zerion': {
+    icon: wcLogo('73f6f52f-7862-49e7-bb85-ba93ab72cc00'),
+    color: '#2461ED',
+    installUrl: 'https://zerion.io/',
+  },
+  'Ledger Live': {
+    icon: wcLogo('19177a98-2671-4377-3ca2-9d0c39e45200'),
+    color: '#000000',
+    installUrl: 'https://www.ledger.com/ledger-live',
+  },
+  'Safe': {
+    icon: wcLogo('28cc8b35-f49b-43d7-1f4e-3a4757fa8c00'),
+    color: '#12FF80',
+    installUrl: 'https://app.safe.global/',
+  },
+  '1inch Wallet': {
+    icon: wcLogo('52c30c1f-9d24-4f06-5d4a-fdaa64a8df00'),
+    color: '#1B314F',
+    installUrl: 'https://1inch.io/wallet/',
   },
 };
 

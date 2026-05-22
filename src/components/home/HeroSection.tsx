@@ -35,101 +35,118 @@ export function HeroSection() {
   }, [pools]);
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-gradient-radial from-primary/8 via-transparent to-transparent pointer-events-none" />
-
-      {/* 3D Token Globe — full-bleed behind the hero */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-80">
-        <TokenGlobe3D className="w-full h-full" />
-      </div>
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+      {/* Ambient red glow behind text (left) */}
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-gradient-radial from-primary/15 via-primary/5 to-transparent pointer-events-none blur-2xl" />
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            className="mb-4"
-          >
-            <img 
-              src={dragonLogo} 
-              alt="DragonDEX Logo" 
-              className="w-20 h-20 sm:w-24 sm:h-24 mx-auto drop-shadow-[0_0_30px_hsl(var(--primary)/0.4)]" 
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          {/* ── LEFT: Text + CTA */}
+          <div className="text-left max-w-xl">
+            {/* Logo + brand */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex items-center gap-3 mb-6"
+            >
+              <img
+                src={dragonLogo}
+                alt="DragonDEX Logo"
+                className="w-14 h-14 sm:w-16 sm:h-16 drop-shadow-[0_0_30px_hsl(var(--primary)/0.55)]"
+              />
+              <div className="leading-tight">
+                <div className="font-display text-2xl sm:text-3xl font-black tracking-tight">
+                  DRAGON<span className="text-primary">DEX</span>
+                </div>
+                <div className="text-[10px] sm:text-xs tracking-[0.25em] text-muted-foreground uppercase">
+                  OPN Testnet
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/70 backdrop-blur border border-primary/30 text-primary text-xs sm:text-sm mb-6"
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>Live on OPN Testnet</span>
+              <span className="text-muted-foreground">· Chain 984</span>
+            </motion.div>
+
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black mb-5 tracking-tight leading-[1.05]">
+              Trade the universe of{' '}
+              <AnimatedGradientText className="font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black">
+                on-chain
+              </AnimatedGradientText>{' '}
+              tokens.
+              <span className="sr-only"> — DragonDEX, Decentralized Exchange on OPN Testnet</span>
+            </h1>
+
+            <TextGenerateEffect
+              words="DragonDEX is a fully on-chain AMM built on OPN. Swap, provide liquidity, and earn fees with transparent routing, real-time pool analytics, and a sleek pitch-black UI."
+              className="text-base md:text-lg text-muted-foreground font-normal mb-7 max-w-lg"
             />
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-primary text-sm mb-6"
-          >
-            <Flame className="w-4 h-4" />
-            <span>Live on OPN Testnet</span>
-          </motion.div>
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="flex flex-wrap items-center gap-3 mb-8"
+            >
+              <Link to="/swap">
+                <ShimmerButton>
+                  <Flame className="w-5 h-5 mr-2" />
+                  Launch Swap
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </ShimmerButton>
+              </Link>
 
-          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 tracking-tight">
-            <AnimatedGradientText className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black">
-              DRAGONDEX
-            </AnimatedGradientText>
-            <span className="sr-only"> — Decentralized Exchange on OPN Testnet</span>
-          </h1>
-
-          <TextGenerateEffect
-            words="The premier decentralized exchange on OPN Testnet. Swap, provide liquidity, and earn with the power of the dragon."
-            className="text-lg md:text-xl text-muted-foreground font-normal mb-8 max-w-xl mx-auto"
-          />
-
-          {/* Stats - Real On-Chain Data */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8 max-w-lg mx-auto">
-            {[
-              { value: totalTVL, label: 'Total Value Locked', prefix: '$', color: 'text-primary' },
-              { value: Number(pairsCount || 0), label: 'Total Pools', prefix: '', color: 'text-secondary' },
-              { value: activePools, label: 'Active Pools', prefix: '', color: 'text-accent' },
-            ].map((stat, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + idx * 0.1 }}
-                className="relative bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-4 overflow-hidden"
+              <Link
+                to="/liquidity"
+                className="group inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-border bg-background/60 backdrop-blur hover:border-primary/50 transition-all font-medium"
               >
-                <BorderBeam size={60} duration={10} delay={idx} />
-                <p className={`text-lg sm:text-2xl md:text-3xl font-bold ${stat.color}`}>
-                  {stat.prefix}<NumberTicker value={stat.value} decimalPlaces={stat.prefix === '$' ? 2 : 0} />
-                </p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-                <span className="absolute top-1 right-1 text-[8px] px-1 py-0.5 rounded bg-success/20 text-success">Live</span>
-              </motion.div>
-            ))}
+                <Flame className="w-4 h-4 text-primary" />
+                Provide Liquidity
+              </Link>
+            </motion.div>
+
+            {/* Stats - Real On-Chain Data */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 max-w-lg">
+              {[
+                { value: Number(pairsCount || 0), label: 'TOTAL POOLS', prefix: '', color: 'text-primary' },
+                { value: totalTVL, label: 'ON-CHAIN TVL', prefix: '$', color: 'text-primary' },
+                { value: activePools, label: 'ACTIVE POOLS', prefix: '', color: 'text-primary' },
+              ].map((stat, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 + idx * 0.08 }}
+                  className="relative bg-card/60 backdrop-blur-sm border border-border/60 rounded-xl p-3 overflow-hidden"
+                >
+                  <BorderBeam size={60} duration={10} delay={idx} />
+                  <p className="text-[10px] tracking-[0.18em] text-muted-foreground mb-1">{stat.label}</p>
+                  <p className={`text-lg sm:text-xl md:text-2xl font-bold ${stat.color}`}>
+                    {stat.prefix}
+                    <NumberTicker value={stat.value} decimalPlaces={stat.prefix === '$' ? 2 : 0} />
+                  </p>
+                </motion.div>
+              ))}
+            </div>
           </div>
 
-          {/* CTA */}
+          {/* ── RIGHT: 3D Token Globe */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="flex flex-wrap items-center justify-center gap-4"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative h-[420px] sm:h-[520px] lg:h-[600px] w-full"
           >
-            <Link to="/swap">
-              <ShimmerButton>
-                <Flame className="w-5 h-5 mr-2" />
-                Start Trading
-              </ShimmerButton>
-            </Link>
-
-            <motion.a
-              href="https://testnet.iopn.tech"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-border hover:border-primary/50 transition-all font-medium"
-            >
-              Get Testnet OPN
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </motion.a>
+            <TokenGlobe3D className="w-full h-full" />
           </motion.div>
         </div>
       </div>

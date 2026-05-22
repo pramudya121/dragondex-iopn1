@@ -158,12 +158,12 @@ export default function Analytics() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm mb-3"
+            className="ember-pill inline-flex items-center gap-2 mb-4"
           >
-            <BarChart3 className="w-4 h-4" />
-            <span>Protocol Analytics</span>
+            <BarChart3 className="w-4 h-4 text-primary" />
+            <span className="text-[10px] md:text-xs font-semibold tracking-[0.18em] uppercase">Protocol Analytics</span>
           </motion.div>
-          <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-2">Analytics</h1>
+          <h1 className="font-display text-4xl md:text-5xl font-bold gradient-text mb-2 tracking-tight">Analytics</h1>
           <p className="text-sm md:text-base text-muted-foreground">Real-time on-chain protocol statistics from OPN Testnet</p>
         </div>
         

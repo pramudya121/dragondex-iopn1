@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, ArrowRight } from 'lucide-react';
 import dragonLogo from '@/assets/dragon-logo.png';
@@ -8,7 +8,10 @@ import { AnimatedGradientText } from '@/components/ui/magic/AnimatedGradientText
 import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffect';
 import { NumberTicker } from '@/components/ui/magic/NumberTicker';
 import { BorderBeam } from '@/components/ui/magic/BorderBeam';
-import { TokenGlobe3D } from '@/components/home/TokenGlobe3D';
+// Lazy-load the 3D globe — ships ~780KB of three.js/drei separately, off the critical path.
+const TokenGlobe3D = lazy(() =>
+  import('@/components/home/TokenGlobe3D').then(m => ({ default: m.TokenGlobe3D }))
+);
 import { useAllPairsLength } from '@/hooks/useContract';
 import { useLiquidityPools } from '@/hooks/useLiquidityPools';
 import { useTokenPrices } from '@/hooks/usePrices';
@@ -147,7 +150,9 @@ export function HeroSection() {
             className="relative h-[420px] sm:h-[520px] lg:h-[640px] w-full overflow-visible"
             style={{ background: 'transparent' }}
           >
-            <TokenGlobe3D className="w-full h-full" />
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-12 h-12 rounded-full border-2 border-primary/40 border-t-primary animate-spin" /></div>}>
+              <TokenGlobe3D className="w-full h-full" />
+            </Suspense>
           </motion.div>
         </div>
       </div>

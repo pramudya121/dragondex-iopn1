@@ -8,6 +8,7 @@ import { AnimatedGradientText } from '@/components/ui/magic/AnimatedGradientText
 import { TextGenerateEffect } from '@/components/ui/aceternity/TextGenerateEffect';
 import { NumberTicker } from '@/components/ui/magic/NumberTicker';
 import { BorderBeam } from '@/components/ui/magic/BorderBeam';
+import { TokenGlobe3D } from '@/components/home/TokenGlobe3D';
 import { useAllPairsLength } from '@/hooks/useContract';
 import { useLiquidityPools } from '@/hooks/useLiquidityPools';
 import { useTokenPrices } from '@/hooks/usePrices';
@@ -36,6 +37,11 @@ export function HeroSection() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-gradient-radial from-primary/8 via-transparent to-transparent pointer-events-none" />
+
+      {/* 3D Token Globe — full-bleed behind the hero */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-80">
+        <TokenGlobe3D className="w-full h-full" />
+      </div>
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ExternalLink, ArrowLeftRight, Droplets, LayoutGrid, BarChart3, Wallet, BookOpen, Home } from 'lucide-react';
+import { Menu, X, ExternalLink, ArrowLeftRight, Droplets, LayoutGrid, BarChart3, Wallet, BookOpen, Home, Sprout } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { FloatingDock } from '@/components/ui/aceternity/FloatingDock';
@@ -13,12 +13,13 @@ const navItems = [
   { name: 'Swap', path: '/swap', icon: ArrowLeftRight },
   { name: 'Liquidity', path: '/liquidity', icon: Droplets },
   { name: 'Pools', path: '/pools', icon: LayoutGrid },
+  { name: 'Farm', path: '/farming', icon: Sprout },
   { name: 'Analytics', path: '/analytics', icon: BarChart3 },
   { name: 'Portfolio', path: '/portfolio', icon: Wallet },
   { name: 'Docs', path: '/docs', icon: BookOpen },
 ];
 
-const dockItems = navItems.filter(i => ['Home','Swap','Liquidity','Pools','Portfolio'].includes(i.name)).map(item => ({
+const dockItems = navItems.filter(i => ['Home','Swap','Liquidity','Farm','Portfolio'].includes(i.name)).map(item => ({
   title: item.name,
   icon: item.icon,
   href: item.path,

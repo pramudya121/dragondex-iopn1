@@ -59,12 +59,15 @@ export function StarCometOverlay({ starCount = 100, cometCount = 8 }: Props) {
         const dirRight = i % 2 === 0;
         return {
           id: i,
-          top: -5 + Math.random() * 50,
-          left: dirRight ? -8 + Math.random() * 30 : 70 + Math.random() * 30,
+          // Start near top, but staggered horizontally so they clearly cross
+          top: -15 + Math.random() * 25,
+          left: dirRight
+            ? -5 + Math.random() * 45 // right-going: start on left side
+            : 60 + Math.random() * 45, // left-going: start on right side
           dirRight,
-          delay: i * 1.6 + Math.random() * 2.5,
-          duration: 2.6 + Math.random() * 2.4,
-          length: 90 + Math.random() * 80,
+          delay: i * 1.4 + Math.random() * 2.2,
+          duration: 2.4 + Math.random() * 2.2,
+          length: 110 + Math.random() * 90,
           hue: [200, 280, 320][Math.floor(Math.random() * 3)],
         };
       }),

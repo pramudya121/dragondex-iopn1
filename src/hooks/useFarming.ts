@@ -51,7 +51,7 @@ export function useFarmingOwner() {
 }
 
 export function useFarmingPools() {
-  const client = usePublicClient();
+  const client = usePublicClient() as any;
   const [pools, setPools] = useState<FarmPool[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -112,7 +112,7 @@ export function useFarmingPools() {
 
 export function useUserFarmInfo(pid: number | null) {
   const { address } = useAccount();
-  const client = usePublicClient();
+  const client = usePublicClient() as any;
   const [info, setInfo] = useState<UserFarmInfo | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -156,7 +156,7 @@ export function useUserFarmInfo(pid: number | null) {
 export function useFarmingActions() {
   const { writeContractAsync } = useWriteContract();
   const { address } = useAccount();
-  const client = usePublicClient();
+  const client = usePublicClient() as any;
 
   const ensureAllowance = useCallback(
     async (token: Address, amount: bigint) => {

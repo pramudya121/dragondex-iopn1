@@ -11,6 +11,8 @@ import { ChatMessage, streamChat } from '@/lib/chatStream';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useWalletPortfolio } from '@/hooks/useWalletPortfolio';
+import { extractAgentActions, type AgentAction } from './agentTools';
+import { AgentActionCard } from './AgentActionCard';
 
 const QUICK_PROMPTS = [
   { emoji: "🔄", text: "How do I swap tokens?" },

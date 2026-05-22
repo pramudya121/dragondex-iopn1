@@ -175,7 +175,7 @@ function GlobeScene() {
       <pointLight position={[8, 6, 8]} intensity={2.2} color="#ff5050" />
       <pointLight position={[-6, -4, -6]} intensity={1.4} color="#7a3bff" />
 
-      <Stars radius={40} depth={50} count={1500} factor={3} fade speed={1} />
+      {/* Stars removed — page background already provides starfield */}
 
       <group ref={systemRef}>
         <GlobeCore />

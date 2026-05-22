@@ -146,13 +146,13 @@ export default function Portfolio() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 mb-3"
+            className="ember-pill inline-flex items-center gap-2 mb-4"
           >
             <Crown className="w-3 h-3 md:w-4 md:h-4 text-primary" />
-            <span className="text-xs md:text-sm font-medium">On-Chain Portfolio</span>
+            <span className="text-[10px] md:text-xs font-semibold tracking-[0.18em] uppercase">On-Chain Portfolio</span>
           </motion.div>
-          <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-2">Your Portfolio</h1>
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-3">
+          <h1 className="font-display text-4xl md:text-5xl font-bold gradient-text mb-3 tracking-tight">Your Portfolio</h1>
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-4 font-mono">
             <Shield className="w-3 h-3 text-primary" />
             <span>{address?.slice(0, 6)}...{address?.slice(-4)}</span>
             <a href={`https://testnet.iopn.tech/address/${address}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -184,8 +184,8 @@ export default function Portfolio() {
                         <Coins className="w-5 h-5 text-primary-foreground" />
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Total Balance</p>
-                        <p className="text-2xl md:text-3xl font-bold">
+                        <p className="text-xs text-muted-foreground tracking-[0.18em] uppercase">Total Balance</p>
+                        <p className="font-mono-display text-2xl md:text-3xl font-bold">
                           $<NumberTicker value={totalValue} decimalPlaces={2} />
                         </p>
                       </div>

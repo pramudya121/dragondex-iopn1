@@ -1,0 +1,20 @@
+# DRAGONDEX
+
+> DRAGONDEX is a decentralized exchange (DEX) on OPN Testnet (Chain ID 984) using the UniswapV2-style AMM model. Users can swap tokens, provide liquidity, and earn 0.3% trading fees.
+
+DRAGONDEX runs entirely on-chain with non-custodial wallet connections (MetaMask, WalletConnect, Coinbase, OKX, Rabby, Bitget, and more). It features multi-hop routing, automatic slippage tuning, native OPN↔WOPN wrap/unwrap, real-time analytics, and an AI assistant (DragonBot) for trading help.
+
+## Pages
+
+- [Home](/): Overview of DRAGONDEX, hero, featured pools, and protocol stats.
+- [Swap](/swap): Trade any supported token pair with multi-hop routing and price-impact protection.
+- [Liquidity](/liquidity): Add or remove liquidity from token pairs and earn 0.3% fees.
+- [Pools](/pools): Browse all liquidity pools with TVL, volume, and APR data.
+- [Create Pool](/create-pool): Bootstrap a brand-new token pair on the AMM.
+- [Analytics](/analytics): Protocol-wide analytics — TVL, volume, top pairs, charts.
+- [Portfolio](/portfolio): Track token balances, LP positions, transaction history, and send tokens.
+- [Docs](/docs): User guides, DeFi concepts, smart-contract addresses, FAQ, and roadmap.
+
+## Optional
+
+- [Block Explorer](https://testnet.iopn.tech): OPN Testnet block explorer for verifying transactions.

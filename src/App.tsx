@@ -9,18 +9,20 @@ import { WagmiProvider } from 'wagmi';
 import { config } from '@/config/wagmi';
 import { Layout } from '@/components/layout/Layout';
 import { ErrorBoundary, RouteErrorBoundary } from '@/components/ErrorBoundary';
-import Index from "./pages/Index";
-import Swap from "./pages/Swap";
-import Liquidity from "./pages/Liquidity";
-import Pools from "./pages/Pools";
-import Analytics from "./pages/Analytics";
-import Portfolio from "./pages/Portfolio";
-import CreatePool from "./pages/CreatePool";
-import Docs from "./pages/Docs";
-import Farming from "./pages/Farming";
-import AdminFarming from "./pages/AdminFarming";
-import PairDetail from "./pages/PairDetail";
-import NotFound from "./pages/NotFound";
+// Lazy-load every route so heavy deps (recharts, three.js, charts, etc.)
+// only download when their page is visited. Cuts initial bundle dramatically.
+const Index = lazy(() => import("./pages/Index"));
+const Swap = lazy(() => import("./pages/Swap"));
+const Liquidity = lazy(() => import("./pages/Liquidity"));
+const Pools = lazy(() => import("./pages/Pools"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const CreatePool = lazy(() => import("./pages/CreatePool"));
+const Docs = lazy(() => import("./pages/Docs"));
+const Farming = lazy(() => import("./pages/Farming"));
+const AdminFarming = lazy(() => import("./pages/AdminFarming"));
+const PairDetail = lazy(() => import("./pages/PairDetail"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,10 +33,18 @@ const queryClient = new QueryClient({
   },
 });
 
+function RouteFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+    </div>
+  );
+}
+
 function PageWrapper({ children }: { children: React.ReactNode }) {
   return (
     <RouteErrorBoundary>
-      {children}
+      <Suspense fallback={<RouteFallback />}>{children}</Suspense>
     </RouteErrorBoundary>
   );
 }

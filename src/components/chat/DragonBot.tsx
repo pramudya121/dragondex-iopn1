@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useWalletPortfolio } from '@/hooks/useWalletPortfolio';
 import { extractAgentActions, type AgentAction } from './agentTools';
 import { AgentActionCard } from './AgentActionCard';
+import { NebulaBackground } from './NebulaBackground';
 
 const QUICK_PROMPTS = [
   { emoji: "🔄", text: "How do I swap tokens?" },
@@ -327,11 +328,14 @@ export function DragonBot() {
                 : "bottom-6 right-6 w-[400px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-4rem)] rounded-3xl"
             )}
             style={{
-              background: 'hsl(var(--background) / 0.92)',
-              backdropFilter: 'blur(24px) saturate(1.5)',
-              boxShadow: '0 0 80px hsl(var(--primary) / 0.1), 0 25px 60px -12px rgba(0,0,0,0.5), inset 0 1px 0 hsl(var(--primary) / 0.1)',
+              background: 'hsl(0 0% 3% / 0.85)',
+              backdropFilter: 'blur(28px) saturate(1.6)',
+              boxShadow: '0 0 80px hsl(var(--primary) / 0.15), 0 25px 60px -12px rgba(0,0,0,0.6), inset 0 1px 0 hsl(var(--primary) / 0.12)',
             }}
           >
+            {/* Nebula backdrop with twinkling stars + crossing comets */}
+            <NebulaBackground />
+
             {/* Header */}
             <div className="relative px-4 py-3 flex items-center gap-3 shrink-0">
               {/* Header bg with animated gradient */}

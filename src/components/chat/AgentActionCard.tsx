@@ -78,78 +78,86 @@ export function AgentActionCard({ action, onResult }: Props) {
     onResult({ status: 'rejected' });
   };
 
-  const colorByType: Record<AgentAction['type'], string> = {
-    swap: 'from-primary/15 to-accent/15 border-primary/30',
-    add_liquidity: 'from-success/15 to-primary/15 border-success/30',
-    remove_liquidity: 'from-destructive/15 to-primary/15 border-destructive/30',
-    farm_stake: 'from-accent/15 to-primary/15 border-accent/30',
-    farm_unstake: 'from-accent/15 to-primary/15 border-accent/30',
-    farm_harvest: 'from-success/20 to-accent/15 border-success/30',
-    farm_emergency: 'from-destructive/20 to-destructive/15 border-destructive/40',
-    wrap: 'from-primary/15 to-accent/15 border-primary/30',
-    unwrap: 'from-primary/15 to-accent/15 border-primary/30',
+  const accentByType: Record<AgentAction['type'], { ring: string; chip: string; cta: string }> = {
+    swap:             { ring: 'ring-primary/40',     chip: 'bg-primary/20 text-primary',         cta: 'from-primary to-secondary' },
+    add_liquidity:    { ring: 'ring-success/40',     chip: 'bg-success/20 text-success',         cta: 'from-success to-primary' },
+    remove_liquidity: { ring: 'ring-destructive/40', chip: 'bg-destructive/20 text-destructive', cta: 'from-destructive to-primary' },
+    farm_stake:       { ring: 'ring-accent/40',      chip: 'bg-accent/20 text-accent',           cta: 'from-accent to-secondary' },
+    farm_unstake:     { ring: 'ring-accent/40',      chip: 'bg-accent/20 text-accent',           cta: 'from-accent to-secondary' },
+    farm_harvest:     { ring: 'ring-success/40',     chip: 'bg-success/20 text-success',         cta: 'from-success to-accent' },
+    farm_emergency:   { ring: 'ring-destructive/50', chip: 'bg-destructive/20 text-destructive', cta: 'from-destructive to-destructive/70' },
+    wrap:             { ring: 'ring-primary/40',     chip: 'bg-primary/20 text-primary',         cta: 'from-primary to-secondary' },
+    unwrap:           { ring: 'ring-primary/40',     chip: 'bg-primary/20 text-primary',         cta: 'from-primary to-secondary' },
   };
+  const tone = accentByType[action.type];
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.96, y: 8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       className={cn(
-        "relative overflow-hidden rounded-2xl border bg-gradient-to-br p-3.5",
-        colorByType[action.type],
+        "relative overflow-hidden rounded-2xl p-4 ring-1",
+        "bg-card/95 border border-border/60 text-foreground shadow-lg",
+        tone.ring,
       )}
+      style={{ backdropFilter: 'blur(8px)' }}
     >
-      <div className="absolute top-2 right-2 text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded-md bg-background/40 border border-border/30 text-muted-foreground uppercase">
-        Agent · On-Chain
+      {/* Top accent bar */}
+      <div className={cn("absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r", tone.cta)} />
+
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <span className={cn("inline-flex items-center gap-1 text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full uppercase", tone.chip)}>
+          <Sparkles className="w-2.5 h-2.5" /> Agent Action
+        </span>
+        <span className="text-[9px] text-muted-foreground/80 inline-flex items-center gap-1">
+          <Shield className="w-2.5 h-2.5" /> Wallet sign required
+        </span>
       </div>
 
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         <ActionVisual action={action} />
-        <div className="flex-1 min-w-0 pr-16">
-          <p className="text-[10px] tracking-wider uppercase text-muted-foreground font-semibold flex items-center gap-1">
-            <Sparkles className="w-2.5 h-2.5" /> Suggested Action
-          </p>
-          <p className="text-sm font-bold text-foreground mt-0.5 break-words">{actionLabel(action)}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
-            <Shield className="w-2.5 h-2.5" /> Wallet confirmation required
-          </p>
-        </div>
+        <p className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0 break-words">
+          {actionLabel(action)}
+        </p>
       </div>
 
       {state.status === 'pending' && (
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mt-3.5">
           <button
             onClick={handleReject}
-            className="flex-1 py-2 rounded-xl text-xs font-semibold bg-background/40 hover:bg-background/60 border border-border/40 text-muted-foreground transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-muted/60 hover:bg-muted text-foreground/80 hover:text-foreground border border-border/60 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={!isConnected}
-            className="flex-1 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-95 transition-opacity disabled:opacity-50"
+            className={cn(
+              "flex-1 py-2.5 rounded-xl text-xs font-bold text-primary-foreground bg-gradient-to-r shadow-md hover:opacity-95 hover:shadow-lg transition-all disabled:opacity-50",
+              tone.cta,
+            )}
           >
-            {isConnected ? 'Confirm' : 'Connect Wallet'}
+            {isConnected ? 'Confirm Transaction' : 'Connect Wallet'}
           </button>
         </div>
       )}
 
       {state.status === 'confirming' && (
-        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-background/40 border border-border/30">
+        <div className="mt-3.5 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 border border-primary/30">
           <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
           <span className="text-xs text-foreground">Awaiting wallet signature & confirmation...</span>
         </div>
       )}
 
       {state.status === 'success' && (
-        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-success/15 border border-success/30">
+        <div className="mt-3.5 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-success/15 border border-success/40">
           <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-          <span className="text-xs text-foreground flex-1">Transaction confirmed</span>
+          <span className="text-xs text-foreground flex-1 font-medium">Transaction confirmed</span>
           {state.txHash && (
             <a
               href={`https://testnet.iopn.tech/tx/${state.txHash}`}
               target="_blank" rel="noopener noreferrer"
-              className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
+              className="text-[11px] text-primary font-semibold hover:underline inline-flex items-center gap-1"
             >
               View <ExternalLink className="w-2.5 h-2.5" />
             </a>
@@ -158,9 +166,9 @@ export function AgentActionCard({ action, onResult }: Props) {
       )}
 
       {(state.status === 'error' || state.status === 'rejected') && (
-        <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/30">
+        <div className="mt-3.5 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-destructive/15 border border-destructive/40">
           <XCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
-          <div className="text-[11px] text-destructive break-words">
+          <div className="text-[11px] text-foreground break-words">
             {state.status === 'rejected' ? 'Cancelled by user.' : (state.error?.slice(0, 140) || 'Failed')}
           </div>
         </div>

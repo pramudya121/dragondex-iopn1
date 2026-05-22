@@ -84,72 +84,68 @@ export function useTokenPrices() {
   };
 }
 
-// Hook to calculate price impact for a swap
-// Uses token0 address to correctly order reserves
+// Hook to calculate price impact for a swap.
+// Uses the Uniswap V2 constant-product formula directly on reserves so the
+// result is bounded between 0 and 100, regardless of decimal mismatches or
+// noisy quote data.
 export function usePriceImpact(
   fromToken: TokenInfo | null,
   toToken: TokenInfo | null,
   fromAmount: string,
-  toAmount: string,
+  _toAmount: string,
   reserves?: [bigint, bigint],
   token0Address?: string
 ) {
   return useMemo(() => {
-    if (!fromToken || !toToken || !fromAmount || !toAmount) {
+    const severityOf = (impact: number) =>
+      impact > 10 ? ('high' as const) : impact > 3 ? ('medium' as const) : ('low' as const);
+
+    if (!fromToken || !toToken || !fromAmount) {
       return { priceImpact: 0, severity: 'low' as const };
     }
 
     const inputAmount = parseFloat(fromAmount);
-    const outputAmount = parseFloat(toAmount);
-
-    if (inputAmount === 0 || outputAmount === 0) {
+    if (!Number.isFinite(inputAmount) || inputAmount <= 0) {
       return { priceImpact: 0, severity: 'low' as const };
     }
 
-    // If we have reserves AND token0 address, calculate actual price impact
+    // Direct-pair AMM formula (preferred): impact = 1 - midOut / amountOut*
+    // where midOut = amountIn * reserveOut / reserveIn (no fee, no slippage)
+    // and amountOut* = amountIn*997 * reserveOut / (reserveIn*1000 + amountIn*997)
     if (reserves && reserves[0] > 0n && reserves[1] > 0n && token0Address) {
       const fromAddr = (fromToken.isNative ? CONTRACTS.WETH : fromToken.address).toLowerCase();
       const isFromToken0 = token0Address.toLowerCase() === fromAddr;
 
       const reserveIn = parseFloat(formatUnits(
-        isFromToken0 ? reserves[0] : reserves[1], fromToken.decimals
+        isFromToken0 ? reserves[0] : reserves[1],
+        fromToken.decimals,
       ));
       const reserveOut = parseFloat(formatUnits(
-        isFromToken0 ? reserves[1] : reserves[0], toToken.decimals
+        isFromToken0 ? reserves[1] : reserves[0],
+        toToken.decimals,
       ));
 
-      if (reserveIn <= 0 || reserveOut <= 0) {
+      if (reserveIn > 0 && reserveOut > 0) {
+        const amountInWithFee = inputAmount * 0.997;
+        const numerator = amountInWithFee * reserveOut;
+        const denominator = reserveIn + amountInWithFee;
+        const amountOut = numerator / denominator;
+        const midOut = inputAmount * (reserveOut / reserveIn);
+
+        if (midOut > 0 && amountOut > 0 && amountOut <= midOut) {
+          const impact = ((midOut - amountOut) / midOut) * 100;
+          const clamped = Math.max(0, Math.min(impact, 99.99));
+          return { priceImpact: clamped, severity: severityOf(clamped) };
+        }
+        // If amountOut > midOut something is off (stale reserves) — treat as low impact.
         return { priceImpact: 0, severity: 'low' as const };
       }
-
-      // Spot price before trade
-      const spotPrice = reserveOut / reserveIn;
-
-      // Actual execution price
-      const executionPrice = outputAmount / inputAmount;
-
-      // Price impact = (spotPrice - executionPrice) / spotPrice * 100
-      const impact = Math.abs((spotPrice - executionPrice) / spotPrice * 100);
-
-      // Cap at 100% to avoid nonsensical display
-      const cappedImpact = Math.min(impact, 99.99);
-
-      return {
-        priceImpact: cappedImpact,
-        severity: cappedImpact > 10 ? 'high' as const : cappedImpact > 3 ? 'medium' as const : 'low' as const,
-      };
     }
 
-    // Fallback: estimate price impact using constant-product AMM approximation
-    // For small trades this is negligible; for larger trades relative to pool size it increases
-    // Without reserves, use a conservative small estimate based on input size
+    // Multi-hop / unknown reserves fallback: conservative size-based estimate.
     const estimatedImpact = Math.min(inputAmount * 0.05, 10);
-
-    return {
-      priceImpact: estimatedImpact,
-      severity: estimatedImpact > 10 ? 'high' as const : estimatedImpact > 3 ? 'medium' as const : 'low' as const,
-    };
-  }, [fromToken, toToken, fromAmount, toAmount, reserves, token0Address]);
+    return { priceImpact: estimatedImpact, severity: severityOf(estimatedImpact) };
+  }, [fromToken, toToken, fromAmount, reserves, token0Address]);
 }
 
 // Hook to calculate TVL for a pool

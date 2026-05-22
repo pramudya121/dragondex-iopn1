@@ -41,10 +41,11 @@ export function PoolCard({ pool, index, prices }: PoolCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="group relative bg-card/90 backdrop-blur-sm rounded-2xl border border-border/50 hover:border-primary/50 transition-all duration-300 overflow-hidden"
+      className="group relative bg-card/90 backdrop-blur-sm rounded-2xl border border-border/50 hover:border-primary/50 transition-all duration-300 overflow-hidden hover:shadow-[0_10px_40px_-10px_hsl(var(--primary)/0.45)]"
     >
       {/* Glow effect on hover */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute -top-px left-1/2 -translate-x-1/2 h-px w-2/3 bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <div className="relative p-4 md:p-5">
         {/* Header */}
@@ -57,9 +58,9 @@ export function PoolCard({ pool, index, prices }: PoolCardProps) {
                 onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
             </div>
             <div>
-              <h3 className="font-bold text-sm md:text-base">{pool.token0Symbol}/{pool.token1Symbol}</h3>
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                <span className="px-1.5 py-0.5 rounded bg-muted/60">Fee: 0.3%</span>
+              <h3 className="font-display font-bold text-sm md:text-base tracking-tight">{pool.token0Symbol}<span className="text-muted-foreground/60">/</span>{pool.token1Symbol}</h3>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                <span className="px-1.5 py-0.5 rounded bg-muted/60 font-medium">0.30% fee</span>
                 {hasLiquidity && (
                   <span className="flex items-center gap-0.5 text-success">
                     <TrendingUp className="w-2.5 h-2.5" />+0.00%
@@ -76,18 +77,18 @@ export function PoolCard({ pool, index, prices }: PoolCardProps) {
         {/* TVL & APY Row */}
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" /> TVL
             </p>
-            <p className="font-bold text-sm md:text-base">
+            <p className="font-mono-display font-bold text-sm md:text-base">
               ${tvl > 0 ? tvl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-muted-foreground flex items-center justify-end gap-1">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center justify-end gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" /> APY
             </p>
-            <p className="font-bold text-sm md:text-base text-success">{hasLiquidity ? `${apy}%` : '-'}</p>
+            <p className="font-mono-display font-bold text-sm md:text-base text-success">{hasLiquidity ? `${apy}%` : '—'}</p>
           </div>
         </div>
 

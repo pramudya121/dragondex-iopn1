@@ -29,17 +29,12 @@ export default function Swap() {
           transition={{ duration: 0.5 }}
           className="text-center mb-4 sm:mb-6"
         >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm mb-3"
-          >
+          <div className="ember-pill mb-3">
             <Flame className="w-3.5 h-3.5" />
-            <span className="font-medium">DragonSwap</span>
-          </motion.div>
-          
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text mb-1.5">
+            <span>DragonSwap</span>
+          </div>
+
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold gradient-text mb-1.5 tracking-tight">
             Trade Instantly
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto">

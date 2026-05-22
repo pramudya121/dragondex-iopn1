@@ -185,7 +185,7 @@ export function StarCometOverlay({ starCount = 100, cometCount = 8 }: Props) {
               repeat: Infinity,
               repeatDelay: 5 + Math.random() * 4,
               ease: 'easeIn',
-              times: [0, 1, 1, 1],
+              times: [0, 0.12, 0.85, 1],
             }}
           />
         );

@@ -30,6 +30,31 @@ import {
 } from '@/hooks/useFarming';
 import { FARMING_CONTRACT } from '@/config/farming';
 import { useTokenPrices } from '@/hooks/usePrices';
+import { getTokenByAddress } from '@/config/contracts';
+
+function TokenLogo({ address, symbol, size = 32 }: { address: string; symbol: string; size?: number }) {
+  const meta = getTokenByAddress(address);
+  const src = meta?.logoURI;
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={symbol}
+        className="rounded-full border-2 border-background object-cover bg-card"
+        style={{ width: size, height: size }}
+        onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
+      />
+    );
+  }
+  return (
+    <div
+      className="rounded-full border-2 border-background flex items-center justify-center bg-gradient-to-br from-primary/40 to-accent/40 font-bold text-foreground"
+      style={{ width: size, height: size, fontSize: size * 0.35 }}
+    >
+      {symbol.charAt(0)}
+    </div>
+  );
+}
 
 function formatUsd(v: number) {
   if (!isFinite(v) || v <= 0) return '$0';

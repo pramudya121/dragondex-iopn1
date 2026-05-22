@@ -4,105 +4,184 @@ import { X, Wallet, QrCode, ExternalLink, Smartphone, Shield, Loader2, ChevronRi
 import { useConnect, Connector } from 'wagmi';
 import { cn } from '@/lib/utils';
 
-// Official wallet logos served by WalletConnect Explorer CDN.
-// Format: https://explorer-api.walletconnect.com/v3/logo/lg/<image_id>?projectId=<id>
-// Image IDs come from https://explorer.walletconnect.com (Reown Explorer).
+// Official wallet logos.
+// Primary source: WalletConnect Explorer CDN (https://explorer.walletconnect.com)
+// Fallback source: vendor brand assets — used automatically if the primary 404s.
 const WC_PROJECT_ID = '2f05ae7f1116030fde2d36508f472bfb';
 const wcLogo = (id: string) =>
   `https://explorer-api.walletconnect.com/v3/logo/lg/${id}?projectId=${WC_PROJECT_ID}`;
 
-const WALLET_ICONS: Record<string, { icon: string; color: string; installUrl?: string }> = {
+interface WalletMeta {
+  icons: string[];        // ordered list of icon URLs (try in order on error)
+  color: string;          // brand color for letter-fallback
+  installUrl?: string;
+  aliases?: string[];     // alternative connector names that map to this entry
+}
+
+const WALLET_ICONS: Record<string, WalletMeta> = {
   'MetaMask': {
-    icon: wcLogo('5195e9db-94d8-4579-6f11-ef553be95100'),
+    icons: [
+      wcLogo('5195e9db-94d8-4579-6f11-ef553be95100'),
+      'https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/SVG_MetaMask_Icon_Color.svg',
+    ],
     color: '#F6851B',
     installUrl: 'https://metamask.io/download/',
   },
   'WalletConnect': {
-    icon: wcLogo('ef333840-475d-4798-7869-cf4e6e573500'),
+    icons: [
+      wcLogo('ef333840-475d-4798-7869-cf4e6e573500'),
+      'https://avatars.githubusercontent.com/u/37784886?s=200&v=4',
+    ],
     color: '#3B99FC',
   },
   'Coinbase Wallet': {
-    icon: wcLogo('a5ebc364-8f91-4200-fcc6-be81310a0000'),
+    icons: [
+      wcLogo('a5ebc364-8f91-4200-fcc6-be81310a0000'),
+      'https://avatars.githubusercontent.com/u/1885080?s=200&v=4',
+    ],
     color: '#0052FF',
     installUrl: 'https://www.coinbase.com/wallet',
+    aliases: ['Coinbase'],
   },
   'Rabby Wallet': {
-    icon: wcLogo('7897a18d-fa44-4be6-c441-89f23e4ade00'),
+    icons: [
+      wcLogo('7897a18d-fa44-4be6-c441-89f23e4ade00'),
+      'https://rabby.io/assets/images/logo-128.png',
+    ],
     color: '#7C8FEC',
     installUrl: 'https://rabby.io/',
+    aliases: ['Rabby'],
   },
   'OKX Wallet': {
-    icon: wcLogo('45f2f08e-fc0c-4d62-3e63-404e72170500'),
+    icons: [
+      wcLogo('45f2f08e-fc0c-4d62-3e63-404e72170500'),
+      'https://www.okx.com/cdn/assets/imgs/239/2C5526F9F19601B7.png',
+    ],
     color: '#000000',
     installUrl: 'https://www.okx.com/web3',
+    aliases: ['OKX', 'OKXWallet'],
   },
   'Phantom': {
-    icon: wcLogo('1ae92b26-df6c-4f24-b294-c30b6dab2700'),
+    icons: [
+      wcLogo('1ae92b26-df6c-4f24-b294-c30b6dab2700'),
+      'https://187760183-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MVOiF6Zqit57q_hxJYp%2Fuploads%2FHEjleywo9QOnfYebBPCZ%2FBest%20of%20Web3%20Apps_Phantom-04.png',
+    ],
     color: '#AB9FF2',
     installUrl: 'https://phantom.app/',
   },
-  'Keplr': {
-    icon: wcLogo('6f10d860-c10e-4912-b3bf-3a4e8d2cc500'),
-    color: '#7B68EE',
-    installUrl: 'https://www.keplr.app/',
-  },
-  'Bitget Wallet': {
-    icon: wcLogo('1bf2b56b-1cab-431d-d2e7-eb47cb053500'),
-    color: '#00D0AA',
-    installUrl: 'https://web3.bitget.com/',
-  },
   'Trust Wallet': {
-    icon: wcLogo('0528ee7e-16d1-4089-21e3-bbfb41933100'),
+    icons: [
+      wcLogo('0528ee7e-16d1-4089-21e3-bbfb41933100'),
+      'https://trustwallet.com/assets/images/media/assets/TWT.png',
+    ],
     color: '#3375BB',
     installUrl: 'https://trustwallet.com/',
+    aliases: ['Trust'],
   },
   'Rainbow': {
-    icon: wcLogo('7a33d7f1-3d12-4b5c-f3ee-5cd83cb1b500'),
+    icons: [
+      wcLogo('7a33d7f1-3d12-4b5c-f3ee-5cd83cb1b500'),
+      'https://avatars.githubusercontent.com/u/48327834?s=200&v=4',
+    ],
     color: '#FF4B4B',
     installUrl: 'https://rainbow.me/',
   },
+  'Bitget Wallet': {
+    icons: [
+      wcLogo('1bf2b56b-1cab-431d-d2e7-eb47cb053500'),
+      'https://web3.bitget.com/favicon.ico',
+    ],
+    color: '#00D0AA',
+    installUrl: 'https://web3.bitget.com/',
+    aliases: ['Bitget', 'BitKeep'],
+  },
   'Zerion': {
-    icon: wcLogo('73f6f52f-7862-49e7-bb85-ba93ab72cc00'),
+    icons: [wcLogo('73f6f52f-7862-49e7-bb85-ba93ab72cc00')],
     color: '#2461ED',
     installUrl: 'https://zerion.io/',
   },
   'Ledger Live': {
-    icon: wcLogo('19177a98-2671-4377-3ca2-9d0c39e45200'),
+    icons: [wcLogo('19177a98-2671-4377-3ca2-9d0c39e45200')],
     color: '#000000',
     installUrl: 'https://www.ledger.com/ledger-live',
+    aliases: ['Ledger'],
   },
   'Safe': {
-    icon: wcLogo('28cc8b35-f49b-43d7-1f4e-3a4757fa8c00'),
+    icons: [wcLogo('28cc8b35-f49b-43d7-1f4e-3a4757fa8c00')],
     color: '#12FF80',
     installUrl: 'https://app.safe.global/',
+    aliases: ['Safe Wallet', 'Gnosis Safe'],
   },
   '1inch Wallet': {
-    icon: wcLogo('52c30c1f-9d24-4f06-5d4a-fdaa64a8df00'),
+    icons: [wcLogo('52c30c1f-9d24-4f06-5d4a-fdaa64a8df00')],
     color: '#1B314F',
     installUrl: 'https://1inch.io/wallet/',
+    aliases: ['1inch'],
+  },
+  'Keplr': {
+    icons: [wcLogo('6f10d860-c10e-4912-b3bf-3a4e8d2cc500')],
+    color: '#7B68EE',
+    installUrl: 'https://www.keplr.app/',
+  },
+  'Uniswap Wallet': {
+    icons: [wcLogo('bff9cf1f-df19-42ce-f62a-87f04df13c00')],
+    color: '#FF007A',
+    installUrl: 'https://wallet.uniswap.org/',
+    aliases: ['Uniswap'],
+  },
+  'Frame': {
+    icons: [wcLogo('d6e6f0c0-1378-4f47-8e9e-9b4f7a2a4f00')],
+    color: '#00DC82',
+    installUrl: 'https://frame.sh/',
   },
 };
 
-const WalletIcon = ({ name, size = 36 }: { name: string; size?: number }) => {
-  const [error, setError] = useState(false);
-  const walletInfo = WALLET_ICONS[name];
+// Lookup that also resolves aliases
+function resolveWallet(name: string): WalletMeta | undefined {
+  if (WALLET_ICONS[name]) return WALLET_ICONS[name];
+  const lower = name.toLowerCase();
+  for (const key of Object.keys(WALLET_ICONS)) {
+    const meta = WALLET_ICONS[key];
+    if (key.toLowerCase() === lower) return meta;
+    if (meta.aliases?.some(a => a.toLowerCase() === lower)) return meta;
+  }
+  // Partial match (e.g. "MetaMask Mobile")
+  for (const key of Object.keys(WALLET_ICONS)) {
+    if (lower.includes(key.toLowerCase())) return WALLET_ICONS[key];
+  }
+  return undefined;
+}
 
-  if (!walletInfo || error) {
+const WalletIcon = ({ name, size = 36 }: { name: string; size?: number }) => {
+  const meta = resolveWallet(name);
+  const [iconIdx, setIconIdx] = useState(0);
+
+  // Letter fallback when all icons fail or no meta is registered
+  if (!meta || iconIdx >= meta.icons.length) {
+    const initial = name.replace(/wallet/i, '').trim().charAt(0).toUpperCase() || '?';
+    const bg = meta?.color || 'hsl(var(--muted))';
     return (
-      <div className="rounded-xl bg-muted/50 flex items-center justify-center" style={{ width: size, height: size }}>
-        <Wallet className="w-5 h-5 text-muted-foreground" />
+      <div
+        className="rounded-xl flex items-center justify-center font-bold text-white shadow-inner"
+        style={{ width: size, height: size, background: bg, fontSize: size * 0.45 }}
+      >
+        {initial}
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl overflow-hidden flex items-center justify-center bg-background/50" style={{ width: size, height: size }}>
+    <div
+      className="rounded-xl overflow-hidden flex items-center justify-center bg-background/50"
+      style={{ width: size, height: size }}
+    >
       <img
-        src={walletInfo.icon}
+        key={meta.icons[iconIdx]}
+        src={meta.icons[iconIdx]}
         alt={name}
         className="object-contain"
         style={{ width: size - 4, height: size - 4 }}
-        onError={() => setError(true)}
+        onError={() => setIconIdx(i => i + 1)}
       />
     </div>
   );

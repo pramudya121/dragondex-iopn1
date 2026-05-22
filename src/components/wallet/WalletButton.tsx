@@ -63,11 +63,14 @@ export function WalletButton() {
     <div className="relative">
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 hover:border-primary/30 transition-all text-sm"
+        className="group flex items-center gap-1.5 sm:gap-2 pl-2 pr-2.5 sm:pr-3 py-1.5 rounded-xl bg-gradient-to-r from-primary/15 via-secondary/10 to-accent/10 hover:from-primary/25 hover:via-secondary/15 hover:to-accent/15 border border-primary/30 hover:border-primary/50 transition-all text-sm shadow-[0_4px_20px_-8px_hsl(var(--primary)/0.5)]"
       >
-        <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-        <span className="font-medium">{formatAddress(address!)}</span>
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+        </span>
+        <span className="font-mono-display font-semibold tabular-nums">{formatAddress(address!)}</span>
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform text-muted-foreground group-hover:text-foreground ${showDropdown ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>

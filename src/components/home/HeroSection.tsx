@@ -150,7 +150,9 @@ export function HeroSection() {
             className="relative h-[420px] sm:h-[520px] lg:h-[640px] w-full overflow-visible"
             style={{ background: 'transparent' }}
           >
-            <TokenGlobe3D className="w-full h-full" />
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-12 h-12 rounded-full border-2 border-primary/40 border-t-primary animate-spin" /></div>}>
+              <TokenGlobe3D className="w-full h-full" />
+            </Suspense>
           </motion.div>
         </div>
       </div>

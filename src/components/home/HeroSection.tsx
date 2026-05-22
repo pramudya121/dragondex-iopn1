@@ -67,6 +67,7 @@ export function HeroSection() {
             <AnimatedGradientText className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black">
               DRAGONDEX
             </AnimatedGradientText>
+            <span className="sr-only"> — Decentralized Exchange on OPN Testnet</span>
           </h1>
 
           <TextGenerateEffect

@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://dragon-forge-exchange.lovable.app/sitemap.xml
+Sitemap: https://dragon-flow-dex.lovable.app/sitemap.xml

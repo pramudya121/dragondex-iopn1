@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ExternalLink, ArrowLeftRight, Droplets, LayoutGrid, BarChart3, Wallet, BookOpen, Home, Sprout } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WalletButton } from '@/components/wallet/WalletButton';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { FloatingDock } from '@/components/ui/aceternity/FloatingDock';
 
 import dragonLogo from '@/assets/dragon-logo.png';

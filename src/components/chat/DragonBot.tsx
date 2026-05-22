@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { useWalletPortfolio } from '@/hooks/useWalletPortfolio';
 import { extractAgentActions, type AgentAction } from './agentTools';
 import { AgentActionCard } from './AgentActionCard';
-import { NebulaBackground } from './NebulaBackground';
 
 const QUICK_PROMPTS = [
   { emoji: "🔄", text: "How do I swap tokens?" },

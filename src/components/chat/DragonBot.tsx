@@ -321,19 +321,18 @@ export function DragonBot() {
             transition={{ type: 'spring', damping: 22, stiffness: 280 }}
             className={cn(
               "fixed z-[100] flex flex-col overflow-hidden",
-              "border border-border/30",
               isExpanded
                 ? "bottom-0 right-0 w-full h-full md:bottom-4 md:right-4 md:w-[600px] md:h-[85vh] md:rounded-3xl"
                 : "bottom-6 right-6 w-[400px] max-w-[calc(100vw-2rem)] h-[600px] max-h-[calc(100vh-4rem)] rounded-3xl"
             )}
             style={{
-              background: 'hsl(0 0% 3% / 0.85)',
-              backdropFilter: 'blur(28px) saturate(1.6)',
-              boxShadow: '0 0 80px hsl(var(--primary) / 0.15), 0 25px 60px -12px rgba(0,0,0,0.6), inset 0 1px 0 hsl(var(--primary) / 0.12)',
+              background: 'hsl(0 0% 2%)',
+              border: '1.5px solid hsl(0 90% 55%)',
+              boxShadow:
+                '0 0 24px hsl(0 90% 55% / 0.55), 0 0 60px hsl(0 90% 55% / 0.35), 0 0 120px hsl(0 90% 55% / 0.18), inset 0 0 30px hsl(0 90% 55% / 0.08), 0 25px 60px -12px rgba(0,0,0,0.7)',
             }}
           >
-            {/* Nebula backdrop with twinkling stars + crossing comets */}
-            <NebulaBackground />
+
 
             {/* Header */}
             <div className="relative px-4 py-3 flex items-center gap-3 shrink-0">

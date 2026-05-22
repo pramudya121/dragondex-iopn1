@@ -1,47 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://dragon-flow-dex.lovable.app/</loc>
+    <loc>https://dragon-flux-swap.lovable.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://dragon-flow-dex.lovable.app/swap</loc>
+    <loc>https://dragon-flux-swap.lovable.app/swap</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://dragon-flow-dex.lovable.app/liquidity</loc>
+    <loc>https://dragon-flux-swap.lovable.app/liquidity</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://dragon-flow-dex.lovable.app/pools</loc>
+    <loc>https://dragon-flux-swap.lovable.app/pools</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://dragon-flow-dex.lovable.app/create-pool</loc>
+    <loc>https://dragon-flux-swap.lovable.app/create-pool</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://dragon-flow-dex.lovable.app/farming</loc>
+    <loc>https://dragon-flux-swap.lovable.app/farming</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://dragon-flow-dex.lovable.app/analytics</loc>
+    <loc>https://dragon-flux-swap.lovable.app/admin/farming</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://dragon-flux-swap.lovable.app/analytics</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://dragon-flow-dex.lovable.app/portfolio</loc>
+    <loc>https://dragon-flux-swap.lovable.app/portfolio</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://dragon-flow-dex.lovable.app/docs</loc>
+    <loc>https://dragon-flux-swap.lovable.app/docs</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

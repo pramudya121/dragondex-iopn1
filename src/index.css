@@ -118,6 +118,26 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground;
   }
+
+  /* === Global Black + Red Neon for all form controls === */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    background-color: hsl(0 0% 3%) !important;
+    border: 1.5px solid hsl(0 90% 55% / 0.45) !important;
+    color: hsl(var(--foreground)) !important;
+    box-shadow: 0 0 10px hsl(0 90% 55% / 0.18), inset 0 0 12px hsl(0 90% 55% / 0.04);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  input:focus, textarea:focus, select:focus,
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: none !important;
+    border-color: hsl(0 90% 60%) !important;
+    box-shadow: 0 0 22px hsl(0 90% 55% / 0.55), inset 0 0 16px hsl(0 90% 55% / 0.08) !important;
+  }
+  input::placeholder, textarea::placeholder {
+    color: hsl(0 0% 55%);
+  }
 }
 
 @layer components {

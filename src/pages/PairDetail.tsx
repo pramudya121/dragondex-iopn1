@@ -15,7 +15,7 @@ import { useTokenPrices, usePoolTVL } from '@/hooks/usePrices';
 export default function PairDetail() {
   const { address } = useParams<{ address: string }>();
   const { pools, isLoading } = useLiquidityPools();
-  const prices = useTokenPrices();
+  const { prices } = useTokenPrices();
 
   const pool = useMemo(
     () => pools.find((p) => p.pairAddress.toLowerCase() === (address ?? '').toLowerCase()),

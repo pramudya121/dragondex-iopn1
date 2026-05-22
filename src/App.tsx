@@ -17,6 +17,8 @@ import Analytics from "./pages/Analytics";
 import Portfolio from "./pages/Portfolio";
 import CreatePool from "./pages/CreatePool";
 import Docs from "./pages/Docs";
+import Farming from "./pages/Farming";
+import AdminFarming from "./pages/AdminFarming";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -47,6 +49,8 @@ function AppRoutes() {
       <Route path="/analytics" element={<PageWrapper><Analytics /></PageWrapper>} />
       <Route path="/portfolio" element={<PageWrapper><Portfolio /></PageWrapper>} />
       <Route path="/docs" element={<PageWrapper><Docs /></PageWrapper>} />
+      <Route path="/farming" element={<PageWrapper><Farming /></PageWrapper>} />
+      <Route path="/admin/farming" element={<PageWrapper><AdminFarming /></PageWrapper>} />
       <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
     </Routes>
   );

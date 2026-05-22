@@ -85,7 +85,9 @@ export function Header() {
                 OPN Testnet
                 <ExternalLink className="w-3 h-3 opacity-70" />
               </a>
+              <NotificationCenter />
               <WalletButton />
+
 
               <Button
                 variant="ghost"

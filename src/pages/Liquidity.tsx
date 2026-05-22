@@ -453,16 +453,18 @@ export default function Liquidity() {
         className="max-w-xl mx-auto relative z-10"
       >
         <header className="text-center mb-8">
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }} 
+          <motion.span
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm mb-4"
+            className="ember-pill inline-flex items-center gap-2 text-xs mb-4"
           >
-            <Droplets className="w-4 h-4" aria-hidden="true" />
-            <span>Liquidity Management</span>
-          </motion.div>
-          <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-3">Manage Liquidity</h1>
+            <Droplets className="w-3.5 h-3.5" aria-hidden="true" />
+            <span className="uppercase tracking-[0.18em]">Liquidity Management</span>
+          </motion.span>
+          <h1 className="font-display text-3xl md:text-5xl font-bold gradient-text mb-3 tracking-tight">
+            Manage Liquidity
+          </h1>
           <TextGenerateEffect 
             words="Provide liquidity and earn 0.3% on every trade. Auto-calculation ensures perfect token ratios."
             className="text-sm md:text-base text-muted-foreground font-normal"
@@ -474,9 +476,10 @@ export default function Liquidity() {
             className="inline-flex items-center gap-1.5 mt-4 px-3 py-1 rounded-full bg-success/10 text-success text-xs"
           >
             <Shield className="w-3 h-3" aria-hidden="true" />
-            <span>Secure & Audited</span>
+            <span className="uppercase tracking-[0.14em]">Secure & Audited</span>
           </motion.div>
         </header>
+
 
         <MovingBorder duration={4000} borderRadius="1.5rem">
           <div className="p-6 bg-card/95 backdrop-blur-sm rounded-3xl">

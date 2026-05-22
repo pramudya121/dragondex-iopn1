@@ -462,6 +462,7 @@ export default function Portfolio() {
       <SendTokenModal
         isOpen={showSendModal}
         onClose={() => setShowSendModal(false)}
+        initialSymbol={sendInitialSymbol}
         tokens={tokens.map(t => ({
           symbol: t.symbol,
           name: t.name,

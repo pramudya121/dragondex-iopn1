@@ -219,14 +219,17 @@
     font-feature-settings: 'tnum' 1;
   }
 
-  /* Token input styling */
+  /* Token input — black + red neon */
   .token-input {
-    @apply bg-muted/50 border border-border/50 rounded-xl p-4 transition-all duration-200;
+    @apply rounded-xl p-4 transition-all duration-200;
+    background: hsl(0 0% 3%);
+    border: 1.5px solid hsl(0 90% 55% / 0.45);
+    box-shadow: 0 0 14px hsl(0 90% 55% / 0.22), inset 0 0 16px hsl(0 90% 55% / 0.05);
   }
 
   .token-input:focus-within {
-    @apply border-primary/50 bg-muted/70;
-    box-shadow: 0 0 20px -10px hsl(var(--primary) / 0.3);
+    border-color: hsl(0 90% 60%);
+    box-shadow: 0 0 24px hsl(0 90% 55% / 0.55), inset 0 0 18px hsl(0 90% 55% / 0.1);
   }
 
   /* Stat card */

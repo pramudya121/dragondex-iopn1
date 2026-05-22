@@ -144,7 +144,8 @@ export function HeroSection() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative h-[420px] sm:h-[520px] lg:h-[600px] w-full"
+            className="relative h-[420px] sm:h-[520px] lg:h-[640px] w-full overflow-visible"
+            style={{ background: 'transparent' }}
           >
             <TokenGlobe3D className="w-full h-full" />
           </motion.div>

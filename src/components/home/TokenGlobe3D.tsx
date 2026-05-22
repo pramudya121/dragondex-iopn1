@@ -1,6 +1,6 @@
 import { Suspense, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Html, Stars, Float } from '@react-three/drei';
+import { Html, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { TOKEN_LIST } from '@/config/contracts';
 
@@ -175,7 +175,7 @@ function GlobeScene() {
       <pointLight position={[8, 6, 8]} intensity={2.2} color="#ff5050" />
       <pointLight position={[-6, -4, -6]} intensity={1.4} color="#7a3bff" />
 
-      <Stars radius={40} depth={50} count={1500} factor={3} fade speed={1} />
+      {/* Stars removed — page background already provides starfield */}
 
       <group ref={systemRef}>
         <GlobeCore />
@@ -200,25 +200,17 @@ function GlobeScene() {
 
 export function TokenGlobe3D({ className = '' }: { className?: string }) {
   return (
-    <div className={`relative w-full ${className}`}>
+    <div className={`relative w-full h-full ${className}`} style={{ background: 'transparent' }}>
       <Canvas
         camera={{ position: [0, 1.5, 8.5], fov: 50 }}
         dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
-        style={{ background: 'transparent' }}
+        gl={{ antialias: true, alpha: true, premultipliedAlpha: false }}
+        style={{ background: 'transparent', display: 'block' }}
       >
         <Suspense fallback={null}>
           <GlobeScene />
         </Suspense>
       </Canvas>
-      {/* Radial vignette to blend with page */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse at center, transparent 50%, hsl(var(--background) / 0.85) 100%)',
-        }}
-      />
     </div>
   );
 }

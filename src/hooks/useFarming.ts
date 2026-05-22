@@ -418,6 +418,5 @@ export function calculateAPR(
 
 export { BLOCKS_PER_YEAR };
 
-}
-
 export { parseUnits };
+

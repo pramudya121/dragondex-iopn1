@@ -47,6 +47,8 @@ export default function Portfolio() {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('overview');
   const [txFilter, setTxFilter] = useState<'all' | 'swap' | 'liquidity'>('all');
   const [showSendModal, setShowSendModal] = useState(false);
+  const [sendInitialSymbol, setSendInitialSymbol] = useState<string | undefined>();
+  const openSendFor = (symbol?: string) => { setSendInitialSymbol(symbol); setShowSendModal(true); };
 
   const lpBalanceResults = useReadContracts({
     contracts: pools.map(pool => ({

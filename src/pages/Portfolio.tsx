@@ -1,7 +1,7 @@
 import { SEO } from '@/components/seo/SEO';
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, TrendingUp, TrendingDown, Coins, ExternalLink, RefreshCw, PieChart, Activity, Zap, Crown, Shield, Droplets, ArrowUpRight, ArrowDownRight, Filter, Send } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Coins, ExternalLink, RefreshCw, PieChart, Activity, Zap, Crown, Shield, Droplets, ArrowUpRight, ArrowDownRight, Filter, Send, Download } from 'lucide-react';
 import { useAccount, useBalance, useReadContracts } from 'wagmi';
 import { formatEther, formatUnits } from 'viem';
 import { useTokenBalance } from '@/hooks/useContract';

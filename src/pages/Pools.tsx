@@ -35,7 +35,14 @@ export default function Pools() {
   }, [pools, prices]);
 
   const filteredPools = useMemo(() => {
-    return pools.filter(pool => {
+    const computeTvl = (pool: typeof pools[number]) => {
+      const p0 = prices[pool.token0Symbol] || 0;
+      const p1 = prices[pool.token1Symbol] || 0;
+      const v0 = parseFloat(formatUnits(pool.reserve0, pool.token0?.decimals || 18)) * p0;
+      const v1 = parseFloat(formatUnits(pool.reserve1, pool.token1?.decimals || 18)) * p1;
+      return v0 + v1;
+    };
+    const filtered = pools.filter(pool => {
       const matchesSearch =
         pool.token0Symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
         pool.token1Symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -45,7 +52,20 @@ export default function Pools() {
       if (filter === 'empty') return matchesSearch && (pool.reserve0 === 0n || pool.reserve1 === 0n);
       return matchesSearch;
     });
-  }, [pools, searchQuery, filter]);
+    return filtered.sort((a, b) => {
+      if (sortBy === 'tvl') return computeTvl(b) - computeTvl(a);
+      if (sortBy === 'volume') {
+        // Proxy: total reserves magnitude (no historic volume on-chain yet)
+        const aMag = Number(a.reserve0) + Number(a.reserve1);
+        const bMag = Number(b.reserve0) + Number(b.reserve1);
+        return bMag - aMag;
+      }
+      // APY proxy: pools with higher TVL get lower implied APR — invert
+      const tA = computeTvl(a) || 1;
+      const tB = computeTvl(b) || 1;
+      return (1 / tA) - (1 / tB);
+    });
+  }, [pools, prices, searchQuery, filter, sortBy]);
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-8 pb-24 lg:pb-8 relative min-h-screen">

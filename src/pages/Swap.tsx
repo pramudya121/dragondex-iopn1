@@ -1,6 +1,7 @@
 import { SEO } from '@/components/seo/SEO';
 import { motion } from 'framer-motion';
 import { SwapCard } from '@/components/swap/SwapCard';
+import { RecentSwapsPanel } from '@/components/swap/RecentSwapsPanel';
 import { Spotlight } from '@/components/ui/magic/Spotlight';
 import { GlowingStarsBackground } from '@/components/ui/aceternity/GlowingStars';
 import { ParticleField } from '@/components/ui/premium/ParticleField';
@@ -71,6 +72,8 @@ export default function Swap() {
         >
           <SwapCard />
         </motion.div>
+
+        <RecentSwapsPanel />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { SEO } from '@/components/seo/SEO';
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, TrendingUp, TrendingDown, Coins, ExternalLink, RefreshCw, PieChart, Activity, Zap, Crown, Shield, Droplets, ArrowUpRight, ArrowDownRight, Filter, Send } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Coins, ExternalLink, RefreshCw, PieChart, Activity, Zap, Crown, Shield, Droplets, ArrowUpRight, ArrowDownRight, Filter, Send, Download } from 'lucide-react';
 import { useAccount, useBalance, useReadContracts } from 'wagmi';
 import { formatEther, formatUnits } from 'viem';
 import { useTokenBalance } from '@/hooks/useContract';
@@ -163,10 +163,44 @@ export default function Portfolio() {
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
-          <Button className="btn-dragon" size="sm" onClick={() => openSendFor()}>
-            <Send className="w-4 h-4 mr-2" />
-            Send Token
-          </Button>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <Button className="btn-dragon" size="sm" onClick={() => openSendFor()}>
+              <Send className="w-4 h-4 mr-2" />
+              Send Token
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!transactions.length) return;
+                const header = ['hash','type','status','timestamp','from','to','amountFrom','amountTo'];
+                const rows = transactions.map((t) => [
+                  t.hash,
+                  t.type,
+                  t.status,
+                  new Date(t.timestamp).toISOString(),
+                  t.details.fromToken || t.details.tokenA || '',
+                  t.details.toToken || t.details.tokenB || '',
+                  t.details.fromAmount || t.details.amountA || '',
+                  t.details.toAmount || t.details.amountB || '',
+                ]);
+                const csv = [header, ...rows]
+                  .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+                  .join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dragondex-portfolio-${Date.now()}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              disabled={!transactions.length}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards - Always visible */}

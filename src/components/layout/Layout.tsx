@@ -1,13 +1,18 @@
 import { ReactNode, lazy, Suspense, useEffect, useState } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
-import { WaveBackground }  from '@/components/ui/WaveBackground';
-import { StarCometOverlay } from '@/components/ui/StarCometOverlay';
 
-// Defer DragonBot (chat + AI tools) until the browser is idle — keeps it off the critical path.
+// Defer decorative backgrounds — pure visuals, not part of the critical path.
+const WaveBackground = lazy(() =>
+  import('@/components/ui/WaveBackground').then(m => ({ default: m.WaveBackground }))
+);
+const StarCometOverlay = lazy(() =>
+  import('@/components/ui/StarCometOverlay').then(m => ({ default: m.StarCometOverlay }))
+);
 const DragonBot = lazy(() =>
   import('@/components/chat/DragonBot').then(m => ({ default: m.DragonBot }))
 );
+
 
 interface LayoutProps {
   children: ReactNode;
@@ -29,8 +34,12 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen relative flex flex-col" style={{ background: 'hsl(0 0% 3%)' }}>
-      <WaveBackground />
-      <StarCometOverlay starCount={100} cometCount={8} />
+      <Suspense fallback={null}>
+        <WaveBackground />
+        <StarCometOverlay starCount={100} cometCount={8} />
+      </Suspense>
+
+
 
       <Header />
       <main className="relative z-10 pt-20 pb-12 flex-1">

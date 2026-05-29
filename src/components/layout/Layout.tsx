@@ -34,8 +34,12 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen relative flex flex-col" style={{ background: 'hsl(0 0% 3%)' }}>
-      <WaveBackground />
-      <StarCometOverlay starCount={100} cometCount={8} />
+      <Suspense fallback={null}>
+        <WaveBackground />
+        <StarCometOverlay starCount={100} cometCount={8} />
+      </Suspense>
+
+
 
       <Header />
       <main className="relative z-10 pt-20 pb-12 flex-1">

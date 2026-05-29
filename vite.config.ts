@@ -19,4 +19,22 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
+  build: {
+    target: "es2020",
+    cssCodeSplit: true,
+    sourcemap: false,
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "web3-vendor": ["wagmi", "viem", "@tanstack/react-query"],
+          "three-vendor": ["three", "@react-three/fiber", "@react-three/drei"],
+          "charts-vendor": ["recharts"],
+          "motion-vendor": ["framer-motion"],
+        },
+      },
+    },
+  },
 }));
+

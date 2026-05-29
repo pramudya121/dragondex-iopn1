@@ -1,13 +1,18 @@
 import { ReactNode, lazy, Suspense, useEffect, useState } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
-import { WaveBackground }  from '@/components/ui/WaveBackground';
-import { StarCometOverlay } from '@/components/ui/StarCometOverlay';
 
-// Defer DragonBot (chat + AI tools) until the browser is idle — keeps it off the critical path.
+// Defer decorative backgrounds — pure visuals, not part of the critical path.
+const WaveBackground = lazy(() =>
+  import('@/components/ui/WaveBackground').then(m => ({ default: m.WaveBackground }))
+);
+const StarCometOverlay = lazy(() =>
+  import('@/components/ui/StarCometOverlay').then(m => ({ default: m.StarCometOverlay }))
+);
 const DragonBot = lazy(() =>
   import('@/components/chat/DragonBot').then(m => ({ default: m.DragonBot }))
 );
+
 
 interface LayoutProps {
   children: ReactNode;

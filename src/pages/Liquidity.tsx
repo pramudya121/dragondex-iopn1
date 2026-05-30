@@ -415,15 +415,28 @@ export default function Liquidity() {
       return;
     }
 
+    if (!lpTotalSupply || lpTotalSupply === 0n || reserveA === 0n || reserveB === 0n) {
+      toast.error('Reserves belum siap, coba lagi sebentar');
+      return;
+    }
+
     toast.loading('Removing liquidity...', { id: 'remove-liq' });
     const liquidityToRemove = (lpBalance * BigInt(removePercent)) / 100n;
     const deadline = getSafeDeadline(30);
 
+    // Compute expected token amounts and apply 1% slippage tolerance (MEV protection)
+    const expectedA = (reserveA * liquidityToRemove) / lpTotalSupply;
+    const expectedB = (reserveB * liquidityToRemove) / lpTotalSupply;
+    const minA = (expectedA * 99n) / 100n;
+    const minB = (expectedB * 99n) / 100n;
+
     if (tokenA.isNative || tokenB.isNative) {
       const token = tokenA.isNative ? tokenB : tokenA;
-      router.removeLiquidityETH(token.address as `0x${string}`, liquidityToRemove, 0n, 0n, address, deadline);
+      const tokenMin = tokenA.isNative ? minB : minA;
+      const ethMin = tokenA.isNative ? minA : minB;
+      router.removeLiquidityETH(token.address as `0x${string}`, liquidityToRemove, tokenMin, ethMin, address, deadline);
     } else {
-      router.removeLiquidity(tokenA.address as `0x${string}`, tokenB.address as `0x${string}`, liquidityToRemove, 0n, 0n, address, deadline);
+      router.removeLiquidity(tokenA.address as `0x${string}`, tokenB.address as `0x${string}`, liquidityToRemove, minA, minB, address, deadline);
     }
   };
 

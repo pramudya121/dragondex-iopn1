@@ -155,12 +155,35 @@ export function useAgentExecutor() {
           if (!pair || pair === '0x0000000000000000000000000000000000000000') throw new Error('Pair not found');
           await ensureAllowance(pair, CONTRACTS.ROUTER as Address, lpAmount);
 
+          // Read pair reserves + totalSupply to compute MEV-safe minimums (1% slippage)
+          const pairAbi = [
+            { inputs: [], name: 'getReserves', outputs: [{type:'uint112'},{type:'uint112'},{type:'uint32'}], stateMutability:'view', type:'function' },
+            { inputs: [], name: 'token0', outputs: [{type:'address'}], stateMutability:'view', type:'function' },
+            { inputs: [], name: 'totalSupply', outputs: [{type:'uint256'}], stateMutability:'view', type:'function' },
+          ] as const;
+          const [reserves, token0, totalSupply] = await Promise.all([
+            publicClient.readContract({ address: pair, abi: pairAbi, functionName: 'getReserves' }) as Promise<[bigint, bigint, number]>,
+            publicClient.readContract({ address: pair, abi: pairAbi, functionName: 'token0' }) as Promise<Address>,
+            publicClient.readContract({ address: pair, abi: pairAbi, functionName: 'totalSupply' }) as Promise<bigint>,
+          ]);
+          if (totalSupply === 0n) throw new Error('Pool has no liquidity');
+          const aAddr = (a.isNative ? CONTRACTS.WETH : a.address).toLowerCase();
+          const aIsToken0 = token0.toLowerCase() === aAddr;
+          const reserveA = aIsToken0 ? reserves[0] : reserves[1];
+          const reserveB = aIsToken0 ? reserves[1] : reserves[0];
+          const expectedA = (reserveA * lpAmount) / totalSupply;
+          const expectedB = (reserveB * lpAmount) / totalSupply;
+          const minA = (expectedA * 99n) / 100n;
+          const minB = (expectedB * 99n) / 100n;
+
           if (a.isNative || b.isNative) {
             const tokenSide = a.isNative ? b : a;
+            const tokenMin = a.isNative ? minB : minA;
+            const ethMin = a.isNative ? minA : minB;
             const hash = await (writeContractAsync as any)({
               address: CONTRACTS.ROUTER as Address, abi: ROUTER_ABI,
               functionName: 'removeLiquidityETH',
-              args: [tokenSide.address as Address, lpAmount, 0n, 0n, address, deadline],
+              args: [tokenSide.address as Address, lpAmount, tokenMin, ethMin, address, deadline],
               gas: 500000n,
             });
             return hash;
@@ -168,7 +191,7 @@ export function useAgentExecutor() {
           const hash = await (writeContractAsync as any)({
             address: CONTRACTS.ROUTER as Address, abi: ROUTER_ABI,
             functionName: 'removeLiquidity',
-            args: [a.address as Address, b.address as Address, lpAmount, 0n, 0n, address, deadline],
+            args: [a.address as Address, b.address as Address, lpAmount, minA, minB, address, deadline],
             gas: 500000n,
           });
           return hash;

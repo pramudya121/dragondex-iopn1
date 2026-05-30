@@ -66,6 +66,7 @@ function StatCard({ icon: Icon, label, value, prefix = '', suffix = '', delay = 
 export default function Analytics() {
   const { pools, pairCount, isLoading, refetch } = useLiquidityPools();
   const { prices } = useTokenPrices();
+  const { logs: swapLogs, stats: volStats, isLoading: volLoading, refetch: refetchVol } = useSwapVolume(pools, prices);
   const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview');
 
   const totalTVL = useMemo(() => {

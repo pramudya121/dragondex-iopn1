@@ -273,7 +273,7 @@ serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (m.role !== "user" && m.role !== "assistant" && m.role !== "system") {
+      if (m.role !== "user" && m.role !== "assistant") {
         return new Response(JSON.stringify({ error: "Invalid message role" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -282,7 +282,12 @@ serve(async (req) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) {
+      console.error("dragon-chat: LOVABLE_API_KEY is not configured");
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     let priceContext = "";
     try {
@@ -338,7 +343,7 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("dragon-chat error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

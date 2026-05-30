@@ -1,9 +1,10 @@
 import { SEO } from '@/components/seo/SEO';
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart3, TrendingUp, DollarSign, Activity, Users, Layers, Droplets, ExternalLink, RefreshCw, Coins, ArrowUpRight, Percent } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, Activity, Users, Layers, Droplets, ExternalLink, RefreshCw, Coins, ArrowUpRight, Percent, ArrowRightLeft, Zap } from 'lucide-react';
 import { useLiquidityPools } from '@/hooks/useLiquidityPools';
 import { useTokenPrices } from '@/hooks/usePrices';
+import { useSwapVolume } from '@/hooks/useSwapVolume';
 import { NumberTicker } from '@/components/ui/magic/NumberTicker';
 import { BorderBeam } from '@/components/ui/magic/BorderBeam';
 import { Spotlight } from '@/components/ui/magic/Spotlight';
@@ -14,12 +15,13 @@ import { formatUnits } from 'viem';
 import { TOKEN_LIST } from '@/config/contracts';
 import { Link } from 'react-router-dom';
 
-type AnalyticsTab = 'overview' | 'pools' | 'tokens';
+type AnalyticsTab = 'overview' | 'pools' | 'tokens' | 'activity';
 
 const TABS: { id: AnalyticsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
   { id: 'pools', label: 'Pools', icon: <Droplets className="w-4 h-4" /> },
   { id: 'tokens', label: 'Tokens', icon: <Coins className="w-4 h-4" /> },
+  { id: 'activity', label: 'Activity', icon: <Activity className="w-4 h-4" /> },
 ];
 
 interface StatCardProps {

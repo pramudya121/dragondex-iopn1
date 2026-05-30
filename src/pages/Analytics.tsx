@@ -145,11 +145,13 @@ export default function Analytics() {
 
   const stats = [
     { icon: DollarSign, label: 'Total Value Locked', value: totalTVL, prefix: '$', isOnChain: true },
+    { icon: ArrowRightLeft, label: 'Volume (recent)', value: volStats.totalVolume, prefix: '$', isOnChain: true },
+    { icon: Zap, label: 'Swaps (recent)', value: volStats.swapCount, isOnChain: true },
+    { icon: Users, label: 'Unique Traders', value: volStats.uniqueTraders, isOnChain: true },
     { icon: Layers, label: 'Total Pools', value: pairCount, isOnChain: true },
     { icon: Activity, label: 'Active Pools', value: activePools, isOnChain: true },
     { icon: Coins, label: 'Listed Tokens', value: TOKEN_LIST.length, isOnChain: true },
-    { icon: Users, label: 'Tokens in Pools', value: uniqueTokens, isOnChain: true },
-    { icon: Percent, label: 'Pool Fee', value: 0.3, suffix: '%', isOnChain: true },
+    { icon: Percent, label: 'Est. Fees Earned', value: volStats.estimatedFees, prefix: '$', isOnChain: true },
   ];
 
   return (

@@ -429,6 +429,98 @@ export default function Analytics() {
               </div>
             </motion.div>
           )}
+
+          {activeTab === 'activity' && (
+            <motion.div key="activity" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              <div className="glass-card p-4 md:p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm md:text-base font-semibold flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-primary" />
+                      Recent Swaps
+                    </h3>
+                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
+                      Live on-chain Swap events across all pools
+                    </p>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/20 text-success shrink-0">
+                    {swapLogs.length} swaps
+                  </span>
+                </div>
+
+                {volLoading && swapLogs.length === 0 ? (
+                  <div className="space-y-2">
+                    {[...Array(5)].map((_, i) => <TableRowSkeleton key={i} columns={5} />)}
+                  </div>
+                ) : swapLogs.length === 0 ? (
+                  <div className="py-10 text-center text-muted-foreground text-sm">
+                    No recent swap activity detected on-chain
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto -mx-4 md:mx-0">
+                    <table className="w-full min-w-[560px]">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Pool</th>
+                          <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Swap</th>
+                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Value</th>
+                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground hidden sm:table-cell">Trader</th>
+                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Tx</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {swapLogs.slice(0, 50).map((log, i) => (
+                          <motion.tr
+                            key={`${log.txHash}-${i}`}
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: Math.min(i * 0.02, 0.4) }}
+                            className="border-b border-border/30 hover:bg-muted/20 transition-colors"
+                          >
+                            <td className="py-2.5 px-3">
+                              <span className="text-xs font-medium">{log.token0Symbol}/{log.token1Symbol}</span>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className="font-mono">{log.amountIn.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
+                                <span className="text-muted-foreground">{log.tokenInSymbol}</span>
+                                <ArrowRightLeft className="w-3 h-3 text-primary mx-0.5" />
+                                <span className="font-mono">{log.amountOut.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
+                                <span className="text-muted-foreground">{log.tokenOutSymbol}</span>
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-right text-xs font-medium text-success">
+                              {log.volumeUSD > 0 ? `$${log.volumeUSD.toFixed(2)}` : '—'}
+                            </td>
+                            <td className="py-2.5 px-3 text-right hidden sm:table-cell">
+                              <a
+                                href={`https://testnet.iopn.tech/address/${log.sender}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] font-mono text-muted-foreground hover:text-primary"
+                              >
+                                {log.sender.slice(0, 6)}…{log.sender.slice(-4)}
+                              </a>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <a
+                                href={`https://testnet.iopn.tech/tx/${log.txHash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline inline-flex"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </motion.div>
     </div>

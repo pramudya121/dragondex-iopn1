@@ -204,8 +204,8 @@ export default function Analytics() {
               <span>{tab.label}</span>
             </button>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isLoading} className="ml-1 shrink-0">
-            <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
+          <Button variant="ghost" size="sm" onClick={() => { refetch(); refetchVol(); }} disabled={isLoading || volLoading} className="ml-1 shrink-0">
+            <RefreshCw className={cn("w-3.5 h-3.5", (isLoading || volLoading) && "animate-spin")} />
           </Button>
         </div>
 

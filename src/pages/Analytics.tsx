@@ -1,9 +1,10 @@
 import { SEO } from '@/components/seo/SEO';
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart3, TrendingUp, DollarSign, Activity, Users, Layers, Droplets, ExternalLink, RefreshCw, Coins, ArrowUpRight, Percent } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, Activity, Users, Layers, Droplets, ExternalLink, RefreshCw, Coins, ArrowUpRight, Percent, ArrowRightLeft, Zap } from 'lucide-react';
 import { useLiquidityPools } from '@/hooks/useLiquidityPools';
 import { useTokenPrices } from '@/hooks/usePrices';
+import { useSwapVolume } from '@/hooks/useSwapVolume';
 import { NumberTicker } from '@/components/ui/magic/NumberTicker';
 import { BorderBeam } from '@/components/ui/magic/BorderBeam';
 import { Spotlight } from '@/components/ui/magic/Spotlight';
@@ -14,12 +15,13 @@ import { formatUnits } from 'viem';
 import { TOKEN_LIST } from '@/config/contracts';
 import { Link } from 'react-router-dom';
 
-type AnalyticsTab = 'overview' | 'pools' | 'tokens';
+type AnalyticsTab = 'overview' | 'pools' | 'tokens' | 'activity';
 
 const TABS: { id: AnalyticsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
   { id: 'pools', label: 'Pools', icon: <Droplets className="w-4 h-4" /> },
   { id: 'tokens', label: 'Tokens', icon: <Coins className="w-4 h-4" /> },
+  { id: 'activity', label: 'Activity', icon: <Activity className="w-4 h-4" /> },
 ];
 
 interface StatCardProps {
@@ -64,6 +66,7 @@ function StatCard({ icon: Icon, label, value, prefix = '', suffix = '', delay = 
 export default function Analytics() {
   const { pools, pairCount, isLoading, refetch } = useLiquidityPools();
   const { prices } = useTokenPrices();
+  const { logs: swapLogs, stats: volStats, isLoading: volLoading, refetch: refetchVol } = useSwapVolume(pools, prices);
   const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview');
 
   const totalTVL = useMemo(() => {
@@ -97,10 +100,11 @@ export default function Analytics() {
         const tvl = value0 + value1;
         const reserve0F = parseFloat(formatUnits(pool.reserve0, pool.token0?.decimals || 18));
         const reserve1F = parseFloat(formatUnits(pool.reserve1, pool.token1?.decimals || 18));
-        return { ...pool, tvl, reserve0F, reserve1F };
+        const volume = volStats.perPool[pool.pairAddress] || 0;
+        return { ...pool, tvl, reserve0F, reserve1F, volume };
       })
       .sort((a, b) => b.tvl - a.tvl);
-  }, [pools, prices]);
+  }, [pools, prices, volStats]);
 
   // Token analytics: aggregate liquidity per token
   const tokenAnalytics = useMemo(() => {
@@ -141,11 +145,13 @@ export default function Analytics() {
 
   const stats = [
     { icon: DollarSign, label: 'Total Value Locked', value: totalTVL, prefix: '$', isOnChain: true },
+    { icon: ArrowRightLeft, label: 'Volume (recent)', value: volStats.totalVolume, prefix: '$', isOnChain: true },
+    { icon: Zap, label: 'Swaps (recent)', value: volStats.swapCount, isOnChain: true },
+    { icon: Users, label: 'Unique Traders', value: volStats.uniqueTraders, isOnChain: true },
     { icon: Layers, label: 'Total Pools', value: pairCount, isOnChain: true },
     { icon: Activity, label: 'Active Pools', value: activePools, isOnChain: true },
     { icon: Coins, label: 'Listed Tokens', value: TOKEN_LIST.length, isOnChain: true },
-    { icon: Users, label: 'Tokens in Pools', value: uniqueTokens, isOnChain: true },
-    { icon: Percent, label: 'Pool Fee', value: 0.3, suffix: '%', isOnChain: true },
+    { icon: Percent, label: 'Est. Fees Earned', value: volStats.estimatedFees, prefix: '$', isOnChain: true },
   ];
 
   return (
@@ -171,12 +177,12 @@ export default function Analytics() {
         </div>
         
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
           {isLoading ? (
-            [...Array(6)].map((_, i) => <StatCardSkeleton key={i} />)
+            [...Array(8)].map((_, i) => <StatCardSkeleton key={i} />)
           ) : (
-            stats.map((s, i) => (
-              <StatCard key={s.label} icon={s.icon} label={s.label} value={s.value} prefix={s.prefix} suffix={s.suffix} isOnChain={s.isOnChain} delay={i * 0.08} />
+            stats.map((s: any, i) => (
+              <StatCard key={s.label} icon={s.icon} label={s.label} value={s.value} prefix={s.prefix} suffix={s.suffix} isOnChain={s.isOnChain} delay={i * 0.06} />
             ))
           )}
         </div>
@@ -198,8 +204,8 @@ export default function Analytics() {
               <span>{tab.label}</span>
             </button>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isLoading} className="ml-1 shrink-0">
-            <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
+          <Button variant="ghost" size="sm" onClick={() => { refetch(); refetchVol(); }} disabled={isLoading || volLoading} className="ml-1 shrink-0">
+            <RefreshCw className={cn("w-3.5 h-3.5", (isLoading || volLoading) && "animate-spin")} />
           </Button>
         </div>
 
@@ -420,6 +426,98 @@ export default function Analytics() {
                     </motion.div>
                   ))}
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'activity' && (
+            <motion.div key="activity" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              <div className="glass-card p-4 md:p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm md:text-base font-semibold flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-primary" />
+                      Recent Swaps
+                    </h3>
+                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
+                      Live on-chain Swap events across all pools
+                    </p>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/20 text-success shrink-0">
+                    {swapLogs.length} swaps
+                  </span>
+                </div>
+
+                {volLoading && swapLogs.length === 0 ? (
+                  <div className="space-y-2">
+                    {[...Array(5)].map((_, i) => <TableRowSkeleton key={i} columns={5} />)}
+                  </div>
+                ) : swapLogs.length === 0 ? (
+                  <div className="py-10 text-center text-muted-foreground text-sm">
+                    No recent swap activity detected on-chain
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto -mx-4 md:mx-0">
+                    <table className="w-full min-w-[560px]">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Pool</th>
+                          <th className="text-left py-2 px-3 text-xs font-medium text-muted-foreground">Swap</th>
+                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Value</th>
+                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground hidden sm:table-cell">Trader</th>
+                          <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">Tx</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {swapLogs.slice(0, 50).map((log, i) => (
+                          <motion.tr
+                            key={`${log.txHash}-${i}`}
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: Math.min(i * 0.02, 0.4) }}
+                            className="border-b border-border/30 hover:bg-muted/20 transition-colors"
+                          >
+                            <td className="py-2.5 px-3">
+                              <span className="text-xs font-medium">{log.token0Symbol}/{log.token1Symbol}</span>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className="font-mono">{log.amountIn.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
+                                <span className="text-muted-foreground">{log.tokenInSymbol}</span>
+                                <ArrowRightLeft className="w-3 h-3 text-primary mx-0.5" />
+                                <span className="font-mono">{log.amountOut.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
+                                <span className="text-muted-foreground">{log.tokenOutSymbol}</span>
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-right text-xs font-medium text-success">
+                              {log.volumeUSD > 0 ? `$${log.volumeUSD.toFixed(2)}` : '—'}
+                            </td>
+                            <td className="py-2.5 px-3 text-right hidden sm:table-cell">
+                              <a
+                                href={`https://testnet.iopn.tech/address/${log.sender}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] font-mono text-muted-foreground hover:text-primary"
+                              >
+                                {log.sender.slice(0, 6)}…{log.sender.slice(-4)}
+                              </a>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <a
+                                href={`https://testnet.iopn.tech/tx/${log.txHash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline inline-flex"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

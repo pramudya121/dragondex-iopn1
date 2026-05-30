@@ -100,10 +100,11 @@ export default function Analytics() {
         const tvl = value0 + value1;
         const reserve0F = parseFloat(formatUnits(pool.reserve0, pool.token0?.decimals || 18));
         const reserve1F = parseFloat(formatUnits(pool.reserve1, pool.token1?.decimals || 18));
-        return { ...pool, tvl, reserve0F, reserve1F };
+        const volume = volStats.perPool[pool.pairAddress] || 0;
+        return { ...pool, tvl, reserve0F, reserve1F, volume };
       })
       .sort((a, b) => b.tvl - a.tvl);
-  }, [pools, prices]);
+  }, [pools, prices, volStats]);
 
   // Token analytics: aggregate liquidity per token
   const tokenAnalytics = useMemo(() => {

@@ -177,12 +177,12 @@ export default function Analytics() {
         </div>
         
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
           {isLoading ? (
-            [...Array(6)].map((_, i) => <StatCardSkeleton key={i} />)
+            [...Array(8)].map((_, i) => <StatCardSkeleton key={i} />)
           ) : (
-            stats.map((s, i) => (
-              <StatCard key={s.label} icon={s.icon} label={s.label} value={s.value} prefix={s.prefix} suffix={s.suffix} isOnChain={s.isOnChain} delay={i * 0.08} />
+            stats.map((s: any, i) => (
+              <StatCard key={s.label} icon={s.icon} label={s.label} value={s.value} prefix={s.prefix} suffix={s.suffix} isOnChain={s.isOnChain} delay={i * 0.06} />
             ))
           )}
         </div>

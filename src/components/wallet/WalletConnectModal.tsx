@@ -31,26 +31,26 @@ const hasProvider = (key: string) => {
 // IDs sourced from https://explorer.walletconnect.com/?type=wallet
 const WALLETS: Record<string, WalletMeta> = {
   'Rabby Wallet': {
-    icons: [wcLogo('7897a18d-fa44-4be6-c441-89f23e4ade00')],
+    icons: [wcLogo('255e6ba2-8dfd-43ad-e88e-57cbb98f6800')],
     color: '#7C8FEC',
     installUrl: 'https://rabby.io/',
     aliases: ['Rabby'],
     detector: () => hasProvider('isRabby'),
   },
   'Keplr': {
-    icons: [wcLogo('6f10d860-c10e-4912-b3bf-3a4e8d2cc500')],
+    icons: [wcLogo('750e0f10-0700-4ca5-7c0d-b4a55da72f00')],
     color: '#7B68EE',
     installUrl: 'https://www.keplr.app/',
     detector: () => isBrowser && !!(window as any).keplr,
   },
   'SubWallet': {
-    icons: [wcLogo('40bd1bd2-3954-4fb1-bafa-cc0c08a3da00')],
+    icons: [wcLogo('03f5c08c-fb30-46a0-ca5c-d8fdd7250b00')],
     color: '#004BFF',
     installUrl: 'https://www.subwallet.app/',
     detector: () => isBrowser && (!!(window as any).SubWallet || hasProvider('isSubWallet')),
   },
   'MetaMask': {
-    icons: [wcLogo('5195e9db-94d8-4579-6f11-ef553be95100')],
+    icons: [wcLogo('eebe4a7f-7166-402f-92e0-1f64ca2aa800')],
     color: '#F6851B',
     installUrl: 'https://metamask.io/download/',
     detector: () => hasProvider('isMetaMask') && !hasProvider('isRabby') && !hasProvider('isOkxWallet'),
@@ -63,38 +63,34 @@ const WALLETS: Record<string, WalletMeta> = {
     detector: () => isBrowser && (!!(window as any).okxwallet || hasProvider('isOkxWallet')),
   },
   'Bitget Wallet': {
-    icons: [wcLogo('1bf2b56b-1cab-431d-d2e7-eb47cb053500')],
+    icons: [wcLogo('2b569b7f-e6c6-4faa-8e5a-ecd4dec8cf00')],
     color: '#00D0AA',
     installUrl: 'https://web3.bitget.com/',
     aliases: ['Bitget', 'BitKeep'],
     detector: () => isBrowser && (!!(window as any).bitkeep || hasProvider('isBitKeep')),
   },
   'Coinbase Wallet': {
-    icons: [wcLogo('a5ebc364-8f91-4200-fcc6-be81310a0000')],
+    icons: [wcLogo('04c88bf0-f115-4686-8c29-90a3d018a400')],
     color: '#0052FF',
     installUrl: 'https://www.coinbase.com/wallet',
-    aliases: ['Coinbase'],
+    aliases: ['Coinbase', 'Base'],
     detector: () => hasProvider('isCoinbaseWallet'),
   },
   'Trust Wallet': {
-    icons: [wcLogo('0528ee7e-16d1-4089-21e3-bbfb41933100')],
+    icons: [wcLogo('7677b54f-3486-46e2-4e37-bf8747814f00')],
     color: '#3375BB',
     installUrl: 'https://trustwallet.com/',
     aliases: ['Trust'],
     detector: () => hasProvider('isTrust'),
   },
   'Phantom': {
-    icons: [wcLogo('1ae92b26-df6c-4f24-b294-c30b6dab2700')],
+    icons: [wcLogo('b6ec7b81-bb4f-427d-e290-7631e6e50d00')],
     color: '#AB9FF2',
     installUrl: 'https://phantom.app/',
     detector: () => isBrowser && !!(window as any).phantom,
   },
-  'WalletConnect': {
-    icons: [wcLogo('ef333840-475d-4798-7869-cf4e6e573500')],
-    color: '#3B99FC',
-  },
   'Safe': {
-    icons: [wcLogo('a1cea2c0-7e22-46c9-2cd7-1832ee4efa00')],
+    icons: [wcLogo('3913df81-63c2-4413-d60b-8ff83cbed500')],
     color: '#12FF80',
     installUrl: 'https://safe.global/',
     aliases: ['Safe Wallet', 'Gnosis Safe'],
@@ -103,7 +99,7 @@ const WALLETS: Record<string, WalletMeta> = {
     icons: [wcLogo('a7f416de-aa03-4c5e-3280-ab49269aef00')],
     color: '#000000',
     installUrl: 'https://www.ledger.com/ledger-live',
-    aliases: ['Ledger'],
+    aliases: ['Ledger', 'Ledger Wallet'],
   },
   'Zerion': {
     icons: [wcLogo('73f6f52f-7862-49e7-bb85-ba93ab72cc00')],
@@ -118,7 +114,7 @@ const WALLETS: Record<string, WalletMeta> = {
     detector: () => hasProvider('isRainbow'),
   },
   'Uniswap Wallet': {
-    icons: [wcLogo('e9ff15be-29b5-4ca5-cea3-cb88a4ba0c00')],
+    icons: [wcLogo('bff9cf1f-df19-42ce-f62a-87f04df13c00')],
     color: '#FF007A',
     installUrl: 'https://wallet.uniswap.org/',
     aliases: ['Uniswap'],
@@ -130,28 +126,28 @@ const WALLETS: Record<string, WalletMeta> = {
     aliases: ['Binance Wallet', 'Binance'],
   },
   'TokenPocket': {
-    icons: [wcLogo('20459438-d12e-4f57-a982-c2d2c8e57100')],
+    icons: [wcLogo('cfe00608-cb9e-45e3-0d08-5ffc7f5ad200')],
     color: '#2980FE',
     installUrl: 'https://www.tokenpocket.pro/',
     detector: () => hasProvider('isTokenPocket'),
   },
   'imToken': {
-    icons: [wcLogo('eff9c6c8-4f24-4f0e-d9da-79355c5fc500')],
+    icons: [wcLogo('c84b4d9d-9525-4bb5-b373-934b46eafc00')],
     color: '#11C4D1',
     installUrl: 'https://token.im/',
     detector: () => hasProvider('isImToken'),
   },
   'Frame': {
-    icons: [wcLogo('0ce87ca8-901f-4271-c52f-2fce1ce81a00')],
+    icons: [wcLogo('29b4f569-c1e8-4144-132e-629bf5290f00')],
     color: '#16BAC5',
     installUrl: 'https://frame.sh/',
     detector: () => hasProvider('isFrame'),
   },
-  'XDEFI Wallet': {
-    icons: [wcLogo('3f7075d0-4ab7-4db5-404d-3e4c05e6fe00')],
+  'Ctrl Wallet': {
+    icons: [wcLogo('749856b0-3f0e-4876-4d0f-27835310db00')],
     color: '#2C5BFF',
-    installUrl: 'https://www.xdefi.io/',
-    aliases: ['XDEFI', 'Ctrl Wallet'],
+    installUrl: 'https://ctrl.xyz/',
+    aliases: ['XDEFI', 'XDEFI Wallet'],
     detector: () => hasProvider('isXDEFI'),
   },
   'Exodus': {
@@ -161,16 +157,66 @@ const WALLETS: Record<string, WalletMeta> = {
     detector: () => hasProvider('isExodus'),
   },
   '1inch Wallet': {
-    icons: [wcLogo('52b1da3c-9e72-40ae-5dac-6142addd9c00')],
+    icons: [wcLogo('3e60118c-b9a9-43df-7975-33ebc8014400')],
     color: '#1B314F',
     installUrl: 'https://1inch.io/wallet/',
     aliases: ['1inch'],
   },
   'Backpack': {
-    icons: [wcLogo('aa389368-310c-4495-7f7a-394390a07c00')],
+    icons: [wcLogo('71ca9daf-a31e-4d2a-fd01-f5dc2dc66900')],
     color: '#E33E3F',
     installUrl: 'https://backpack.app/',
     detector: () => hasProvider('isBackpack'),
+  },
+  'Bybit Wallet': {
+    icons: [wcLogo('b9e64f74-0176-44fd-c603-673a45ed5b00')],
+    color: '#F7A600',
+    installUrl: 'https://www.bybit.com/web3/',
+    aliases: ['Bybit'],
+  },
+  'SafePal': {
+    icons: [wcLogo('252753e7-b783-4e03-7f77-d39864530900')],
+    color: '#3375BB',
+    installUrl: 'https://www.safepal.com/',
+  },
+  'Trezor Suite': {
+    icons: [wcLogo('3816cd81-6f38-4fa1-7900-f451a1727300')],
+    color: '#000000',
+    installUrl: 'https://suite.trezor.io/',
+    aliases: ['Trezor'],
+  },
+  'Crypto.com Onchain': {
+    icons: [wcLogo('88388eb4-4471-4e72-c4b4-852d496fea00')],
+    color: '#003D8F',
+    installUrl: 'https://crypto.com/defi-wallet',
+    aliases: ['Crypto.com', 'Crypto.com DeFi Wallet'],
+  },
+  'OneKey': {
+    icons: [wcLogo('2067c771-93e8-4b32-b388-b2a0e1d4dc00')],
+    color: '#44D62C',
+    installUrl: 'https://onekey.so/',
+    detector: () => hasProvider('isOneKey'),
+  },
+  'Argent': {
+    icons: [wcLogo('215158d2-614b-49c9-410f-77aa661c3900')],
+    color: '#FF875B',
+    installUrl: 'https://www.argent.xyz/',
+  },
+  'Core': {
+    icons: [wcLogo('aec2da5c-8867-4a53-8f3d-4d547a30b400')],
+    color: '#000000',
+    installUrl: 'https://core.app/',
+    detector: () => hasProvider('isAvalanche'),
+  },
+  'Kraken Wallet': {
+    icons: [wcLogo('8909e826-63e4-42b3-60b2-8a6a54060900')],
+    color: '#5841D8',
+    installUrl: 'https://www.kraken.com/wallet',
+    aliases: ['Kraken'],
+  },
+  'WalletConnect': {
+    icons: [wcLogo('ef333840-475d-4798-7869-cf4e6e573500')],
+    color: '#3B99FC',
   },
 };
 

@@ -93,6 +93,85 @@ const WALLETS: Record<string, WalletMeta> = {
     icons: [wcLogo('ef333840-475d-4798-7869-cf4e6e573500')],
     color: '#3B99FC',
   },
+  'Safe': {
+    icons: [wcLogo('a1cea2c0-7e22-46c9-2cd7-1832ee4efa00')],
+    color: '#12FF80',
+    installUrl: 'https://safe.global/',
+    aliases: ['Safe Wallet', 'Gnosis Safe'],
+  },
+  'Ledger Live': {
+    icons: [wcLogo('a7f416de-aa03-4c5e-3280-ab49269aef00')],
+    color: '#000000',
+    installUrl: 'https://www.ledger.com/ledger-live',
+    aliases: ['Ledger'],
+  },
+  'Zerion': {
+    icons: [wcLogo('73f6f52f-7862-49e7-bb85-ba93ab72cc00')],
+    color: '#2962EF',
+    installUrl: 'https://zerion.io/',
+    detector: () => hasProvider('isZerion'),
+  },
+  'Rainbow': {
+    icons: [wcLogo('7a33d7f1-3d12-4b5c-f3ee-5cd83cb1b500')],
+    color: '#001E59',
+    installUrl: 'https://rainbow.me/',
+    detector: () => hasProvider('isRainbow'),
+  },
+  'Uniswap Wallet': {
+    icons: [wcLogo('e9ff15be-29b5-4ca5-cea3-cb88a4ba0c00')],
+    color: '#FF007A',
+    installUrl: 'https://wallet.uniswap.org/',
+    aliases: ['Uniswap'],
+  },
+  'Binance Web3 Wallet': {
+    icons: [wcLogo('ebac7b39-688c-41e3-7912-a4fefba74600')],
+    color: '#F0B90B',
+    installUrl: 'https://www.binance.com/en/web3wallet',
+    aliases: ['Binance Wallet', 'Binance'],
+  },
+  'TokenPocket': {
+    icons: [wcLogo('20459438-d12e-4f57-a982-c2d2c8e57100')],
+    color: '#2980FE',
+    installUrl: 'https://www.tokenpocket.pro/',
+    detector: () => hasProvider('isTokenPocket'),
+  },
+  'imToken': {
+    icons: [wcLogo('eff9c6c8-4f24-4f0e-d9da-79355c5fc500')],
+    color: '#11C4D1',
+    installUrl: 'https://token.im/',
+    detector: () => hasProvider('isImToken'),
+  },
+  'Frame': {
+    icons: [wcLogo('0ce87ca8-901f-4271-c52f-2fce1ce81a00')],
+    color: '#16BAC5',
+    installUrl: 'https://frame.sh/',
+    detector: () => hasProvider('isFrame'),
+  },
+  'XDEFI Wallet': {
+    icons: [wcLogo('3f7075d0-4ab7-4db5-404d-3e4c05e6fe00')],
+    color: '#2C5BFF',
+    installUrl: 'https://www.xdefi.io/',
+    aliases: ['XDEFI', 'Ctrl Wallet'],
+    detector: () => hasProvider('isXDEFI'),
+  },
+  'Exodus': {
+    icons: [wcLogo('4c16cad4-cac9-4643-6726-c696efaf5200')],
+    color: '#1F2033',
+    installUrl: 'https://www.exodus.com/',
+    detector: () => hasProvider('isExodus'),
+  },
+  '1inch Wallet': {
+    icons: [wcLogo('52b1da3c-9e72-40ae-5dac-6142addd9c00')],
+    color: '#1B314F',
+    installUrl: 'https://1inch.io/wallet/',
+    aliases: ['1inch'],
+  },
+  'Backpack': {
+    icons: [wcLogo('aa389368-310c-4495-7f7a-394390a07c00')],
+    color: '#E33E3F',
+    installUrl: 'https://backpack.app/',
+    detector: () => hasProvider('isBackpack'),
+  },
 };
 
 

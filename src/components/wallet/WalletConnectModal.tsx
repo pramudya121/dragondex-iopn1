@@ -27,29 +27,24 @@ const hasProvider = (key: string) => {
   return false;
 };
 
+// Official logos served directly from WalletConnect Explorer (cloud.reown.com).
+// IDs sourced from https://explorer.walletconnect.com/?type=wallet
 const WALLETS: Record<string, WalletMeta> = {
   'Rabby Wallet': {
-    icons: [wcLogo('7897a18d-fa44-4be6-c441-89f23e4ade00'), 'https://rabby.io/assets/images/logo-128.png'],
+    icons: [wcLogo('7897a18d-fa44-4be6-c441-89f23e4ade00')],
     color: '#7C8FEC',
     installUrl: 'https://rabby.io/',
     aliases: ['Rabby'],
     detector: () => hasProvider('isRabby'),
   },
   'Keplr': {
-    icons: [
-      'https://registry.walletconnect.com/api/v1/logo/lg/6f10d860-c10e-4912-b3bf-3a4e8d2cc500',
-      wcLogo('6f10d860-c10e-4912-b3bf-3a4e8d2cc500'),
-      'https://avatars.githubusercontent.com/u/74489019?s=200&v=4',
-    ],
+    icons: [wcLogo('6f10d860-c10e-4912-b3bf-3a4e8d2cc500')],
     color: '#7B68EE',
     installUrl: 'https://www.keplr.app/',
     detector: () => isBrowser && !!(window as any).keplr,
   },
   'SubWallet': {
-    icons: [
-      'https://avatars.githubusercontent.com/u/96474543?s=200&v=4',
-      wcLogo('40bd1bd2-3954-4fb1-bafa-cc0c08a3da00'),
-    ],
+    icons: [wcLogo('40bd1bd2-3954-4fb1-bafa-cc0c08a3da00')],
     color: '#004BFF',
     installUrl: 'https://www.subwallet.app/',
     detector: () => isBrowser && (!!(window as any).SubWallet || hasProvider('isSubWallet')),
@@ -89,20 +84,13 @@ const WALLETS: Record<string, WalletMeta> = {
     detector: () => hasProvider('isTrust'),
   },
   'Phantom': {
-    icons: [
-      'https://187760183-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2F-MVOiF6Zqit57q_hxJYp%2Fuploads%2FHEjleywo9QOnfYebBPCZ%2FPhantom_SVG_Icon.svg',
-      'https://avatars.githubusercontent.com/u/78782331?s=200&v=4',
-      wcLogo('1ae92b26-df6c-4f24-b294-c30b6dab2700'),
-    ],
+    icons: [wcLogo('1ae92b26-df6c-4f24-b294-c30b6dab2700')],
     color: '#AB9FF2',
     installUrl: 'https://phantom.app/',
     detector: () => isBrowser && !!(window as any).phantom,
   },
   'WalletConnect': {
-    icons: [
-      'https://avatars.githubusercontent.com/u/37784886?s=200&v=4',
-      wcLogo('ef333840-475d-4798-7869-cf4e6e573500'),
-    ],
+    icons: [wcLogo('ef333840-475d-4798-7869-cf4e6e573500')],
     color: '#3B99FC',
   },
 };

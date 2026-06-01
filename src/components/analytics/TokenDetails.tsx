@@ -15,50 +15,60 @@ const EXPLORER = 'https://testnet.iopn.tech';
 // Only show user-facing assets (skip duplicate WOPN entry — it's the bridge).
 const FEATURED = ['DRAGON', 'BNB', 'ETH', 'MON', 'HYPE'];
 
+interface TokenPoolEntry {
+  pool: LiquidityPool;
+  isToken0: boolean;
+  tokenReserve: number;
+  quoteReserve: number;
+  quoteSymbol: string;
+  quoteAddress: `0x${string}`;
+  tvl: number;
+}
+
+interface TokenEntry {
+  symbol: string;
+  meta: typeof TOKEN_LIST[number];
+  price: number;
+  tokenPools: TokenPoolEntry[];
+  priceSource: TokenPoolEntry | null;
+  totalLiquidity: number;
+  totalTokenReserve: number;
+  activePools: number;
+}
+
 export function TokenDetails({ pools, prices }: Props) {
   const [open, setOpen] = useState<string | null>(FEATURED[0]);
 
-  const data = useMemo(() => {
-    return FEATURED.map(symbol => {
+  const data = useMemo<TokenEntry[]>(() => {
+    const out: TokenEntry[] = [];
+    for (const symbol of FEATURED) {
       const meta = TOKEN_LIST.find(t => t.symbol === symbol);
-      if (!meta) return null;
+      if (!meta) continue;
       const addr = meta.address.toLowerCase();
 
-      // Find every pool containing this token, with reserves on each side.
-      const tokenPools = pools
-        .map(p => {
-          const isToken0 = p.token0Address.toLowerCase() === addr;
-          const isToken1 = p.token1Address.toLowerCase() === addr;
-          if (!isToken0 && !isToken1) return null;
-          const dec0 = p.token0?.decimals ?? 18;
-          const dec1 = p.token1?.decimals ?? 18;
-          const r0 = parseFloat(formatUnits(p.reserve0, dec0));
-          const r1 = parseFloat(formatUnits(p.reserve1, dec1));
-          const price0 = prices[p.token0Symbol] || 0;
-          const price1 = prices[p.token1Symbol] || 0;
-          const tvl = r0 * price0 + r1 * price1;
-          return {
-            pool: p,
-            isToken0,
-            tokenReserve: isToken0 ? r0 : r1,
-            quoteReserve: isToken0 ? r1 : r0,
-            quoteSymbol: isToken0 ? p.token1Symbol : p.token0Symbol,
-            quoteAddress: isToken0 ? p.token1Address : p.token0Address,
-            tvl,
-          };
-        })
-        .filter(Boolean) as Array<{
-          pool: LiquidityPool;
-          isToken0: boolean;
-          tokenReserve: number;
-          quoteReserve: number;
-          quoteSymbol: string;
-          quoteAddress: `0x${string}`;
-          tvl: number;
-        }>;
+      const tokenPools: TokenPoolEntry[] = [];
+      for (const p of pools) {
+        const isToken0 = p.token0Address.toLowerCase() === addr;
+        const isToken1 = p.token1Address.toLowerCase() === addr;
+        if (!isToken0 && !isToken1) continue;
+        const dec0 = p.token0?.decimals ?? 18;
+        const dec1 = p.token1?.decimals ?? 18;
+        const r0 = parseFloat(formatUnits(p.reserve0, dec0));
+        const r1 = parseFloat(formatUnits(p.reserve1, dec1));
+        const price0 = prices[p.token0Symbol] || 0;
+        const price1 = prices[p.token1Symbol] || 0;
+        tokenPools.push({
+          pool: p,
+          isToken0,
+          tokenReserve: isToken0 ? r0 : r1,
+          quoteReserve: isToken0 ? r1 : r0,
+          quoteSymbol: isToken0 ? p.token1Symbol : p.token0Symbol,
+          quoteAddress: isToken0 ? p.token1Address : p.token0Address,
+          tvl: r0 * price0 + r1 * price1,
+        });
+      }
 
-      // Price source: prefer the WOPN pair (since WOPN ≈ $1 anchor), else
-      // fall back to the deepest pool with both sides > 0.
+      // Prefer the WOPN pair as price source (WOPN anchors $1), else the deepest pool.
       const wopnPair = tokenPools.find(
         p =>
           p.quoteAddress.toLowerCase() === CONTRACTS.WETH.toLowerCase() &&
@@ -68,35 +78,19 @@ export function TokenDetails({ pools, prices }: Props) {
       const deepest = [...tokenPools]
         .filter(p => p.tokenReserve > 0 && p.quoteReserve > 0)
         .sort((a, b) => b.tvl - a.tvl)[0];
-      const priceSource = wopnPair || deepest || null;
 
-      const totalLiquidity = tokenPools.reduce((acc, p) => acc + p.tvl, 0);
-      const totalTokenReserve = tokenPools.reduce((acc, p) => acc + p.tokenReserve, 0);
-
-      return {
+      out.push({
         symbol,
         meta,
         price: prices[symbol] || 0,
         tokenPools,
-        priceSource,
-        totalLiquidity,
-        totalTokenReserve,
+        priceSource: wopnPair || deepest || null,
+        totalLiquidity: tokenPools.reduce((acc, p) => acc + p.tvl, 0),
+        totalTokenReserve: tokenPools.reduce((acc, p) => acc + p.tokenReserve, 0),
         activePools: tokenPools.filter(p => p.tokenReserve > 0 && p.quoteReserve > 0).length,
-      };
-    }).filter(Boolean) as NonNullable<ReturnType<typeof buildEntry>>[];
-    // (helper type alias — kept inline to avoid extra exports)
-    function buildEntry() {
-      return null as null | {
-        symbol: string;
-        meta: typeof TOKEN_LIST[number];
-        price: number;
-        tokenPools: any[];
-        priceSource: any;
-        totalLiquidity: number;
-        totalTokenReserve: number;
-        activePools: number;
-      };
+      });
     }
+    return out;
   }, [pools, prices]);
 
   return (

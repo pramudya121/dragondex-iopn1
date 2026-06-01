@@ -44,11 +44,22 @@ function RouteFallback() {
 }
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   return (
     <RouteErrorBoundary>
-      <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+      <Suspense fallback={<RouteFallback />}>
+        {/* Key on pathname so the enter animation re-plays on every nav. */}
+        <PageTransition key={location.pathname}>{children}</PageTransition>
+      </Suspense>
     </RouteErrorBoundary>
   );
+}
+
+function PrefetchWarmer() {
+  useEffect(() => {
+    warmCriticalRoutes();
+  }, []);
+  return null;
 }
 
 function AppRoutes() {

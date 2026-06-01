@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { formatUnits } from 'viem';
 import { TOKEN_LIST } from '@/config/contracts';
 import { Link } from 'react-router-dom';
+import { TokenDetails } from '@/components/analytics/TokenDetails';
 
 type AnalyticsTab = 'overview' | 'pools' | 'tokens' | 'activity';
 
@@ -393,10 +394,11 @@ export default function Analytics() {
           )}
 
           {activeTab === 'tokens' && (
-            <motion.div key="tokens" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+            <motion.div key="tokens" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-4">
+              <TokenDetails pools={pools} prices={prices} />
               <div className="glass-card p-4 md:p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm md:text-base font-semibold">Token Analytics</h3>
+                  <h3 className="text-sm md:text-base font-semibold">All Tokens Overview</h3>
                   <span className="text-xs text-muted-foreground">{tokenAnalytics.length} tokens</span>
                 </div>
                 <div className="grid gap-2">
@@ -417,7 +419,7 @@ export default function Analytics() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-medium">
-                          ${token.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ${token.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: token.price < 1 ? 4 : 2 })}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
                           TVL: ${token.totalLiquidity.toFixed(2)}

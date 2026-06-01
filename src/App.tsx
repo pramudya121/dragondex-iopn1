@@ -89,6 +89,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <PrefetchWarmer />
             <Layout>
               <AppRoutes />
             </Layout>

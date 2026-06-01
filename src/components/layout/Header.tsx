@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { FloatingDock } from '@/components/ui/aceternity/FloatingDock';
+import { prefetchRoute } from '@/lib/prefetchRoutes';
 
 import dragonLogo from '@/assets/dragon-logo.png';
 
@@ -61,6 +62,9 @@ export function Header() {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onMouseEnter={() => prefetchRoute(item.path)}
+                    onFocus={() => prefetchRoute(item.path)}
+                    onTouchStart={() => prefetchRoute(item.path)}
                     className={`nav-link flex items-center gap-2 ${location.pathname === item.path ? 'active' : ''}`}
                   >
                     <Icon className="w-4 h-4" />
@@ -117,6 +121,8 @@ export function Header() {
                     <Link
                       key={item.path}
                       to={item.path}
+                      onMouseEnter={() => prefetchRoute(item.path)}
+                      onTouchStart={() => prefetchRoute(item.path)}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                         location.pathname === item.path

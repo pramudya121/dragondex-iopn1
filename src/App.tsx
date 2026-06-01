@@ -1,14 +1,16 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { WagmiProvider } from 'wagmi';
 
 import { config } from '@/config/wagmi';
 import { Layout } from '@/components/layout/Layout';
 import { ErrorBoundary, RouteErrorBoundary } from '@/components/ErrorBoundary';
+import { PageTransition } from '@/components/layout/PageTransition';
+import { warmCriticalRoutes } from '@/lib/prefetchRoutes';
 // Lazy-load every route so heavy deps (recharts, three.js, charts, etc.)
 // only download when their page is visited. Cuts initial bundle dramatically.
 const Index = lazy(() => import("./pages/Index"));
@@ -42,11 +44,22 @@ function RouteFallback() {
 }
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   return (
     <RouteErrorBoundary>
-      <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+      <Suspense fallback={<RouteFallback />}>
+        {/* Key on pathname so the enter animation re-plays on every nav. */}
+        <PageTransition key={location.pathname}>{children}</PageTransition>
+      </Suspense>
     </RouteErrorBoundary>
   );
+}
+
+function PrefetchWarmer() {
+  useEffect(() => {
+    warmCriticalRoutes();
+  }, []);
+  return null;
 }
 
 function AppRoutes() {
@@ -76,6 +89,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <PrefetchWarmer />
             <Layout>
               <AppRoutes />
             </Layout>

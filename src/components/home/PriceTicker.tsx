@@ -1,22 +1,40 @@
 import { Marquee } from '@/components/ui/magic/Marquee';
 import { useTokenPrices, BASE_PRICES } from '@/hooks/usePrices';
+import { getTokenBySymbol } from '@/config/contracts';
 
 function PriceTickerItem({ symbol, price, basePrice }: { symbol: string; price: number; basePrice: number }) {
-  const change = basePrice > 0 ? ((price - basePrice) / basePrice) * 100 : 0;
+  const token = getTokenBySymbol(symbol);
+  const hasPrice = price > 0;
+  const change = hasPrice && basePrice > 0 ? ((price - basePrice) / basePrice) * 100 : 0;
   const isPositive = change >= 0;
+  const displayPrice = hasPrice ? price : basePrice;
+
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-lg border border-border/50 mx-2">
+    <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 rounded-lg border border-border/50 mx-2">
+      {token?.logoURI && (
+        <img
+          src={token.logoURI}
+          alt={symbol}
+          className="w-5 h-5 rounded-full object-cover"
+          onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+        />
+      )}
       <span className="font-semibold">{symbol}</span>
-      <span className="text-muted-foreground">${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      <span className="text-muted-foreground">
+        ${displayPrice.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: displayPrice < 1 ? 4 : 2,
+        })}
+      </span>
       <span className={isPositive ? 'text-success' : 'text-destructive'}>
-        {isPositive ? '+' : ''}{change.toFixed(1)}%
+        {isPositive ? '+' : ''}{change.toFixed(2)}%
       </span>
     </div>
   );
 }
 
 export function PriceTicker() {
-  const { prices, isLoading } = useTokenPrices();
+  const { prices } = useTokenPrices();
 
   const tokenList = ['OPN', 'DRAGON', 'BNB', 'ETH', 'MON', 'HYPE'];
 
@@ -27,7 +45,7 @@ export function PriceTicker() {
           <PriceTickerItem
             key={symbol}
             symbol={symbol}
-            price={prices[symbol] || BASE_PRICES[symbol] || 0}
+            price={prices[symbol] || 0}
             basePrice={BASE_PRICES[symbol] || 0}
           />
         ))}

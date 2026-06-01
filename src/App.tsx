@@ -1,14 +1,16 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { WagmiProvider } from 'wagmi';
 
 import { config } from '@/config/wagmi';
 import { Layout } from '@/components/layout/Layout';
 import { ErrorBoundary, RouteErrorBoundary } from '@/components/ErrorBoundary';
+import { PageTransition } from '@/components/layout/PageTransition';
+import { warmCriticalRoutes } from '@/lib/prefetchRoutes';
 // Lazy-load every route so heavy deps (recharts, three.js, charts, etc.)
 // only download when their page is visited. Cuts initial bundle dramatically.
 const Index = lazy(() => import("./pages/Index"));

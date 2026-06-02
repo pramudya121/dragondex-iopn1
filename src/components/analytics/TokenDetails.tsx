@@ -53,8 +53,9 @@ interface TokenEntry {
   activePools: number;
 }
 
-export function TokenDetails({ pools, prices }: Props) {
+export function TokenDetails({ pools, prices, isLoading = false }: Props) {
   const [open, setOpen] = useState<string | null>(FEATURED[0]);
+  const showSkeleton = isLoading && pools.length === 0;
 
   const data = useMemo<TokenEntry[]>(() => {
     const out: TokenEntry[] = [];

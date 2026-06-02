@@ -1,6 +1,7 @@
 import { Marquee } from '@/components/ui/magic/Marquee';
 import { useTokenPrices, BASE_PRICES } from '@/hooks/usePrices';
 import { getTokenBySymbol } from '@/config/contracts';
+import { TokenIcon } from '@/components/ui/TokenIcon';
 
 function PriceTickerItem({ symbol, price, basePrice }: { symbol: string; price: number; basePrice: number }) {
   const token = getTokenBySymbol(symbol);
@@ -11,14 +12,12 @@ function PriceTickerItem({ symbol, price, basePrice }: { symbol: string; price: 
 
   return (
     <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 rounded-lg border border-border/50 mx-2">
-      {token?.logoURI && (
-        <img
-          src={token.logoURI}
-          alt={symbol}
-          className="w-5 h-5 rounded-full object-cover"
-          onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-        />
-      )}
+      <TokenIcon
+        src={token?.logoURI}
+        symbol={symbol}
+        alt={symbol}
+        size={20}
+      />
       <span className="font-semibold">{symbol}</span>
       <span className="text-muted-foreground">
         ${displayPrice.toLocaleString(undefined, {

@@ -9,11 +9,28 @@ import { cn } from '@/lib/utils';
 interface Props {
   pools: LiquidityPool[];
   prices: Record<string, number>;
+  isLoading?: boolean;
 }
 
 const EXPLORER = 'https://testnet.iopn.tech';
 // Only show user-facing assets (skip duplicate WOPN entry — it's the bridge).
 const FEATURED = ['DRAGON', 'BNB', 'ETH', 'MON', 'HYPE'];
+
+function TokenDetailRowSkeleton() {
+  return (
+    <div className="rounded-xl border border-border/40 bg-muted/20 p-3 flex items-center gap-3 animate-pulse">
+      <div className="w-10 h-10 rounded-full bg-muted/60 shrink-0" />
+      <div className="flex-1 space-y-2 min-w-0">
+        <div className="h-3 w-24 rounded bg-muted/60" />
+        <div className="h-2.5 w-40 rounded bg-muted/40" />
+      </div>
+      <div className="space-y-2 text-right shrink-0">
+        <div className="h-3 w-16 rounded bg-muted/60 ml-auto" />
+        <div className="h-2.5 w-24 rounded bg-muted/40 ml-auto" />
+      </div>
+    </div>
+  );
+}
 
 interface TokenPoolEntry {
   pool: LiquidityPool;

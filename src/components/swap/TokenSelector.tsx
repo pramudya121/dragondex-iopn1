@@ -11,6 +11,7 @@ import { useTokenSafety, SafetyLevel } from '@/hooks/useTokenSafety';
 import { formatEther, formatUnits } from 'viem';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { TokenIcon } from '@/components/ui/TokenIcon';
 
 interface TokenSelectorProps {
   selectedToken: TokenInfo | null;

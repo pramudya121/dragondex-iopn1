@@ -29,6 +29,8 @@ export function useTokenPrices() {
       functionName: 'getPair',
       args: [CONTRACTS.WETH as `0x${string}`, token.address as `0x${string}`],
     })),
+    // Pair addresses are immutable once created — cache aggressively.
+    query: { staleTime: 5 * 60_000, gcTime: 30 * 60_000 },
   });
 
   const pairTargets = useMemo(() => {
@@ -48,7 +50,14 @@ export function useTokenPrices() {
       { address: pairAddress, abi: PAIR_ABI, functionName: 'getReserves' },
       { address: pairAddress, abi: PAIR_ABI, functionName: 'token0' },
     ]),
-    query: { enabled: pairTargets.length > 0 },
+    // Auto-refresh prices every 45s; serve cached reserves for 20s to throttle RPCs.
+    query: {
+      enabled: pairTargets.length > 0,
+      staleTime: 20_000,
+      gcTime: 60_000,
+      refetchInterval: 45_000,
+      refetchIntervalInBackground: false,
+    },
   });
 
   const prices = useMemo(() => {

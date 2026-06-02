@@ -395,7 +395,7 @@ export default function Analytics() {
 
           {activeTab === 'tokens' && (
             <motion.div key="tokens" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-4">
-              <TokenDetails pools={pools} prices={prices} />
+              <TokenDetails pools={pools} prices={prices} isLoading={isLoading} />
               <div className="glass-card p-4 md:p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm md:text-base font-semibold">All Tokens Overview</h3>

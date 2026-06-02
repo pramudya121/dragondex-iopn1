@@ -23,11 +23,17 @@ export function useLiquidityPools() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Get total number of pairs
+  // Get total number of pairs (cheap call, can refresh more often)
   const { data: pairsLength, refetch: refetchLength } = useReadContract({
     address: CONTRACTS.FACTORY as `0x${string}`,
     abi: FACTORY_ABI,
     functionName: 'allPairsLength',
+    query: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchInterval: 60_000,
+      refetchIntervalInBackground: false,
+    },
   });
 
   // Get all pair addresses
@@ -41,14 +47,15 @@ export function useLiquidityPools() {
       functionName: 'allPairs',
       args: [BigInt(index)],
     })),
-    query: { enabled: pairCount > 0 },
+    // Pair addresses by index are immutable — cache for the session.
+    query: { enabled: pairCount > 0, staleTime: 10 * 60_000, gcTime: 30 * 60_000 },
   });
 
   const pairAddresses = (pairAddressesResult.data || [])
     .map(result => result.result as `0x${string}` | undefined)
     .filter(Boolean) as `0x${string}`[];
 
-  // Get token0 and token1 for each pair
+  // Get token0, token1, reserves, totalSupply for each pair (batched multicall)
   const tokenCallsResult = useReadContracts({
     contracts: pairAddresses.flatMap(pairAddress => [
       { address: pairAddress, abi: PAIR_ABI, functionName: 'token0' },
@@ -56,7 +63,14 @@ export function useLiquidityPools() {
       { address: pairAddress, abi: PAIR_ABI, functionName: 'getReserves' },
       { address: pairAddress, abi: PAIR_ABI, functionName: 'totalSupply' },
     ]),
-    query: { enabled: pairAddresses.length > 0 },
+    // Auto-refresh reserves every 45s with a short cache to avoid RPC spam.
+    query: {
+      enabled: pairAddresses.length > 0,
+      staleTime: 20_000,
+      gcTime: 60_000,
+      refetchInterval: 45_000,
+      refetchIntervalInBackground: false,
+    },
   });
 
   // Get symbols for unknown tokens
@@ -76,7 +90,8 @@ export function useLiquidityPools() {
       { address, abi: ERC20_ABI, functionName: 'name' },
       { address, abi: ERC20_ABI, functionName: 'decimals' },
     ]),
-    query: { enabled: tokenAddresses.size > 0 },
+    // Token metadata (symbol/name/decimals) is immutable — cache for the session.
+    query: { enabled: tokenAddresses.size > 0, staleTime: 30 * 60_000, gcTime: 60 * 60_000 },
   });
 
   // Build symbol map

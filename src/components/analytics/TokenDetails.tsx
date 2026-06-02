@@ -5,6 +5,7 @@ import { formatUnits } from 'viem';
 import { TOKEN_LIST, CONTRACTS } from '@/config/contracts';
 import type { LiquidityPool } from '@/hooks/useLiquidityPools';
 import { cn } from '@/lib/utils';
+import { TokenIcon } from '@/components/ui/TokenIcon';
 
 interface Props {
   pools: LiquidityPool[];

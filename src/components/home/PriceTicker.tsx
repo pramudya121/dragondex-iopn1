@@ -1,6 +1,7 @@
 import { Marquee } from '@/components/ui/magic/Marquee';
 import { useTokenPrices, BASE_PRICES } from '@/hooks/usePrices';
 import { getTokenBySymbol } from '@/config/contracts';
+import { TokenIcon } from '@/components/ui/TokenIcon';
 
 function PriceTickerItem({ symbol, price, basePrice }: { symbol: string; price: number; basePrice: number }) {
   const token = getTokenBySymbol(symbol);

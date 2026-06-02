@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Plus, ExternalLink, Star, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { TokenIcon } from '@/components/ui/TokenIcon';
 import { LiquidityPool } from '@/hooks/useLiquidityPools';
 import { usePoolTVL } from '@/hooks/usePrices';
 import { cn } from '@/lib/utils';
@@ -52,10 +53,12 @@ export function PoolCard({ pool, index, prices }: PoolCardProps) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
-              <img src={token0Logo} alt={pool.token0Symbol} className="w-9 h-9 rounded-full border-2 border-background ring-1 ring-border/50"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
-              <img src={token1Logo} alt={pool.token1Symbol} className="w-9 h-9 rounded-full border-2 border-background ring-1 ring-border/50"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+              <TokenIcon src={token0Logo} symbol={pool.token0Symbol} size={36}
+                fallbackSrc="/tokens/opn.jpg"
+                className="border-2 border-background ring-1 ring-border/50" />
+              <TokenIcon src={token1Logo} symbol={pool.token1Symbol} size={36}
+                fallbackSrc="/tokens/opn.jpg"
+                className="border-2 border-background ring-1 ring-border/50" />
             </div>
             <div>
               <h3 className="font-display font-bold text-sm md:text-base tracking-tight">{pool.token0Symbol}<span className="text-muted-foreground/60">/</span>{pool.token1Symbol}</h3>

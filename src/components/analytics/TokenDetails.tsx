@@ -156,11 +156,13 @@ export function TokenDetails({ pools, prices, isLoading = false }: Props) {
                 onClick={() => setOpen(isOpen ? null : t.symbol)}
                 className="w-full flex items-center gap-3 p-3 text-left"
               >
-                <img
+                <TokenIcon
                   src={t.meta.logoURI}
+                  symbol={t.symbol}
                   alt={t.symbol}
-                  className="w-10 h-10 rounded-full border border-border shrink-0 object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
+                  size={40}
+                  fallbackSrc="/tokens/opn.jpg"
+                  className="border border-border"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">

@@ -273,11 +273,12 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
       >
         {selectedToken ? (
           <>
-            <img
+            <TokenIcon
               src={selectedToken.logoURI}
+              symbol={selectedToken.symbol}
               alt={selectedToken.symbol}
-              className="w-6 h-6 rounded-full"
-              onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
+              size={24}
+              fallbackSrc="/tokens/opn.jpg"
             />
             <span className="font-semibold">{selectedToken.symbol}</span>
           </>
@@ -445,12 +446,14 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
                               )}
                             >
                               <div className="relative">
-                                <img
+                                <TokenIcon
                                   src={token.logoURI}
+                                  symbol={token.symbol}
                                   alt={token.symbol}
-                                  className="w-10 h-10 rounded-full"
-                                  onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }}
+                                  size={40}
+                                  fallbackSrc="/tokens/opn.jpg"
                                 />
+
                                 {isImported && (
                                   <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-warning rounded-full flex items-center justify-center border-2 border-[#1a1a1a]">
                                     <AlertTriangle className="w-2 h-2 text-warning-foreground" />

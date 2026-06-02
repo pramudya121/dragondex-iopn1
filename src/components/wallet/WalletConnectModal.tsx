@@ -63,6 +63,26 @@ const WALLETS: Record<string, WalletMeta> = {
     installUrl: 'https://phantom.app/',
     detector: () => isBrowser && !!(window as any).phantom,
   },
+  'WalletConnect': {
+    icons: [
+      wcLogo('ef333840-541e-4536-a352-c1e0cdcb5400'),
+      'https://avatars.githubusercontent.com/u/37784886?s=200&v=4',
+    ],
+    color: '#3B99FC',
+    installUrl: 'https://walletconnect.com/',
+    aliases: ['WC', 'Wallet Connect'],
+    detector: () => false,
+  },
+  'Coinbase Wallet': {
+    icons: [
+      wcLogo('a5ebc364-8f91-4200-fcc6-be81310a0000'),
+      'https://avatars.githubusercontent.com/u/18060234?s=200&v=4',
+    ],
+    color: '#0052FF',
+    installUrl: 'https://www.coinbase.com/wallet',
+    aliases: ['Coinbase', 'CoinbaseWallet'],
+    detector: () => isBrowser && (!!(window as any).coinbaseWalletExtension || hasProvider('isCoinbaseWallet')),
+  },
 };
 
 

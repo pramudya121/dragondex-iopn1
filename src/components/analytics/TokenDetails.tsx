@@ -314,6 +314,7 @@ export function TokenDetails({ pools, prices, isLoading = false }: Props) {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

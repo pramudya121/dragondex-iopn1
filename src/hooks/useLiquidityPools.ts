@@ -90,7 +90,8 @@ export function useLiquidityPools() {
       { address, abi: ERC20_ABI, functionName: 'name' },
       { address, abi: ERC20_ABI, functionName: 'decimals' },
     ]),
-    query: { enabled: tokenAddresses.size > 0 },
+    // Token metadata (symbol/name/decimals) is immutable — cache for the session.
+    query: { enabled: tokenAddresses.size > 0, staleTime: 30 * 60_000, gcTime: 60 * 60_000 },
   });
 
   // Build symbol map

@@ -88,10 +88,12 @@ export default function PairDetail() {
         >
           <div className="flex items-center gap-4">
             <div className="flex -space-x-3">
-              <img src={logo0} alt={pool.token0Symbol} className="w-12 h-12 rounded-full border-2 border-background ring-1 ring-primary/30"
-                onError={(e) => ((e.target as HTMLImageElement).src = '/tokens/opn.jpg')} />
-              <img src={logo1} alt={pool.token1Symbol} className="w-12 h-12 rounded-full border-2 border-background ring-1 ring-primary/30"
-                onError={(e) => ((e.target as HTMLImageElement).src = '/tokens/opn.jpg')} />
+              <TokenIcon src={logo0} symbol={pool.token0Symbol} size={48}
+                fallbackSrc="/tokens/opn.jpg"
+                className="border-2 border-background ring-1 ring-primary/30" />
+              <TokenIcon src={logo1} symbol={pool.token1Symbol} size={48}
+                fallbackSrc="/tokens/opn.jpg"
+                className="border-2 border-background ring-1 ring-primary/30" />
             </div>
             <div>
               <h1 className="font-display text-3xl sm:text-4xl font-extrabold gradient-text">

@@ -308,7 +308,7 @@ export default function Analytics() {
                         transition={{ delay: 0.2 + i * 0.05 }}
                         className="flex flex-col items-center p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
-                        <img src={token.logoURI} alt={token.symbol} className="w-8 h-8 rounded-full border border-border mb-2" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+                        <TokenIcon src={token.logoURI} symbol={token.symbol} size={32} fallbackSrc="/tokens/opn.jpg" className="border border-border mb-2" />
                         <span className="text-xs font-bold">{token.symbol}</span>
                         <span className="text-[10px] text-muted-foreground">
                           ${(prices[token.symbol] || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

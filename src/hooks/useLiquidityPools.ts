@@ -140,6 +140,8 @@ export function useLiquidityPools() {
         const token0Data = symbolMap.get(token0Address.toLowerCase());
         const token1Data = symbolMap.get(token1Address.toLowerCase());
 
+        const normalizeSym = (s?: string) => (s === 'WETH' ? 'WOPN' : s || 'Unknown');
+
         poolsData.push({
           pairAddress,
           token0: token0Info || null,
@@ -149,8 +151,8 @@ export function useLiquidityPools() {
           reserve0: reserves?.[0] || 0n,
           reserve1: reserves?.[1] || 0n,
           totalSupply: totalSupply || 0n,
-          token0Symbol: token0Info?.symbol || token0Data?.symbol || 'Unknown',
-          token1Symbol: token1Info?.symbol || token1Data?.symbol || 'Unknown',
+          token0Symbol: normalizeSym(token0Info?.symbol || token0Data?.symbol),
+          token1Symbol: normalizeSym(token1Info?.symbol || token1Data?.symbol),
         });
       }
 

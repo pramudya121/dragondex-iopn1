@@ -353,8 +353,8 @@ export default function Analytics() {
                               <td className="py-2.5 px-3">
                                 <div className="flex items-center gap-2">
                                   <div className="flex -space-x-1 shrink-0">
-                                    <img src={pool.token0?.logoURI || '/tokens/opn.jpg'} alt="" className="w-5 h-5 rounded-full border border-background" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
-                                    <img src={pool.token1?.logoURI || '/tokens/opn.jpg'} alt="" className="w-5 h-5 rounded-full border border-background" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+                                    <TokenIcon src={pool.token0?.logoURI} symbol={pool.token0Symbol} size={20} fallbackSrc="/tokens/opn.jpg" className="border border-background" />
+                                    <TokenIcon src={pool.token1?.logoURI} symbol={pool.token1Symbol} size={20} fallbackSrc="/tokens/opn.jpg" className="border border-background" />
                                   </div>
                                   <span className="font-medium text-xs">{pool.token0Symbol}/{pool.token1Symbol}</span>
                                 </div>

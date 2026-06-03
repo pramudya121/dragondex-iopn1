@@ -181,8 +181,9 @@ export default function PairDetail() {
           ].map((t) => (
             <Card key={t.addr} className="p-5 bg-card/60 backdrop-blur-xl border-border/40">
               <div className="flex items-center gap-3 mb-3">
-                <img src={t.logo} alt={t.sym} className="w-10 h-10 rounded-full ring-1 ring-border/50"
-                  onError={(e) => ((e.target as HTMLImageElement).src = '/tokens/opn.jpg')} />
+                <TokenIcon src={t.logo} symbol={t.sym} size={40}
+                  fallbackSrc="/tokens/opn.jpg"
+                  className="ring-1 ring-border/50" />
                 <div className="flex-1">
                   <div className="font-display font-bold">{t.sym}</div>
                   <a

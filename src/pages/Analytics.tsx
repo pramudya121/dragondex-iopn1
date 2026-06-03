@@ -275,8 +275,8 @@ export default function Analytics() {
                         className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex -space-x-1">
-                          <img src={pool.token0?.logoURI || '/tokens/opn.jpg'} alt="" className="w-5 h-5 rounded-full border border-background" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
-                          <img src={pool.token1?.logoURI || '/tokens/opn.jpg'} alt="" className="w-5 h-5 rounded-full border border-background" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+                          <TokenIcon src={pool.token0?.logoURI} symbol={pool.token0Symbol} size={20} fallbackSrc="/tokens/opn.jpg" className="border border-background" />
+                          <TokenIcon src={pool.token1?.logoURI} symbol={pool.token1Symbol} size={20} fallbackSrc="/tokens/opn.jpg" className="border border-background" />
                         </div>
                         <span className="text-xs font-medium flex-1">{pool.token0Symbol}/{pool.token1Symbol}</span>
                         <span className="text-xs font-bold text-success">${pool.tvl.toFixed(2)}</span>

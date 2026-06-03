@@ -15,6 +15,7 @@ import { formatUnits } from 'viem';
 import { TOKEN_LIST } from '@/config/contracts';
 import { Link } from 'react-router-dom';
 import { TokenDetails } from '@/components/analytics/TokenDetails';
+import { TokenIcon } from '@/components/ui/TokenIcon';
 
 type AnalyticsTab = 'overview' | 'pools' | 'tokens' | 'activity';
 
@@ -274,8 +275,8 @@ export default function Analytics() {
                         className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex -space-x-1">
-                          <img src={pool.token0?.logoURI || '/tokens/opn.jpg'} alt="" className="w-5 h-5 rounded-full border border-background" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
-                          <img src={pool.token1?.logoURI || '/tokens/opn.jpg'} alt="" className="w-5 h-5 rounded-full border border-background" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+                          <TokenIcon src={pool.token0?.logoURI} symbol={pool.token0Symbol} size={20} fallbackSrc="/tokens/opn.jpg" className="border border-background" />
+                          <TokenIcon src={pool.token1?.logoURI} symbol={pool.token1Symbol} size={20} fallbackSrc="/tokens/opn.jpg" className="border border-background" />
                         </div>
                         <span className="text-xs font-medium flex-1">{pool.token0Symbol}/{pool.token1Symbol}</span>
                         <span className="text-xs font-bold text-success">${pool.tvl.toFixed(2)}</span>
@@ -307,7 +308,7 @@ export default function Analytics() {
                         transition={{ delay: 0.2 + i * 0.05 }}
                         className="flex flex-col items-center p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
-                        <img src={token.logoURI} alt={token.symbol} className="w-8 h-8 rounded-full border border-border mb-2" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+                        <TokenIcon src={token.logoURI} symbol={token.symbol} size={32} fallbackSrc="/tokens/opn.jpg" className="border border-border mb-2" />
                         <span className="text-xs font-bold">{token.symbol}</span>
                         <span className="text-[10px] text-muted-foreground">
                           ${(prices[token.symbol] || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -352,8 +353,8 @@ export default function Analytics() {
                               <td className="py-2.5 px-3">
                                 <div className="flex items-center gap-2">
                                   <div className="flex -space-x-1 shrink-0">
-                                    <img src={pool.token0?.logoURI || '/tokens/opn.jpg'} alt="" className="w-5 h-5 rounded-full border border-background" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
-                                    <img src={pool.token1?.logoURI || '/tokens/opn.jpg'} alt="" className="w-5 h-5 rounded-full border border-background" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+                                    <TokenIcon src={pool.token0?.logoURI} symbol={pool.token0Symbol} size={20} fallbackSrc="/tokens/opn.jpg" className="border border-background" />
+                                    <TokenIcon src={pool.token1?.logoURI} symbol={pool.token1Symbol} size={20} fallbackSrc="/tokens/opn.jpg" className="border border-background" />
                                   </div>
                                   <span className="font-medium text-xs">{pool.token0Symbol}/{pool.token1Symbol}</span>
                                 </div>
@@ -410,7 +411,7 @@ export default function Analytics() {
                       transition={{ delay: i * 0.04 }}
                       className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
                     >
-                      <img src={token.logo} alt={token.symbol} className="w-9 h-9 rounded-full border border-border shrink-0" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+                      <TokenIcon src={token.logo} symbol={token.symbol} size={36} fallbackSrc="/tokens/opn.jpg" className="border border-border shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm">{token.symbol}</p>
                         <p className="text-[10px] text-muted-foreground">

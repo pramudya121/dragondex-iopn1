@@ -99,16 +99,14 @@ export function PoolCard({ pool, index, prices }: PoolCardProps) {
         <div className="bg-muted/30 rounded-xl p-3 space-y-2 mb-3">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <img src={token0Logo} alt={pool.token0Symbol} className="w-4 h-4 rounded-full"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+              <TokenIcon src={token0Logo} symbol={pool.token0Symbol} size={16} fallbackSrc="/tokens/opn.jpg" />
               <span className="text-muted-foreground">{pool.token0Symbol}</span>
             </div>
             <span className="font-medium">{reserve0Formatted.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
           </div>
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <img src={token1Logo} alt={pool.token1Symbol} className="w-4 h-4 rounded-full"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+              <TokenIcon src={token1Logo} symbol={pool.token1Symbol} size={16} fallbackSrc="/tokens/opn.jpg" />
               <span className="text-muted-foreground">{pool.token1Symbol}</span>
             </div>
             <span className="font-medium">{reserve1Formatted.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>

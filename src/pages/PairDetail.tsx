@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { Spotlight } from '@/components/ui/magic/Spotlight';
 import { GlowOrb } from '@/components/ui/premium/GlowOrb';
 import { SwapPriceChart } from '@/components/swap/SwapPriceChart';
+import { TokenIcon } from '@/components/ui/TokenIcon';
 import { useLiquidityPools } from '@/hooks/useLiquidityPools';
 import { useTokenPrices, usePoolTVL } from '@/hooks/usePrices';
 
@@ -87,10 +88,12 @@ export default function PairDetail() {
         >
           <div className="flex items-center gap-4">
             <div className="flex -space-x-3">
-              <img src={logo0} alt={pool.token0Symbol} className="w-12 h-12 rounded-full border-2 border-background ring-1 ring-primary/30"
-                onError={(e) => ((e.target as HTMLImageElement).src = '/tokens/opn.jpg')} />
-              <img src={logo1} alt={pool.token1Symbol} className="w-12 h-12 rounded-full border-2 border-background ring-1 ring-primary/30"
-                onError={(e) => ((e.target as HTMLImageElement).src = '/tokens/opn.jpg')} />
+              <TokenIcon src={logo0} symbol={pool.token0Symbol} size={48}
+                fallbackSrc="/tokens/opn.jpg"
+                className="border-2 border-background ring-1 ring-primary/30" />
+              <TokenIcon src={logo1} symbol={pool.token1Symbol} size={48}
+                fallbackSrc="/tokens/opn.jpg"
+                className="border-2 border-background ring-1 ring-primary/30" />
             </div>
             <div>
               <h1 className="font-display text-3xl sm:text-4xl font-extrabold gradient-text">
@@ -178,8 +181,9 @@ export default function PairDetail() {
           ].map((t) => (
             <Card key={t.addr} className="p-5 bg-card/60 backdrop-blur-xl border-border/40">
               <div className="flex items-center gap-3 mb-3">
-                <img src={t.logo} alt={t.sym} className="w-10 h-10 rounded-full ring-1 ring-border/50"
-                  onError={(e) => ((e.target as HTMLImageElement).src = '/tokens/opn.jpg')} />
+                <TokenIcon src={t.logo} symbol={t.sym} size={40}
+                  fallbackSrc="/tokens/opn.jpg"
+                  className="ring-1 ring-border/50" />
                 <div className="flex-1">
                   <div className="font-display font-bold">{t.sym}</div>
                   <a

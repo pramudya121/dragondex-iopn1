@@ -411,7 +411,7 @@ export default function Analytics() {
                       transition={{ delay: i * 0.04 }}
                       className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
                     >
-                      <img src={token.logo} alt={token.symbol} className="w-9 h-9 rounded-full border border-border shrink-0" onError={(e) => { (e.target as HTMLImageElement).src = '/tokens/opn.jpg'; }} />
+                      <TokenIcon src={token.logo} symbol={token.symbol} size={36} fallbackSrc="/tokens/opn.jpg" className="border border-border shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm">{token.symbol}</p>
                         <p className="text-[10px] text-muted-foreground">

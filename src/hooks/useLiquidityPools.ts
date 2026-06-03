@@ -103,9 +103,13 @@ export function useLiquidityPools() {
       const name = symbolCallsResult.data[i * 3 + 1]?.result as string | undefined;
       const decimals = symbolCallsResult.data[i * 3 + 2]?.result as number | undefined;
       if (symbol) {
+        // On-chain WOPN contract is a WETH9 fork and reports "WETH"/"Wrapped Ether".
+        // Normalize to OPN-native branding everywhere it surfaces.
+        const normalizedSymbol = symbol === 'WETH' ? 'WOPN' : symbol;
+        const normalizedName = (name === 'Wrapped Ether' || !name) ? 'Wrapped OPN' : name;
         symbolMap.set(addresses[i].toLowerCase(), {
-          symbol,
-          name: name || symbol,
+          symbol: normalizedSymbol,
+          name: symbol === 'WETH' ? normalizedName : (name || symbol),
           decimals: decimals || 18,
         });
       }

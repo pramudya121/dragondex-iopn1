@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { Spotlight } from '@/components/ui/magic/Spotlight';
 import { GlowOrb } from '@/components/ui/premium/GlowOrb';
 import { SwapPriceChart } from '@/components/swap/SwapPriceChart';
+import { TokenIcon } from '@/components/ui/TokenIcon';
 import { useLiquidityPools } from '@/hooks/useLiquidityPools';
 import { useTokenPrices, usePoolTVL } from '@/hooks/usePrices';
 

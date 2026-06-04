@@ -36,6 +36,17 @@ export function useLiquidityPools() {
     },
   });
 
+  // Auto-index new pairs: when Factory emits PairCreated, refetch length
+  // so Pools/Analytics surface the new pair without a hard reload.
+  useWatchContractEvent({
+    address: CONTRACTS.FACTORY as `0x${string}`,
+    abi: FACTORY_ABI,
+    eventName: 'PairCreated',
+    onLogs: () => {
+      refetchLength();
+    },
+  });
+
   // Get all pair addresses
   const pairCount = Number(pairsLength || 0);
   const pairIndices = Array.from({ length: pairCount }, (_, i) => i);

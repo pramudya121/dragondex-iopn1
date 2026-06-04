@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useReadContract, useReadContracts } from 'wagmi';
+import { useReadContract, useReadContracts, useWatchContractEvent } from 'wagmi';
 import { CONTRACTS, getTokenByAddress, TokenInfo } from '@/config/contracts';
 import { FACTORY_ABI, PAIR_ABI, ERC20_ABI } from '@/config/abis';
 import { formatUnits } from 'viem';

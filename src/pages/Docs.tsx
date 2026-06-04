@@ -61,12 +61,13 @@ const allNavItems = sidebarSections.flatMap(s => s.items);
 
 // Content sections data
 const contracts = [
-  { name: 'Factory', address: '0x266174ba738E757AA82398E7b0dd3D7840ed6232', description: 'Creates new trading pairs' },
-  { name: 'Router', address: '0x51d4756EA62680eF8cC570856eE4d0E97Ab94571', description: 'Handles swap routing' },
-  { name: 'WOPN', address: '0xBc022C9dEb5AF250A526321d16Ef52E39b4DBD84', description: 'Wrapped OPN token' },
-  { name: 'Library', address: '0xeC697968edC511cF6f9436eD65c08897bb568Eb7', description: 'Helper functions' },
-  { name: 'Multicall', address: '0x02BC332F37c6B7C0c170624d8E74e9D90c952A66', description: 'Batch contract calls' },
-  { name: 'DRAGON', address: '0xFF3191bEE1640610CFA5338430f7F07CC9f5E1FF', description: 'Native DEX token' },
+  { name: 'Factory', address: '0x887AE7FfCB54f5811d957f3EA8095b15Bd99e538', description: 'Creates new trading pairs' },
+  { name: 'Router', address: '0x048A65f2f52F1c1A0a1fC59E67Ac95daA361AA89', description: 'Handles swap routing' },
+  { name: 'WOPN', address: '0xd38b2Cd5D8d68E6EA75f9aD9bC01F9e168d4b5E1', description: 'Wrapped OPN token' },
+  { name: 'Library', address: '0x2C9bd07a8885Fdd93f5426DB6C250a9adfcEe2C7', description: 'Helper functions' },
+  { name: 'Multicall', address: '0xb27c21B35d6fF3Fc55e826ef6714AF76a82c5E71', description: 'Batch contract calls' },
+  { name: 'Farming', address: '0xfc911Ef8F6372786cd671bdC99dc4f9255b85596', description: 'MultiPool farming/staking' },
+  { name: 'DRAGON', address: '0x76c8BF103D0548dC171EC9675bCc327f20f35A42', description: 'Native DEX token' },
 ];
 
 const tokens = [

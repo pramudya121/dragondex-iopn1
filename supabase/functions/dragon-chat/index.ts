@@ -8,16 +8,16 @@ const corsHeaders = {
 const RPC_URL = "https://testnet-rpc.iopn.tech";
 
 const CONTRACTS = {
-  FACTORY: "0x266174ba738E757AA82398E7b0dd3D7840ed6232",
-  WETH: "0xBc022C9dEb5AF250A526321d16Ef52E39b4DBD84",
+  FACTORY: "0x887AE7FfCB54f5811d957f3EA8095b15Bd99e538",
+  WETH: "0xd38b2Cd5D8d68E6EA75f9aD9bC01F9e168d4b5E1",
 };
 
 const TOKENS: Record<string, { address: string; decimals: number }> = {
-  DRAGON: { address: "0xFF3191bEE1640610CFA5338430f7F07CC9f5E1FF", decimals: 18 },
-  BNB: { address: "0x0800e7438013A0ffEf305B0977760Ed7FfEEfa84", decimals: 18 },
-  ETH: { address: "0x4b160BC86837898cc462fb6BA6e45cBC0f4BcDB5", decimals: 18 },
-  MON: { address: "0x4D4C72C6f83A8ec651e4b1a5A825EAE15503DBaF", decimals: 18 },
-  HYPE: { address: "0xBcfc4eC8E155c238501F0ca8DDfa0E33231eC87c", decimals: 18 },
+  DRAGON: { address: "0x76c8BF103D0548dC171EC9675bCc327f20f35A42", decimals: 18 },
+  BNB: { address: "0x542ed1D0572428f6aCC16852bFd9a4AD8e90A7b6", decimals: 18 },
+  ETH: { address: "0x769511B4237AE00Af2bbF77a339eC71CACe0e08B", decimals: 18 },
+  MON: { address: "0xbC7aa080ECe100522E5d2b396d0C31b39cEEa87b", decimals: 18 },
+  HYPE: { address: "0x45B14877a0A640f94a09C1Ab4445DEb000f7Aff7", decimals: 18 },
 };
 
 // Minimal ABI encoding helpers

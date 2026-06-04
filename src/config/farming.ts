@@ -1,5 +1,5 @@
 // DRAGONDEX Farming / Staking Contract Configuration
-export const FARMING_CONTRACT = '0x6C8a626d69298245a7B5bB0Df76184E956e53A93' as const;
+export const FARMING_CONTRACT = '0xfc911Ef8F6372786cd671bdC99dc4f9255b85596' as const;
 
 // Owner address allowed to manage farming pools (admin panel access).
 // This should match the contract owner returned by owner().

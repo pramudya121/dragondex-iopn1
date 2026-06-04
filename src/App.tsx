@@ -24,6 +24,7 @@ const Docs = lazy(() => import("./pages/Docs"));
 const Farming = lazy(() => import("./pages/Farming"));
 const AdminFarming = lazy(() => import("./pages/AdminFarming"));
 const PairDetail = lazy(() => import("./pages/PairDetail"));
+const ContractStatus = lazy(() => import("./pages/ContractStatus"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -76,6 +77,7 @@ function AppRoutes() {
       <Route path="/farming" element={<PageWrapper><Farming /></PageWrapper>} />
       <Route path="/admin/farming" element={<PageWrapper><AdminFarming /></PageWrapper>} />
       <Route path="/pool/:address" element={<PageWrapper><PairDetail /></PageWrapper>} />
+      <Route path="/status" element={<PageWrapper><ContractStatus /></PageWrapper>} />
       <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
     </Routes>
   );

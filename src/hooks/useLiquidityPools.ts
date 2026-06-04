@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useReadContract, useReadContracts } from 'wagmi';
+import { useReadContract, useReadContracts, useWatchContractEvent } from 'wagmi';
 import { CONTRACTS, getTokenByAddress, TokenInfo } from '@/config/contracts';
 import { FACTORY_ABI, PAIR_ABI, ERC20_ABI } from '@/config/abis';
 import { formatUnits } from 'viem';
@@ -33,6 +33,17 @@ export function useLiquidityPools() {
       gcTime: 5 * 60_000,
       refetchInterval: 60_000,
       refetchIntervalInBackground: false,
+    },
+  });
+
+  // Auto-index new pairs: when Factory emits PairCreated, refetch length
+  // so Pools/Analytics surface the new pair without a hard reload.
+  useWatchContractEvent({
+    address: CONTRACTS.FACTORY as `0x${string}`,
+    abi: FACTORY_ABI,
+    eventName: 'PairCreated',
+    onLogs: () => {
+      refetchLength();
     },
   });
 

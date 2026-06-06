@@ -265,10 +265,13 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
         <span className="text-xs text-muted-foreground mb-1.5 block">{label}</span>
       )}
       
-      <button
+      <motion.button
         onClick={() => setIsOpen(true)}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.97 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 22 }}
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-xl transition-all min-w-[130px]",
+          "flex items-center gap-2 px-3 rounded-xl transition-colors min-w-[130px] min-h-[44px]",
           "bg-muted/80 hover:bg-muted border border-border/50 hover:border-primary/40"
         )}
       >
@@ -286,8 +289,8 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
         ) : (
           <span className="text-muted-foreground">Select</span>
         )}
-        <ChevronDown className="w-4 h-4 ml-auto text-muted-foreground" />
-      </button>
+        <ChevronDown className={cn("w-4 h-4 ml-auto text-muted-foreground transition-transform", isOpen && "rotate-180")} />
+      </motion.button>
 
       <AnimatePresence>
         {isOpen && (
@@ -295,18 +298,19 @@ export function TokenSelector({ selectedToken, onSelect, disabledToken, label }:
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4"
             onClick={() => { setIsOpen(false); setShowImportConfirm(false); }}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              initial={{ scale: 0.97, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              transition={{ type: 'spring', duration: 0.35 }}
-              className="w-full max-w-[400px]"
+              exit={{ scale: 0.97, opacity: 0, y: 30 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+              className="w-full sm:max-w-[400px]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="bg-[#1a1a1a] border border-border/40 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="bg-[#1a1a1a] border border-border/40 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-border/30">
                   <h2 className="text-lg font-bold">Select Token</h2>

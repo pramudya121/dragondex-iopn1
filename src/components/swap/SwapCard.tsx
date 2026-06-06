@@ -18,6 +18,7 @@ import { usePriceImpact, useTokenPrices } from '@/hooks/usePrices';
 import { parseTransactionError, getErrorToastConfig } from '@/lib/transactionErrors';
 import { sanitizeAmountInput, sanitizeSlippage, getSafeDeadline, calculateMinOutput, getSafeApprovalAmount } from '@/lib/inputValidation';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
+import { SwapConfirmModal } from './SwapConfirmModal';
 import { useTransactionHistory } from '@/components/history/TransactionHistory';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ export function SwapCard() {
   const [slippage, setSlippage] = useState(0.5);
   const [showSettings, setShowSettings] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [lastSwapParams, setLastSwapParams] = useState<{ from: string; to: string } | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [autoSlippage, setAutoSlippage] = useState(true);
@@ -824,7 +826,7 @@ export function SwapCard() {
                 </>
               ) : (
                 <Button 
-                  onClick={handleSwap} 
+                  onClick={() => setShowConfirm(true)} 
                   className={cn(
                     "w-full h-11 sm:h-12 rounded-xl text-sm font-semibold",
                     isHighImpact ? "bg-destructive hover:bg-destructive/90" : "btn-dragon"
@@ -883,6 +885,27 @@ export function SwapCard() {
       <WalletConnectModal 
         isOpen={showWalletModal} 
         onClose={() => setShowWalletModal(false)} 
+      />
+
+      {/* Swap Confirmation Modal */}
+      <SwapConfirmModal
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={() => { handleSwap(); }}
+        fromToken={fromToken}
+        toToken={toToken}
+        fromAmount={fromAmount}
+        toAmount={toAmount}
+        rate={rate}
+        minReceived={minReceived}
+        slippage={slippage}
+        priceImpact={priceImpact}
+        severity={severity}
+        isWrapUnwrap={isWrapUnwrap}
+        isWrapping={isWrapping}
+        isProcessing={isLoading}
+        txHash={router.hash || weth.hash || undefined}
+        isSuccess={(router.isSuccess || weth.isSuccess) && !isLoading && !!(router.hash || weth.hash)}
       />
     </div>
   );

@@ -219,7 +219,7 @@ export default function Analytics() {
                 {/* TVL Bar Chart */}
                 <div className="glass-card p-4 md:p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm md:text-base font-semibold">Pool TVL Distribution</h3>
+                    <h2 className="text-sm md:text-base font-semibold">Pool TVL Distribution</h2>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/20 text-success">Live</span>
                   </div>
                   {chartPools.length > 0 ? (
@@ -260,7 +260,7 @@ export default function Analytics() {
                 {/* Top Pools Quick View */}
                 <div className="glass-card p-4 md:p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm md:text-base font-semibold">Top Pools by TVL</h3>
+                    <h2 className="text-sm md:text-base font-semibold">Top Pools by TVL</h2>
                     <button onClick={() => setActiveTab('pools')} className="text-xs text-primary hover:underline flex items-center gap-1">
                       View all <ArrowUpRight className="w-3 h-3" />
                     </button>
@@ -325,7 +325,7 @@ export default function Analytics() {
             <motion.div key="pools" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card p-4 md:p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm md:text-base font-semibold">All Pools</h3>
+                  <h2 className="text-sm md:text-base font-semibold">All Pools</h2>
                   <span className="text-xs text-muted-foreground">{pools.length} pools on-chain</span>
                 </div>
                 <div className="overflow-x-auto -mx-4 md:mx-0">
@@ -399,7 +399,7 @@ export default function Analytics() {
               <TokenDetails pools={pools} prices={prices} isLoading={isLoading} />
               <div className="glass-card p-4 md:p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm md:text-base font-semibold">All Tokens Overview</h3>
+                  <h2 className="text-sm md:text-base font-semibold">All Tokens Overview</h2>
                   <span className="text-xs text-muted-foreground">{tokenAnalytics.length} tokens</span>
                 </div>
                 <div className="grid gap-2">

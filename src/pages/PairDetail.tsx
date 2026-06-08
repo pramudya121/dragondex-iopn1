@@ -42,10 +42,19 @@ export default function PairDetail() {
   const price0in1 = reserve0 > 0 ? reserve1 / reserve0 : 0;
   const price1in0 = reserve1 > 0 ? reserve0 / reserve1 : 0;
 
+  const pairPath = `/pool/${address ?? ''}`;
+  const pairLabel = pool ? `${pool.token0Symbol}/${pool.token1Symbol}` : 'Liquidity';
+  const seoTitle = pool
+    ? `${pairLabel} Pool — DRAGONDEX on OPN Testnet`
+    : 'Pool Details — DRAGONDEX';
+  const seoDescription = pool
+    ? `View reserves, price chart, TVL, and recent swaps for the ${pairLabel} liquidity pool on DRAGONDEX (OPN Testnet).`
+    : 'Detailed view of a DRAGONDEX liquidity pool with reserves, price chart, and recent swaps.';
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-20 flex justify-center">
-      <SEO title="Pool Details — DRAGONDEX" description="Detailed view of a DRAGONDEX liquidity pool with reserves, price chart, and recent swaps." path="/pools" />
+        <SEO title={seoTitle} description={seoDescription} path={pairPath} />
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );

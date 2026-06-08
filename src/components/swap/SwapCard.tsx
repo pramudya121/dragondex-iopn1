@@ -487,6 +487,7 @@ export function SwapCard() {
                   onClick={() => { refetchPair(); if (validPairAddress) refetchReserves(); }}
                   className="p-2 rounded-lg hover:bg-muted/80 transition-colors"
                   title="Refresh prices"
+                  aria-label="Refresh prices"
                 >
                   <RefreshCw className="w-4 h-4 text-muted-foreground" />
                 </motion.button>
@@ -494,6 +495,8 @@ export function SwapCard() {
                 <motion.button
                   whileHover={{ rotate: 90 }}
                   onClick={() => setShowSettings(!showSettings)}
+                  aria-label="Swap settings"
+                  aria-expanded={showSettings}
                   className={cn(
                     "p-2 rounded-lg transition-colors",
                     showSettings ? "bg-primary/20 text-primary" : "hover:bg-muted/80 text-muted-foreground"
@@ -527,7 +530,7 @@ export function SwapCard() {
                           <Sparkles className="w-3 h-3 inline mr-0.5" />
                           Auto
                         </button>
-                        <button onClick={() => setShowSettings(false)}>
+                        <button onClick={() => setShowSettings(false)} aria-label="Close settings">
                           <X className="w-4 h-4 text-muted-foreground" />
                         </button>
                       </div>
@@ -628,6 +631,7 @@ export function SwapCard() {
                 whileHover={{ scale: 1.15 }} 
                 whileTap={{ scale: 0.9, rotate: 180 }}
                 onClick={handleSwapTokens} 
+                aria-label="Swap token direction"
                 className="p-2.5 rounded-xl bg-card border-2 border-border/60 hover:border-primary/50 hover:bg-primary/5 transition-all shadow-lg group/swap"
               >
                 <ArrowDownUp className="w-4 h-4 text-muted-foreground group-hover/swap:text-primary transition-colors" />

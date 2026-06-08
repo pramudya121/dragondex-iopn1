@@ -294,7 +294,7 @@ export default function Analytics() {
                     <h2 className="text-sm md:text-base font-semibold flex items-center gap-2">
                       <Coins className="w-4 h-4 text-primary" />
                       Token Prices
-                    </h3>
+                    </h2>
                     <button onClick={() => setActiveTab('tokens')} className="text-xs text-primary hover:underline flex items-center gap-1">
                       View all <ArrowUpRight className="w-3 h-3" />
                     </button>

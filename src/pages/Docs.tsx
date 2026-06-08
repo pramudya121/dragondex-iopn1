@@ -616,6 +616,8 @@ export default function Docs() {
       {/* Mobile sidebar toggle */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label="Toggle docs sidebar"
+        aria-expanded={sidebarOpen}
         className="lg:hidden fixed top-20 left-4 z-50 p-2 rounded-lg bg-card border border-border shadow-lg"
       >
         <BookOpen className="w-5 h-5" />

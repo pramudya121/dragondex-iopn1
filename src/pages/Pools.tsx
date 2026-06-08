@@ -148,10 +148,10 @@ export default function Pools() {
 
             {/* View Toggle */}
             <div className="flex bg-muted/50 rounded-lg p-1">
-              <button onClick={() => setViewMode('grid')} className={cn("p-2 rounded-md transition-colors", viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
+              <button aria-label="Grid view" onClick={() => setViewMode('grid')} className={cn("p-2 rounded-md transition-colors", viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
                 <Grid className="w-4 h-4" />
               </button>
-              <button onClick={() => setViewMode('list')} className={cn("p-2 rounded-md transition-colors", viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
+              <button aria-label="List view" onClick={() => setViewMode('list')} className={cn("p-2 rounded-md transition-colors", viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
                 <List className="w-4 h-4" />
               </button>
             </div>

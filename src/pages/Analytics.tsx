@@ -206,7 +206,7 @@ export default function Analytics() {
               <span>{tab.label}</span>
             </button>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => { refetch(); refetchVol(); }} disabled={isLoading || volLoading} className="ml-1 shrink-0">
+          <Button variant="ghost" size="sm" aria-label="Refresh analytics data" onClick={() => { refetch(); refetchVol(); }} disabled={isLoading || volLoading} className="ml-1 shrink-0">
             <RefreshCw className={cn("w-3.5 h-3.5", (isLoading || volLoading) && "animate-spin")} />
           </Button>
         </div>
@@ -219,7 +219,7 @@ export default function Analytics() {
                 {/* TVL Bar Chart */}
                 <div className="glass-card p-4 md:p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm md:text-base font-semibold">Pool TVL Distribution</h3>
+                    <h2 className="text-sm md:text-base font-semibold">Pool TVL Distribution</h2>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/20 text-success">Live</span>
                   </div>
                   {chartPools.length > 0 ? (
@@ -260,7 +260,7 @@ export default function Analytics() {
                 {/* Top Pools Quick View */}
                 <div className="glass-card p-4 md:p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm md:text-base font-semibold">Top Pools by TVL</h3>
+                    <h2 className="text-sm md:text-base font-semibold">Top Pools by TVL</h2>
                     <button onClick={() => setActiveTab('pools')} className="text-xs text-primary hover:underline flex items-center gap-1">
                       View all <ArrowUpRight className="w-3 h-3" />
                     </button>
@@ -291,10 +291,10 @@ export default function Analytics() {
                 {/* Token Prices Quick View */}
                 <div className="glass-card p-4 md:p-5 md:col-span-2">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm md:text-base font-semibold flex items-center gap-2">
+                    <h2 className="text-sm md:text-base font-semibold flex items-center gap-2">
                       <Coins className="w-4 h-4 text-primary" />
                       Token Prices
-                    </h3>
+                    </h2>
                     <button onClick={() => setActiveTab('tokens')} className="text-xs text-primary hover:underline flex items-center gap-1">
                       View all <ArrowUpRight className="w-3 h-3" />
                     </button>
@@ -325,7 +325,7 @@ export default function Analytics() {
             <motion.div key="pools" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card p-4 md:p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm md:text-base font-semibold">All Pools</h3>
+                  <h2 className="text-sm md:text-base font-semibold">All Pools</h2>
                   <span className="text-xs text-muted-foreground">{pools.length} pools on-chain</span>
                 </div>
                 <div className="overflow-x-auto -mx-4 md:mx-0">
@@ -399,7 +399,7 @@ export default function Analytics() {
               <TokenDetails pools={pools} prices={prices} isLoading={isLoading} />
               <div className="glass-card p-4 md:p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm md:text-base font-semibold">All Tokens Overview</h3>
+                  <h2 className="text-sm md:text-base font-semibold">All Tokens Overview</h2>
                   <span className="text-xs text-muted-foreground">{tokenAnalytics.length} tokens</span>
                 </div>
                 <div className="grid gap-2">
@@ -438,10 +438,10 @@ export default function Analytics() {
               <div className="glass-card p-4 md:p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-sm md:text-base font-semibold flex items-center gap-2">
+                    <h2 className="text-sm md:text-base font-semibold flex items-center gap-2">
                       <Activity className="w-4 h-4 text-primary" />
                       Recent Swaps
-                    </h3>
+                    </h2>
                     <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
                       Live on-chain Swap events across all pools
                     </p>

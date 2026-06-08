@@ -62,7 +62,9 @@ export function useAgentExecutor() {
           const from = resolveToken(action.fromSymbol);
           const to = resolveToken(action.toSymbol);
           const amountIn = parseUnits(action.amount, from.decimals);
-          const slippage = action.slippage ?? 0.5;
+          // Clamp slippage to a safe range [0.01%, 50%] to prevent MEV sandwich
+          // attacks from AI-emitted values like 100% (which would yield minOut = 0).
+          const slippage = Math.min(Math.max(action.slippage ?? 0.5, 0.01), 50);
 
           // OPN <-> WOPN: route to wrap/unwrap
           if (from.isNative && to.symbol === 'WOPN') return execute({ type: 'wrap', amount: action.amount });

@@ -121,6 +121,19 @@ export function AgentActionCard({ action, onResult }: Props) {
         </p>
       </div>
 
+      {action.type === 'swap' && (() => {
+        const effSlip = Math.min(Math.max(action.slippage ?? 0.5, 0.01), 50);
+        const clamped = (action.slippage ?? 0.5) !== effSlip;
+        return (
+          <div className="mt-2.5 px-3 py-2 rounded-lg bg-muted/40 border border-border/40 text-[11px] text-muted-foreground flex items-center justify-between gap-2">
+            <span>Max slippage</span>
+            <span className={cn("font-mono font-semibold", effSlip > 5 ? 'text-destructive' : 'text-foreground')}>
+              {effSlip}%{clamped && <span className="ml-1 text-[9px] uppercase text-primary">clamped</span>}
+            </span>
+          </div>
+        );
+      })()}
+
       {state.status === 'pending' && (
         <div className="flex gap-2 mt-3.5">
           <button

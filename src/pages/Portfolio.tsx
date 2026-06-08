@@ -281,7 +281,7 @@ export default function Portfolio() {
               <span>{tab.label}</span>
             </button>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => refetchOpn()} className="ml-1 shrink-0">
+          <Button variant="ghost" size="sm" aria-label="Refresh portfolio balances" onClick={() => refetchOpn()} className="ml-1 shrink-0">
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
         </div>

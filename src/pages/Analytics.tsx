@@ -206,7 +206,7 @@ export default function Analytics() {
               <span>{tab.label}</span>
             </button>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => { refetch(); refetchVol(); }} disabled={isLoading || volLoading} className="ml-1 shrink-0">
+          <Button variant="ghost" size="sm" aria-label="Refresh analytics data" onClick={() => { refetch(); refetchVol(); }} disabled={isLoading || volLoading} className="ml-1 shrink-0">
             <RefreshCw className={cn("w-3.5 h-3.5", (isLoading || volLoading) && "animate-spin")} />
           </Button>
         </div>
@@ -441,7 +441,7 @@ export default function Analytics() {
                     <h2 className="text-sm md:text-base font-semibold flex items-center gap-2">
                       <Activity className="w-4 h-4 text-primary" />
                       Recent Swaps
-                    </h3>
+                    </h2>
                     <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
                       Live on-chain Swap events across all pools
                     </p>
